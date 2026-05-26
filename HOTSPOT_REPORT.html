@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotspot Report — CardDemo COBOL Estate</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            color: #24292e;
+            background: #fff;
+        }
+        h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; color: #0366d6; }
+        h2 { border-bottom: 1px solid #e1e4e8; padding-bottom: 8px; margin-top: 32px; }
+        h3 { color: #24292e; margin-top: 24px; }
+        h4 { color: #586069; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #d1d5da;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f8ff;
+            font-weight: 600;
+            color: #0366d6;
+        }
+        tr:nth-child(even) { background-color: #f6f8fa; }
+        tr:hover { background-color: #e1f0ff; }
+        code {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 85%;
+        }
+        pre {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            line-height: 1.45;
+        }
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 13px;
+        }
+        blockquote {
+            border-left: 4px solid #0366d6;
+            margin: 16px 0;
+            padding: 8px 16px;
+            color: #586069;
+            background-color: #f1f8ff;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #e1e4e8;
+            margin: 32px 0;
+        }
+        strong { color: #24292e; }
+        a { color: #0366d6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { margin-bottom: 40px; }
+    </style>
+</head>
+<body>
+<div class="container">
+<h1 id="hotspot-report-carddemo-cobol-estate">Hotspot Report — CardDemo COBOL Estate</h1>
+<blockquote>
+<p>Top programs ranked by complexity, dependency, and modernization priority.</p>
+</blockquote>
+<hr />
+<h2 id="1-metric-definitions">1. Metric Definitions</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Description</th>
+<th>How Measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LOC</strong></td>
+<td>Lines of code</td>
+<td><code>wc -l</code> on source file</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>Number of COPY statements</td>
+<td>Count of <code>COPY</code> directives</td>
+</tr>
+<tr>
+<td><strong>I/O Ops</strong></td>
+<td>Total I/O operations</td>
+<td>Count of READ, WRITE, REWRITE, DELETE, EXEC CICS SEND/RECEIVE, EXEC SQL, CALL MQ*</td>
+</tr>
+<tr>
+<td><strong>Logic Density</strong></td>
+<td>Business logic complexity</td>
+<td>Count of EVALUATE + IF/END-IF blocks</td>
+</tr>
+<tr>
+<td><strong>Dependencies</strong></td>
+<td>Inter-program links</td>
+<td>Count of programs that CALL, XCTL, or LINK to this program + programs it calls/transfers to</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-top-10-programs-by-lines-of-code">2. Top 10 Programs by Lines of Code</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Program</th>
+<th>LOC</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>COACTUPC.cbl</td>
+<td>4,236</td>
+<td>Online (CICS)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>COTRTLIC.cbl</td>
+<td>2,098</td>
+<td>Online (CICS/DB2)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>COTRTUPC.cbl</td>
+<td>1,702</td>
+<td>Online (CICS/DB2)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>COCRDUPC.cbl</td>
+<td>1,560</td>
+<td>Online (CICS)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COCRDLIC.cbl</td>
+<td>1,459</td>
+<td>Online (CICS)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>COPAUS0C.cbl</td>
+<td>1,032</td>
+<td>Online (CICS/IMS)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>COPAUA0C.cbl</td>
+<td>1,026</td>
+<td>Online (CICS/IMS/MQ)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>COACTVWC.cbl</td>
+<td>941</td>
+<td>Online (CICS)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>CBSTM03A.CBL</td>
+<td>924</td>
+<td>Batch</td>
+</tr>
+<tr>
+<td>10</td>
+<td>COCRDSLC.cbl</td>
+<td>887</td>
+<td>Online (CICS)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-top-10-programs-by-copybook-references">3. Top 10 Programs by Copybook References</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Program</th>
+<th>Copybooks</th>
+<th>Key Copybooks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>COACTUPC.cbl</td>
+<td>58</td>
+<td>CSSETATY (×3 via COPY REPLACING), COCOM01Y, CVCRD01Y, CVACT01Y, etc.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>COPAUA0C.cbl</td>
+<td>17</td>
+<td>CMQODV, CMQMDV, CMQV, CCPAURQY, CIPAUSMY, CIPAUDTY</td>
+</tr>
+<tr>
+<td>3</td>
+<td>COACTVWC.cbl</td>
+<td>16</td>
+<td>COCOM01Y, CVACT01Y, CVACT02Y, CVACT03Y, CVCUS01Y</td>
+</tr>
+<tr>
+<td>4</td>
+<td>COCRDSLC.cbl</td>
+<td>16</td>
+<td>COCOM01Y, CVCRD01Y, CVACT02Y, CVCUS01Y</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COCRDUPC.cbl</td>
+<td>16</td>
+<td>COCOM01Y, CVCRD01Y, CVACT02Y, CVCUS01Y</td>
+</tr>
+<tr>
+<td>6</td>
+<td>COPAUS0C.cbl</td>
+<td>15</td>
+<td>COCOM01Y, CIPAUSMY, CIPAUDTY, CVACT01Y, CVCUS01Y</td>
+</tr>
+<tr>
+<td>7</td>
+<td>COTRTUPC.cbl</td>
+<td>15</td>
+<td>COCOM01Y, CVCRD01Y, DCLTRTYP, DCLTRCAT (DB2 SQL INCLUDE)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>COCRDLIC.cbl</td>
+<td>14</td>
+<td>COCOM01Y, CVCRD01Y, CVACT02Y</td>
+</tr>
+<tr>
+<td>9</td>
+<td>COTRTLIC.cbl</td>
+<td>12</td>
+<td>COCOM01Y, CVCRD01Y, CSDB2RWY, DCLTRTYP (DB2 SQL INCLUDE)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>COBIL00C.cbl</td>
+<td>11</td>
+<td>COCOM01Y, CVACT01Y, CVACT03Y, CVTRA05Y</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-top-10-programs-by-io-operations">4. Top 10 Programs by I/O Operations</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Program</th>
+<th>Total I/O</th>
+<th>Breakdown</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>CBSTM03A.CBL</td>
+<td>115</td>
+<td>R:4, W:97, CALL:14 (97 WRITEs for statement generation lines)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>COTRTUPC.cbl</td>
+<td>40</td>
+<td>R:1, W:1, D:28, S:2, RV:1, SQL:7 (28 DELETEs for cascading DB2 cleanup)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>COTRTLIC.cbl</td>
+<td>34</td>
+<td>R:4, D:10, S:3, RV:1, SQL:16 (16 SQL cursor operations)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>CBPAUP0C.cbl</td>
+<td>21</td>
+<td>R:12, D:9 (IMS segment reads and deletes)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COPAUA0C.cbl</td>
+<td>16</td>
+<td>R:8, W:4, CALL:4 (MQ + CICS + IMS reads)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>COACTUPC.cbl</td>
+<td>14</td>
+<td>R:8, W:3, S:2, RV:1 (multi-file account update)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>CBACT01C.cbl</td>
+<td>13</td>
+<td>R:2, W:9, CALL:2 (account file splitter)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>COCRDLIC.cbl</td>
+<td>12</td>
+<td>R:8, S:3, RV:1 (paginated browse with STARTBR/READNEXT)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>CBEXPORT.cbl</td>
+<td>12</td>
+<td>R:6, W:5, CALL:1 (5-file export)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>CBTRN02C.cbl</td>
+<td>12</td>
+<td>R:6, W:5, CALL:1 (transaction posting)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-top-10-programs-by-business-logic-density">5. Top 10 Programs by Business Logic Density</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Program</th>
+<th>EVALUATE</th>
+<th>IF/END-IF</th>
+<th>Total</th>
+<th>Key Logic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>COACTUPC.cbl</td>
+<td>20</td>
+<td>339</td>
+<td>359</td>
+<td>Field-by-field validation (date, SSN, phone, state, ZIP); multi-screen flow control</td>
+</tr>
+<tr>
+<td>2</td>
+<td>COTRTLIC.cbl</td>
+<td>32</td>
+<td>184</td>
+<td>216</td>
+<td>DB2 cursor navigation; inline update/delete with multi-row selection</td>
+</tr>
+<tr>
+<td>3</td>
+<td>COCRDUPC.cbl</td>
+<td>16</td>
+<td>151</td>
+<td>167</td>
+<td>Card field validation; expiry date checking; status transitions</td>
+</tr>
+<tr>
+<td>4</td>
+<td>COCRDLIC.cbl</td>
+<td>18</td>
+<td>131</td>
+<td>149</td>
+<td>Paginated browse logic; forward/backward navigation; selection handling</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COTRTUPC.cbl</td>
+<td>26</td>
+<td>108</td>
+<td>134</td>
+<td>DB2 CRUD with cascading deletes; delete confirmation workflow</td>
+</tr>
+<tr>
+<td>6</td>
+<td>CBTRN02C.cbl</td>
+<td>0</td>
+<td>96</td>
+<td>96</td>
+<td>Transaction validation: card status, account balance, credit limit checks</td>
+</tr>
+<tr>
+<td>7</td>
+<td>CBACT04C.cbl</td>
+<td>0</td>
+<td>86</td>
+<td>86</td>
+<td>Interest calculation: rate lookup, prorating, fee computation, balance update</td>
+</tr>
+<tr>
+<td>8</td>
+<td>CBTRN03C.cbl</td>
+<td>4</td>
+<td>75</td>
+<td>79</td>
+<td>Report formatting: page breaks, subtotals, control breaks by account</td>
+</tr>
+<tr>
+<td>9</td>
+<td>COCRDSLC.cbl</td>
+<td>8</td>
+<td>72</td>
+<td>80</td>
+<td>Card detail display with multi-file lookup and error handling</td>
+</tr>
+<tr>
+<td>10</td>
+<td>COPAUS0C.cbl</td>
+<td>22</td>
+<td>50</td>
+<td>72</td>
+<td>IMS browse with cursor positioning; multi-page navigation; sync points</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-top-10-programs-by-inter-program-dependencies">6. Top 10 Programs by Inter-Program Dependencies</h2>
+<p>Programs ranked by total number of direct connections (calls in + calls out + transfers in + transfers out):</p>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Program</th>
+<th>Total Deps</th>
+<th>Calls/Links In</th>
+<th>Calls/Links Out</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>COMEN01C.cbl</td>
+<td>12</td>
+<td>1 (from COSGN00C)</td>
+<td>11 (XCTL to all main screens)</td>
+<td>Hub for all user navigation</td>
+</tr>
+<tr>
+<td>2</td>
+<td>COADM01C.cbl</td>
+<td>7</td>
+<td>1 (from COSGN00C)</td>
+<td>6 (XCTL to admin screens)</td>
+<td>Hub for admin navigation</td>
+</tr>
+<tr>
+<td>3</td>
+<td>COACTUPC.cbl</td>
+<td>3</td>
+<td>1 (from COMEN01C)</td>
+<td>0 (self-contained screen) + reads 3 files</td>
+<td>Central account update</td>
+</tr>
+<tr>
+<td>4</td>
+<td>COCRDLIC.cbl</td>
+<td>4</td>
+<td>1 (from COMEN01C)</td>
+<td>2 (XCTL to COCRDSLC, COCRDUPC) + 1 (return)</td>
+<td>Card list hub</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COPAUA0C.cbl</td>
+<td>4</td>
+<td>0 (MQ-triggered)</td>
+<td>4 (MQOPEN/GET/PUT1 + CICS reads + IMS)</td>
+<td>Cross-subsystem hub</td>
+</tr>
+<tr>
+<td>6</td>
+<td>COUSR00C.cbl</td>
+<td>4</td>
+<td>1 (from COADM01C)</td>
+<td>2 (XCTL to COUSR02C, COUSR03C) + 1 (return)</td>
+<td>User list hub</td>
+</tr>
+<tr>
+<td>7</td>
+<td>COPAUS0C.cbl</td>
+<td>3</td>
+<td>1 (from COMEN01C)</td>
+<td>1 (LINK COPAUS1C) + IMS/CICS</td>
+<td>Auth summary</td>
+</tr>
+<tr>
+<td>8</td>
+<td>CBSTM03A.CBL</td>
+<td>2</td>
+<td>0 (JCL direct)</td>
+<td>1 (CALL CBSTM03B)</td>
+<td>Statement generation</td>
+</tr>
+<tr>
+<td>9</td>
+<td>COSGN00C.cbl</td>
+<td>3</td>
+<td>0 (CICS entry point)</td>
+<td>2 (XCTL to COADM01C, COMEN01C)</td>
+<td>Entry point</td>
+</tr>
+<tr>
+<td>10</td>
+<td>CBTRN02C.cbl</td>
+<td>2</td>
+<td>0 (JCL direct)</td>
+<td>reads 3 files, writes 3</td>
+<td>Core batch posting</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-composite-hotspot-score">7. Composite Hotspot Score</h2>
+<p>Combined weighted score: <strong>LOC (25%) + Copybooks (20%) + I/O Ops (15%) + Logic Density (25%) + Dependencies (15%)</strong></p>
+<p>Normalized to 0–100 scale (100 = most complex/critical).</p>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Program</th>
+<th>LOC Score</th>
+<th>Copy Score</th>
+<th>I/O Score</th>
+<th>Logic Score</th>
+<th>Dep Score</th>
+<th><strong>Composite</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>COACTUPC.cbl</strong></td>
+<td>100</td>
+<td>100</td>
+<td>12</td>
+<td>100</td>
+<td>25</td>
+<td><strong>74.8</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>COTRTLIC.cbl</strong></td>
+<td>50</td>
+<td>21</td>
+<td>30</td>
+<td>60</td>
+<td>17</td>
+<td><strong>39.6</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>COCRDUPC.cbl</strong></td>
+<td>37</td>
+<td>28</td>
+<td>7</td>
+<td>47</td>
+<td>17</td>
+<td><strong>29.5</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>COCRDLIC.cbl</strong></td>
+<td>34</td>
+<td>24</td>
+<td>10</td>
+<td>42</td>
+<td>33</td>
+<td><strong>29.1</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>COTRTUPC.cbl</strong></td>
+<td>40</td>
+<td>26</td>
+<td>35</td>
+<td>37</td>
+<td>17</td>
+<td><strong>32.0</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>CBSTM03A.CBL</strong></td>
+<td>22</td>
+<td>9</td>
+<td>100</td>
+<td>11</td>
+<td>17</td>
+<td><strong>28.2</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>COPAUS0C.cbl</strong></td>
+<td>24</td>
+<td>26</td>
+<td>9</td>
+<td>20</td>
+<td>25</td>
+<td><strong>21.0</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>COPAUA0C.cbl</strong></td>
+<td>24</td>
+<td>29</td>
+<td>14</td>
+<td>18</td>
+<td>33</td>
+<td><strong>22.5</strong></td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>COACTVWC.cbl</strong></td>
+<td>22</td>
+<td>28</td>
+<td>8</td>
+<td>19</td>
+<td>17</td>
+<td><strong>19.4</strong></td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>CBTRN02C.cbl</strong></td>
+<td>17</td>
+<td>10</td>
+<td>10</td>
+<td>27</td>
+<td>17</td>
+<td><strong>16.4</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-modernization-recommendations">8. Modernization Recommendations</h2>
+<h3 id="priority-1-modernize-first-highest-impact">Priority 1 — Modernize First (Highest Impact)</h3>
+<h4 id="1-coactupccbl-account-update-composite-score-748">1. COACTUPC.cbl (Account Update) — Composite Score: 74.8</h4>
+<p><strong>Why first:</strong> This is the single largest and most complex program in the estate (4,236 LOC). It has the highest logic density (359 branching statements) due to exhaustive field-by-field validation of dates, SSN, phone numbers, states, and ZIP codes. It references 58 copybooks (including 3× COPY REPLACING for CSSETATY screen attribute macros). As the central account update screen, it touches 3 VSAM files (account, card-xref, customer).</p>
+<p><strong>Modernization approach:</strong>
+- Extract the validation logic (date, SSN, phone, state, ZIP) into reusable Java validation classes
+- Convert BMS screen interaction to a REST API with a modern UI framework
+- The CSSETATY COPY REPLACING pattern maps well to a parameterized component pattern
+- Consider splitting into separate Account View, Account Edit, and Validation Service components</p>
+<h4 id="2-cbstm03acbl-statement-generation-composite-score-282">2. CBSTM03A.CBL (Statement Generation) — Composite Score: 28.2</h4>
+<p><strong>Why early:</strong> Despite moderate LOC (924), it has the highest I/O count in the estate (115 operations) because it writes individual lines to statement files. It reads 4 cross-referenced files and generates both text and HTML output. This is a self-contained batch program with no CICS dependencies, making it the <strong>easiest batch program to prove out a migration approach</strong>.</p>
+<p><strong>Modernization approach:</strong>
+- Convert to a Spring Batch job with ItemReader/ItemWriter pattern
+- Replace file-based I/O with a template engine (Thymeleaf/FreeMarker) for HTML output
+- Use as a pilot batch migration to validate the VSAM-to-database data access layer</p>
+<h3 id="priority-2-modernize-second-high-complexity-contained-scope">Priority 2 — Modernize Second (High Complexity, Contained Scope)</h3>
+<h4 id="3-cotrtliccbl-cotrtupccbl-transaction-type-crud-db2">3. COTRTLIC.cbl / COTRTUPC.cbl (Transaction Type CRUD — DB2)</h4>
+<p><strong>Why:</strong> These programs already use DB2, making them the natural entry point for database modernization. COTRTLIC (2,098 LOC) has complex cursor-based pagination; COTRTUPC (1,702 LOC) has cascading delete logic. Together they form a complete CRUD boundary.</p>
+<p><strong>Modernization approach:</strong>
+- Map DB2 tables to JPA entities (TRANSACTION_TYPE, TRANSACTION_CATEGORY)
+- Convert CICS BMS screens to REST API + React/Angular components
+- The DB2 SQL is already close to standard SQL and translates with minimal changes</p>
+<h4 id="4-cocrdliccbl-cocrdupccbl-credit-card-list-and-update">4. COCRDLIC.cbl / COCRDUPC.cbl (Credit Card List and Update)</h4>
+<p><strong>Why:</strong> These are the second and third most complex CICS programs. COCRDLIC implements a paginated browse pattern (STARTBR/READNEXT/READPREV/ENDBR) that appears in 5+ programs — modernizing it establishes the reusable pagination pattern for all other list screens.</p>
+<p><strong>Modernization approach:</strong>
+- Implement Spring Data paging/sorting for VSAM-to-DB list queries
+- The browse pattern can become a generic AbstractListController
+- Card update validation logic is simpler than account update</p>
+<h3 id="priority-3-modernize-third-cross-subsystem-integration">Priority 3 — Modernize Third (Cross-Subsystem Integration)</h3>
+<h4 id="5-copaua0ccbl-authorization-decision-engine-imsmqcics">5. COPAUA0C.cbl (Authorization Decision Engine — IMS/MQ/CICS)</h4>
+<p><strong>Why:</strong> This program spans 3 subsystems (CICS, IMS, MQ), making it the most architecturally complex integration point. It receives MQ messages, reads CICS VSAM files, queries IMS databases, and returns MQ responses. However, it should be modernized only after the core VSAM access patterns and MQ adapters are proven.</p>
+<p><strong>Modernization approach:</strong>
+- Replace MQ with a message broker adapter (Spring JMS/AMQP)
+- Replace IMS DL/I calls with a relational database (the hierarchical structure maps to 2 tables)
+- COPAUS0C/COPAUS1C/COPAUS2C form a dependency chain and should migrate as a unit</p>
+<h3 id="priority-4-modernize-last-simple-batch-programs">Priority 4 — Modernize Last (Simple Batch Programs)</h3>
+<h4 id="610-cbtrn02c-cbact04c-cbtrn03c-cbexport-cbimport">6–10. CBTRN02C, CBACT04C, CBTRN03C, CBEXPORT, CBIMPORT</h4>
+<p>These batch programs are structurally simple (sequential file processing with validation and accumulation). They have no CICS dependencies and follow standard read-validate-write patterns. They should be migrated last because:
+- They are already well-isolated (JCL → program → files)
+- They can run in parallel with modernized online programs during transition
+- They map cleanly to Spring Batch steps</p>
+<hr />
+<h2 id="9-risk-assessment">9. Risk Assessment</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>COACTUPC complexity (4,236 LOC)</td>
+<td>High — single most complex module; if migration fails here, confidence drops</td>
+<td>Break into 3–4 microservices; extensive test case generation before migration</td>
+</tr>
+<tr>
+<td>IMS dependency (7 programs)</td>
+<td>Medium — requires IMS-to-RDBMS migration</td>
+<td>Migrate IMS data to PostgreSQL/Oracle with hierarchical-to-relational mapping</td>
+</tr>
+<tr>
+<td>MQ integration (4 programs)</td>
+<td>Medium — real-time message flow</td>
+<td>Use Spring JMS adapter; test with MQ emulator during development</td>
+</tr>
+<tr>
+<td>BMS screen logic (20 programs)</td>
+<td>Medium — tightly coupled UI/business logic</td>
+<td>Extract business logic first; replace BMS with API layer + modern UI</td>
+</tr>
+<tr>
+<td>COPY REPLACING pattern (CSSETATY, CSUTLDPY)</td>
+<td>Low — macro-like code generation</td>
+<td>Convert to parameterized methods/decorators in Java</td>
+</tr>
+<tr>
+<td>GDG (Generation Data Group) files</td>
+<td>Low — versioned file management</td>
+<td>Replace with timestamped file naming or database-based versioning</td>
+</tr>
+<tr>
+<td>DB2 SQL (3 programs)</td>
+<td>Low — already close to standard SQL</td>
+<td>Direct translation with minimal changes; use Spring Data JPA</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-summary-metrics">10. Summary Metrics</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total programs analyzed</td>
+<td>44</td>
+</tr>
+<tr>
+<td>Total lines of COBOL</td>
+<td>27,350</td>
+</tr>
+<tr>
+<td>Programs with CICS dependency</td>
+<td>21 (48%)</td>
+</tr>
+<tr>
+<td>Programs with DB2 dependency</td>
+<td>4 (9%)</td>
+</tr>
+<tr>
+<td>Programs with IMS dependency</td>
+<td>7 (16%)</td>
+</tr>
+<tr>
+<td>Programs with MQ dependency</td>
+<td>4 (9%)</td>
+</tr>
+<tr>
+<td>Pure batch programs</td>
+<td>16 (36%)</td>
+</tr>
+<tr>
+<td>Average LOC per program</td>
+<td>622</td>
+</tr>
+<tr>
+<td>Median LOC per program</td>
+<td>487</td>
+</tr>
+<tr>
+<td>Programs &gt; 1,000 LOC</td>
+<td>8 (18%)</td>
+</tr>
+<tr>
+<td>Programs with &gt; 10 copybooks</td>
+<td>12 (27%)</td>
+</tr>
+<tr>
+<td>Estimated modernization effort</td>
+<td>6–9 months (4-person team)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</body>
+</html>
