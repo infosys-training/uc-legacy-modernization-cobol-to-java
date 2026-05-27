@@ -317,4 +317,4 @@ This report ranks the top 10 programs across the CardDemo COBOL estate by comple
 | CSUTLDTC | Core | Utility | 157 | 0 | 0 | — | 2 | 0 |
 | COBSWAIT | Core | Utility | 41 | 0 | 0 | — | 0 | 1 |
 
-**Estate Totals:** 44 programs, 35,575 lines of code, 426 copybook references, 505 I/O operations.
+**Estate Totals:** 44 programs, 30,175 lines of code, 359 copybook references, 446 I/O operations.

@@ -139,8 +139,7 @@ Working storage for CICS card screens. Contains AID key mapping and navigation f
 | `CCARD-NEXT-PROG` | `X(8)` | Alphanumeric (8) | Next program to transfer to | — |
 | `CCARD-NEXT-MAPSET` | `X(7)` | Alphanumeric (7) | Next BMS mapset | — |
 | `CCARD-NEXT-MAP` | `X(7)` | Alphanumeric (7) | Next BMS map | — |
-| `CCARD-ERROR-MSG` | `X(60)` | Alphanumeric (60) | Error message display | — |
-| `CCARD-RETURN-FLAG` | `X(1)` | Alphanumeric (1) | Return navigation flag | — |
+| `CCARD-ERROR-MSG` | `X(75)` | Alphanumeric (75) | Error message display | — |
 
 ---
 
