@@ -468,6 +468,73 @@ Batch maintenance:
 Triggered by: CBPAUP0J.jcl, UNLDPADB.JCL, LOADPADB.JCL, UNLDGSAM.JCL
 ```
 
+### 6.8 JCL Job Frequency Classification
+
+The following table classifies every JCL job by execution frequency, based on evidence from `app/scheduler/CardDemo.controlm` (Control-M definitions) and `app/scheduler/CardDemo.ca7` (CA-7 trigger chains).
+
+| JCL Job | Frequency | Pipeline | Evidence | Purpose |
+|---------|-----------|----------|----------|---------|
+| **CLOSEFIL.jcl** | Daily | DAILY-TransactionBackup | Control-M: `DAYS="ALL"`, Description: "DAILY CLOSEFIL" | Close CICS files for batch window |
+| **TRANBKP.jcl** | Daily | DAILY-TransactionBackup | Control-M: `DAYS="ALL"`, chained after CLOSEFIL | Backup VSAM transaction file to GDG |
+| **WAITSTEP.jcl** | Daily | DAILY-TransactionBackup | Control-M: `DAYS="ALL"`, chained after TRANBKP | Timer wait between batch steps |
+| **OPENFIL.jcl** | Daily | DAILY-TransactionBackup | Control-M: `DAYS="ALL"`, terminal job in chain | Reopen CICS files after batch window |
+| **POSTTRAN.jcl** | Daily | Daily Transaction Processing | CA-7: triggered by CBPAUP0J (SCHID=030) | Post validated transactions to VSAM |
+| **CBPAUP0J.jcl** | Daily | Daily Transaction Processing | CA-7: triggered by CLOSEFIL (SCHID=030) | Purge expired pending authorizations |
+| **COMBTRAN.jcl** | Daily + Monthly | Daily Transaction / Monthly Interest | Control-M: Monthly; CA-7: also in daily chain | Combine & validate daily transactions |
+| **MNTTRDB2** (inline) | Weekly | WEEKLY-TransactionTypesDBRefresh | Control-M: folder runs Saturdays (`DAYS="SA"`) | Update transaction types in DB2 |
+| **DISCGRP.jcl** | Weekly | WEEKLY-DisclosureGroupsRefresh | Control-M: `DAYS="SA"`, chained after MNTTRDB2→CLOSEFIL | Refresh disclosure groups from DB2 |
+| **TRANEXTR** (inline) | Weekly | WEEKLY-TransactionTypesDBRefresh | Control-M: `DAYS="SA"`, chained after MNTTRDB2 | Extract transaction types from DB2 to VSAM |
+| **TRANTYPE.jcl** | Weekly | Weekly Ref Data Refresh | CA-7: triggered by CLOSEFIL in weekly chain | Load transaction type reference data |
+| **TRANCATG.jcl** | Weekly | Weekly Ref Data Refresh | CA-7: triggered by CLOSEFIL1 (SCHID=031) | Load transaction category data |
+| **TCATBALF.jcl** | Weekly | Weekly Ref Data Refresh | CA-7: triggered by CLOSEFIL2 (SCHID=032) | Load transaction category balance file |
+| **INTCALC.jcl** | Monthly | MONTHLY-InterestCalculation | Control-M: folder "MONTHLY-InterestCalculation" | Calculate monthly interest charges |
+| **CREASTMT.JCL** | Monthly | Statement Generation | CA-7: triggered by CLOSEFIL→CREASTMT chain | Generate monthly customer statements |
+| **TXT2PDF1.JCL** | Monthly | Statement Generation | CA-7: triggered by CREASTMT (SCHID=030) | Convert statement text to PDF |
+| **PRTCATBL.jcl** | Monthly | Monthly Reporting | CA-7: triggered after TXT2PDF1 chain | Print category balance report |
+| **READACCT.jcl** | Monthly | Monthly Validation | CA-7: triggered after monthly CLOSEFIL chain | Sequential read/audit of account file |
+| **READCARD.jcl** | Monthly | Monthly Validation | CA-7: chained after READACCT | Sequential read/audit of card file |
+| **READCUST.jcl** | Monthly | Monthly Validation | CA-7: chained after READCARD | Sequential read/audit of customer file |
+| **READXREF.jcl** | Monthly | Monthly Validation | CA-7: chained after READCUST | Sequential read/audit of cross-reference file |
+| **TRANREPT.jcl** | On-Demand | Report Generation | No scheduler entry; triggered via CORPT00C online | Generate transaction reports |
+| **CBEXPORT.jcl** | On-Demand | Data Export | No scheduler entry; manual/migration trigger | Export all VSAM files to sequential |
+| **CBIMPORT.jcl** | On-Demand | Data Import | No scheduler entry; manual/migration trigger | Import sequential file to VSAM |
+| **ACCTFILE.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE/REPRO | Define and load account VSAM cluster |
+| **CARDFILE.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE/REPRO | Define and load card VSAM cluster |
+| **CUSTFILE.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE/REPRO | Define and load customer VSAM cluster |
+| **TRANFILE.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE/REPRO | Define and load transaction VSAM cluster |
+| **XREFFILE.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE/REPRO | Define and load cross-reference VSAM cluster |
+| **DALYREJS.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE | Define daily rejects VSAM cluster |
+| **REPTFILE.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE | Define report output file |
+| **TRANIDX.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE AIX | Define transaction alternate index |
+| **DUSRSECJ.jcl** | On-Demand | Security Setup | No scheduler entry; IDCAMS DEFINE/REPRO | Define and load user security file |
+| **DEFCUST.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE | Define customer VSAM (alternate) |
+| **DEFGDGB.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE GDG | Define GDG base for backup files |
+| **DEFGDGD.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE GDG | Define GDG base for daily files |
+| **ESDSRRDS.jcl** | On-Demand | Initial Setup | No scheduler entry; IDCAMS DEFINE ESDS/RRDS | Define ESDS/RRDS VSAM clusters |
+| **CBADMCDJ.jcl** | On-Demand | Utility | No scheduler entry; admin card maintenance | Admin card data maintenance utility |
+| **FTPJCL.JCL** | On-Demand | Data Transfer | No scheduler entry; FTP transfer | Transfer files to/from remote systems |
+| **INTRDRJ1.JCL** | On-Demand | Utility | No scheduler entry; internal reader | Internal reader job submission (1) |
+| **INTRDRJ2.JCL** | On-Demand | Utility | No scheduler entry; internal reader | Internal reader job submission (2) |
+| **LOADPADB.JCL** | On-Demand | IMS Maintenance | No scheduler entry; reload after maintenance | Load pending auth IMS database |
+| **UNLDPADB.JCL** | On-Demand | IMS Maintenance | No scheduler entry; unload for backup | Unload pending auth IMS database |
+| **UNLDGSAM.JCL** | On-Demand | IMS Maintenance | No scheduler entry; GSAM unload | Unload IMS database via GSAM |
+| **DBPAUTP0.jcl** | On-Demand | IMS Maintenance | No scheduler entry; DB provisioning | Provision IMS pending auth database |
+
+### 6.9 Frequency Summary
+
+| Frequency | Job Count | Characteristics |
+|-----------|-----------|-----------------|
+| **Daily** | 6 | Core batch window: close files → backup → process → reopen. Runs 365 days/year. |
+| **Weekly** | 5 | Reference data refresh from DB2. Runs Saturdays during extended maintenance window. |
+| **Monthly** | 7 | Interest calculation, statement generation, file audits, balance reports. Runs end-of-cycle. |
+| **On-Demand** | 25 | Initial setup (IDCAMS), migrations (export/import), maintenance (IMS), utilities. Manual trigger only. |
+
+**Key observations:**
+- Jobs like CLOSEFIL, WAITSTEP, and OPENFIL are **shared utility jobs** — they appear in daily, weekly, and monthly pipelines but are counted once at their highest frequency.
+- COMBTRAN is dual-frequency: runs daily for transaction validation and monthly as part of interest calculation.
+- The CA-7 scheduler uses SCHID values to distinguish pipeline instances (030 = daily, 031/032 = weekly sub-chains).
+- All 25 on-demand jobs lack scheduler entries entirely — they exist for initial provisioning, ad-hoc migrations, or manual maintenance.
+
 ---
 
 ## 7. CICS Transaction / Program Mapping
