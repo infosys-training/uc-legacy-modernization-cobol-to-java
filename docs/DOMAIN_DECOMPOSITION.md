@@ -260,7 +260,7 @@ All 46 JCL jobs (38 core + 5 auth sub-app + 3 tran-type sub-app) are classified 
 | DUSRSECJ | `app/jcl/DUSRSECJ.jcl` | Define/load USRSEC VSAM | USRSEC | No |
 | CBADMCDJ | `app/jcl/CBADMCDJ.jcl` | CICS NEWCOPY for online programs | _(CICS system)_ | **Yes** — refreshes ALL programs |
 
-#### Customer Domain (2 jobs)
+#### Customer Domain (3 jobs)
 
 | Job | File | Purpose | Datasets Touched | Cross-Domain? |
 |-----|------|---------|-----------------|---------------|

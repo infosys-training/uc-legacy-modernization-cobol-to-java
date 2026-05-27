@@ -346,10 +346,10 @@ The following must be in place before Phase 1 begins:
 | CBACT01C | `app/cbl/CBACT01C.cbl` | Batch | 430 | Decommissioned (replaced by `GET /api/accounts` with streaming) |
 | CBACT04C | `app/cbl/CBACT04C.cbl` | Batch | 652 | Spring Batch — scheduled interest calculation job (Sub-phase 3D) |
 | COBIL00C | `app/cbl/COBIL00C.cbl` | CICS Online | 572 | Spring Boot — `POST /api/accounts/{id}/credit` (Sub-phase 3C) |
-| COADM01C | `app/cbl/COADM01C.cbl` | CICS Online | 495 | Spring Boot — Admin menu routing (navigation concern absorbed into API gateway) |
-| COMEN01C | `app/cbl/COMEN01C.cbl` | CICS Online | 521 | Spring Boot — Main menu routing (navigation concern absorbed into frontend SPA) |
+| COADM01C | `app/cbl/COADM01C.cbl` | CICS Online | 288 | Spring Boot — Admin menu routing (navigation concern absorbed into API gateway) |
+| COMEN01C | `app/cbl/COMEN01C.cbl` | CICS Online | 308 | Spring Boot — Main menu routing (navigation concern absorbed into frontend SPA) |
 
-**Total: 7 programs, 7,847 LOC**
+**Total: 7 programs, 7,427 LOC**
 
 **Strategy:** Strangler Pattern (API-first, incremental replacement)
 
@@ -441,15 +441,15 @@ The following must be in place before Phase 1 begins:
 | COTRN01C | `app/cbl/COTRN01C.cbl` | CICS Online | 330 | Spring Data JPA — `GET /api/transactions/{id}` (Sub-phase 4B) |
 | COTRN02C | `app/cbl/COTRN02C.cbl` | CICS Online | 783 | Spring Boot — `POST /api/transactions` (Sub-phase 4B) |
 | CORPT00C | `app/cbl/CORPT00C.cbl` | CICS Online | 649 | Spring Boot — `GET /api/reports/transactions` (Sub-phase 4B) |
-| COBSWAIT | `app/cbl/COBSWAIT.cbl` | Utility | 53 | Decommissioned — eliminated with VSAM batch window |
-| CSUTLDTC | `app/cbl/CSUTLDTC.cbl` | Utility | 72 | Java `java.time` date validation (shared library) |
+| COBSWAIT | `app/cbl/COBSWAIT.cbl` | Utility | 41 | Decommissioned — eliminated with VSAM batch window |
+| CSUTLDTC | `app/cbl/CSUTLDTC.cbl` | Utility | 157 | Java `java.time` date validation (shared library) |
 | CBTRN01C | `app/cbl/CBTRN01C.cbl` | Batch | 494 | Kafka consumer — event-driven transaction posting (Sub-phase 4C) |
 | CBTRN02C | `app/cbl/CBTRN02C.cbl` | Batch | 731 | Kafka consumer — transaction validation (Sub-phase 4C) |
 | CBTRN03C | `app/cbl/CBTRN03C.cbl` | Batch | 649 | Spring Batch — scheduled report generation (Sub-phase 4D) |
 | CBSTM03A | `app/cbl/CBSTM03A.CBL` | Batch | 924 | Spring Batch + Apache FOP — statement generation (Sub-phase 4D) |
 | CBSTM03B | `app/cbl/CBSTM03B.CBL` | Batch | 230 | Absorbed into statement generation service (Sub-phase 4D) |
 
-**Total: 14 programs, 9,651 LOC**
+**Total: 14 programs, 9,724 LOC**
 
 **Strategy:** Strangler Pattern (eliminate dual-store sync first, then API-first wrapping, then batch pipeline replacement)
 

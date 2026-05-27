@@ -121,7 +121,7 @@
 |---|------|----------|------------|--------|------------|------------|--------------------------|------------|
 | RISK-01 | CARDXREF tri-domain coupling prevents independent domain deployment | Technical | High (3) | High (3) | **9** | Card service owns XREF; expose lookup API; all consumers migrate to API before domain split | Domain teams discover they cannot deploy without Card service being live | Lead Architect |
 | RISK-02 | VSAM batch window unavailability blocks online operations during migration | Operational | Medium (2) | High (3) | **6** | Replace CLOSEFIL/OPENFIL with PostgreSQL; eliminate exclusive file access requirement | Batch window duration increasing; online users reporting downtime during batch runs | Platform Lead |
-| RISK-03 | IMS/DB2/MQ multi-technology Authorization domain has highest migration complexity | Technical | Medium (2) | High (3) | **6** | Migrate authorization last (Phase 7); prototype IMS-to-JPA mapping early; use Kafka to replace MQ | Prototype for IMS segment navigation takes >2× estimated time | Lead Architect |
+| RISK-03 | IMS/DB2/MQ multi-technology Authorization domain has highest migration complexity | Technical | Medium (2) | High (3) | **6** | Migrate authorization last (Phase 5); prototype IMS-to-JPA mapping early; use Kafka to replace MQ | Prototype for IMS segment navigation takes >2× estimated time | Lead Architect |
 | RISK-04 | DB2 master → VSAM replica sync divergence during dual-run period | Data | Low (1) | Medium (2) | **2** | Implement checksummed reconciliation jobs; run continuous delta comparison during parallel-run | Row count drift >0.1% between DB2/PostgreSQL and VSAM; reconciliation job failures | Data Engineer |
 | RISK-05 | POSTTRAN/INTCALC cross-domain batch mutations break domain boundaries | Technical | High (3) | High (3) | **9** | Implement saga pattern with compensating transactions; keep batch monolithic until Phase 5 parallel-run validates | Balance mismatches in parallel-run comparison; saga compensations triggered >1% of transactions | Lead Architect |
 | RISK-06 | COBOL developer scarcity delays legacy maintenance during migration | Organizational | High (3) | Medium (2) | **6** | Cross-train Java developers on COBOL reading; retain 2 COBOL SMEs through migration; document tribal knowledge in analysis artifacts | COBOL bug fix turnaround time >5 business days; SME attrition | Engineering Manager |
@@ -148,7 +148,7 @@ The Card Cross-Reference file (CARDXREF, defined in `app/cpy/CVACT03Y.cpy`) is a
 
 As documented in `DOMAIN_DECOMPOSITION.md` §3.1, CVACT03Y is the only copybook that touches all 6 domains. Any attempt to deploy the Card, Account, or Transaction domain independently requires this cross-reference to be available — meaning no domain can go live without the Card service (which owns CARDXREF) being operational and exposing a lookup API.
 
-**Likelihood:** High (3) — The coupling is structural and unavoidable; 16 programs already depend on it. Every phase of the CUTOVER_PLAN (Phases 2–7) includes programs that read CARDXREF.
+**Likelihood:** High (3) — The coupling is structural and unavoidable; 16 programs already depend on it. Every phase of the CUTOVER_PLAN (Phases 1–5) includes programs that read CARDXREF.
 
 **Impact:** High (3) — If domains cannot be deployed independently, the migration collapses into a big-bang approach, eliminating the risk-reduction benefit of phased migration. The strangler pattern (recommended for Account and Transaction domains in MODERNIZATION_BLUEPRINT.md §4–§6) requires API-mediated access to CARDXREF.
 
@@ -157,7 +157,7 @@ As documented in `DOMAIN_DECOMPOSITION.md` §3.1, CVACT03Y is the only copybook 
 **Mitigation Strategy:**
 1. Designate the Card service (`card-service`) as the sole owner of CARDXREF data, migrated to a `card_xref` PostgreSQL table
 2. Expose a high-performance lookup API: `GET /api/cards/{cardNum}/xref` → returns `{custId, acctId}`
-3. Deploy the Card service XREF lookup endpoint in **Phase 1** (Foundation), before any consumer domain goes live
+3. Deploy the Card service XREF lookup endpoint in **Phase 1** (Security & Authentication Foundation), before any consumer domain goes live
 4. During the parallel-run period, implement a dual-read strategy: Java services call the Card service API; COBOL programs continue reading VSAM directly
 5. Add a Redis/Hazelcast cache in front of the XREF lookup API — this dataset is read-heavy (16 readers, 1 writer: CBIMPORT) and changes infrequently
 
@@ -167,9 +167,9 @@ If the Card service API cannot achieve acceptable latency (<5ms p99), fall back 
 **Early Warning Indicators:**
 - Card service XREF API latency exceeds 10ms p99 under load testing
 - Domain teams request direct database access to `card_xref` table instead of using the API
-- Phase 2 (Read-Only) programs fail integration tests due to XREF lookup failures
+- Phase 2 (Customer + Card) programs fail integration tests due to XREF lookup failures
 
-**Related Cutover Phase:** Phase 1 (Foundation) through Phase 7 (Optional Modules) — all phases include XREF consumers
+**Related Cutover Phase:** Phase 1 (Security) through Phase 5 (Authorization & Fraud) — all phases include XREF consumers
 
 **Related Domain:** Card Management (owner), Account Management, Transaction Management, Customer Management, Authorization/Fraud (consumers)
 
@@ -196,7 +196,7 @@ During the migration's parallel-run period (Phases 4–5), both COBOL and Java s
 1. Migrate PostgreSQL as the primary data store before attempting batch parallel-runs — PostgreSQL does not require exclusive file access
 2. Shorten the VSAM batch window by running only validation (COBOL) during the window while the Java batch runs against PostgreSQL independently
 3. Implement the batch comparison outside the window: capture COBOL batch outputs to GDG files and compare asynchronously
-4. For Phase 5 (Financial Operations), schedule parallel-runs during weekends when transaction volumes are lower
+4. For Phase 4 (Transaction Management), schedule parallel-runs during weekends when transaction volumes are lower
 
 **Contingency Plan:**
 If the batch window cannot accommodate parallel processing, abandon dual-run for batch programs and rely instead on golden-file comparison testing: run the Java batch against a snapshot of production data and compare outputs to COBOL batch results from the previous cycle.
@@ -206,7 +206,7 @@ If the batch window cannot accommodate parallel processing, abandon dual-run for
 - OPENFIL.jcl completes after the start of business hours
 - Online users report "file unavailable" errors outside the expected batch window
 
-**Related Cutover Phase:** Phase 5 (Financial Operations), Phase 6 (Reporting/ETL)
+**Related Cutover Phase:** Phase 4 (Transaction Management), Phase 5 (Authorization & Fraud)
 
 **Related Domain:** All domains (CLOSEFIL.jcl closes files used across every domain)
 
@@ -226,17 +226,17 @@ The Authorization/Fraud Management domain is the most technologically diverse in
 
 This domain contains **10 programs** (HOTSPOT_REPORT.md §6–7) with the highest integration complexity. COPAUA0C alone touches MQ + VSAM + CICS in a single request. The IMS HIDAM database has no direct relational equivalent — its hierarchical segment navigation (parent→child via GNP) must be flattened into JPA entity relationships.
 
-**Likelihood:** Medium (2) — IMS migration is well-understood in mainframe modernization practice, and this domain is scheduled last (Phase 7) to allow maximum learning time. However, the 4-technology intersection is unique in this estate.
+**Likelihood:** Medium (2) — IMS migration is well-understood in mainframe modernization practice, and this domain is scheduled last (Phase 5) to allow maximum learning time. However, the 4-technology intersection is unique in this estate.
 
 **Impact:** High (3) — Authorization is a real-time, customer-facing function. Incorrect migration breaks fraud detection and card authorization, with direct financial exposure (fraudulent transactions approved or legitimate transactions declined).
 
 **Risk Score:** 6 (2 × 3)
 
 **Mitigation Strategy:**
-1. Prototype the IMS HIDAM → JPA mapping in Phase 0 (Prep): model CIPAUSMY/CIPAUDTY as a one-to-many JPA relationship (`PendingAuthSummary` → `PendingAuthDetail`)
+1. Prototype the IMS HIDAM → JPA mapping during Prerequisites (CUTOVER_PLAN §2): model CIPAUSMY/CIPAUDTY as a one-to-many JPA relationship (`PendingAuthSummary` → `PendingAuthDetail`)
 2. Replace MQ with Kafka (as recommended in MODERNIZATION_BLUEPRINT.md §7): `COPAUA0C` MQGET/MQPUT1 maps to a Spring Kafka `@KafkaListener` / `KafkaTemplate.send()`
 3. Migrate the DB2 AUTHFRDS view to a PostgreSQL materialized view, maintaining read compatibility for COPAUS0C/COPAUS1C screens
-4. Keep the authorization domain on COBOL until Phase 7 — by then, all consumer domains (Account, Card) will have migrated, reducing cross-domain integration pressure
+4. Keep the authorization domain on COBOL until Phase 5 — by then, all consumer domains (Account, Card, Transaction) will have migrated, reducing cross-domain integration pressure
 5. Run COPAUA0C's fraud scoring logic through the golden-file test harness with production MQ message samples
 
 **Contingency Plan:**
@@ -247,7 +247,7 @@ If IMS migration proves infeasible within the timeline, replatform the authoriza
 - Fraud scoring accuracy diverges >0.5% between COBOL and Java implementations
 - MQ-to-Kafka bridge drops or reorders messages during load testing
 
-**Related Cutover Phase:** Phase 7 (Optional Modules — Authorization IMS Module)
+**Related Cutover Phase:** Phase 5 (Authorization & Fraud)
 
 **Related Domain:** Authorization/Fraud Management
 
@@ -261,7 +261,7 @@ If IMS migration proves infeasible within the timeline, replatform the authoriza
 During the parallel-run phases (Phases 4–6), both VSAM and PostgreSQL will contain live data. The migration strategy (MODERNIZATION_BLUEPRINT.md §1) requires incremental sync between the two stores: PostgreSQL becomes the primary for migrated domains while VSAM remains primary for un-migrated domains. The sync patterns include:
 
 - **DB2 → VSAM replica via batch:** The weekly MNTTRDB2 job updates DB2 transaction types, then CLOSEFIL → DISCGRP → OPENFIL refreshes the VSAM disclosure group file from DB2 (documented in DEPENDENCY_MAP.md §6.3)
-- **VSAM → PostgreSQL ETL:** The Phase 0 ETL pipeline (CUTOVER_PLAN.md §Phase 0, task 0.3) must handle incremental sync for ACCTDATA (300-byte records), TRANSACT (350-byte records), CARDDATA (150-byte records), CUSTDATA (500-byte records), and CARDXREF (50-byte records)
+- **VSAM → PostgreSQL ETL:** The pre-migration ETL pipeline (CUTOVER_PLAN.md §2 Prerequisites) must handle incremental sync for ACCTDATA (300-byte records), TRANSACT (350-byte records), CARDDATA (150-byte records), CUSTDATA (500-byte records), and CARDXREF (50-byte records)
 
 The highest-risk scenario involves ACCTDATA — classified as "Shared-Mutable" in DOMAIN_DECOMPOSITION.md §5.1 — where 4 batch writers (CBIMPORT, CBTRN01C, CBTRN02C, CBACT04C) and 2 online writers (COACTUPC, COBIL00C) all modify `ACCT-CURR-BAL`. A sync failure could result in balance discrepancies between the two stores.
 
@@ -276,7 +276,7 @@ The highest-risk scenario involves ACCTDATA — classified as "Shared-Mutable" i
 2. Run a nightly reconciliation job comparing record counts and `SUM(ACCT-CURR-BAL)` across all accounts
 3. Design the ETL pipeline as idempotent: re-running sync for any time window produces the same result
 4. Log all sync operations to an audit table with before/after values
-5. During Phase 5 (Financial), run reconciliation after every batch cycle, not just nightly
+5. During Phase 4 (Transaction Management), run reconciliation after every batch cycle, not just nightly
 
 **Contingency Plan:**
 If sync divergence is detected, halt the parallel-run for the affected domain, resync from the authoritative VSAM source, and investigate the root cause before resuming. The COBOL system remains fully operational as the primary during this recovery.
@@ -286,7 +286,7 @@ If sync divergence is detected, halt the parallel-run for the affected domain, r
 - `SUM(ACCT-CURR-BAL)` differs by >$0.01 between stores
 - Reconciliation job execution time increases >50% (indicates growing data volume or sync lag)
 
-**Related Cutover Phase:** Phase 4 (CRUD Operations) through Phase 6 (Reporting/ETL)
+**Related Cutover Phase:** Phase 3 (Account Management) through Phase 5 (Authorization & Fraud)
 
 **Related Domain:** Account Management (highest risk due to Shared-Mutable ACCTDATA), Transaction Management
 
@@ -312,8 +312,8 @@ In the current COBOL system, these cross-domain writes are atomic — VSAM file 
 **Risk Score:** 9 (3 × 3)
 
 **Mitigation Strategy:**
-1. **Keep batch monolithic through Phase 4:** Do not decompose POSTTRAN or INTCALC until the saga infrastructure is proven in Phase 5
-2. **Implement the saga pattern for Phase 5 (Financial Operations):**
+1. **Keep batch monolithic through Phase 3:** Do not decompose POSTTRAN or INTCALC until the saga infrastructure is proven in Phase 4
+2. **Implement the saga pattern for Phase 4 (Transaction Management):**
    - POSTTRAN saga: `TransactionService.post()` → `AccountService.updateBalance()` with compensating rollback
    - INTCALC saga: `AccountService.calculateInterest()` → `TransactionService.createInterestRecord()` with compensating rollback
 3. **Run parallel batch:** Execute both COBOL and Java batch, compare outputs field-by-field, for a minimum of 30 days before cutting over
@@ -329,7 +329,7 @@ If the saga pattern introduces unacceptable latency or failure rates (>0.1% comp
 - Parallel-run comparison shows drift in `ACCT-CURR-BAL` totals
 - Saga orchestration latency >500ms per transaction (vs. <1ms for VSAM direct write)
 
-**Related Cutover Phase:** Phase 5 (Financial Operations — POSTTRAN/INTCALC are the critical-risk programs)
+**Related Cutover Phase:** Phase 4 (Transaction Management — POSTTRAN/INTCALC are the critical-risk programs)
 
 **Related Domain:** Transaction Management (POSTTRAN owner), Account Management (INTCALC owner, POSTTRAN writes to ACCTDATA)
 
@@ -356,9 +356,9 @@ The global COBOL developer workforce is aging and shrinking. According to indust
 **Risk Score:** 6 (3 × 2)
 
 **Mitigation Strategy:**
-1. **Retain 2 dedicated COBOL SMEs** through the full migration period with retention bonuses tied to Phase 8 (Decommission) completion
+1. **Retain 2 dedicated COBOL SMEs** through the full migration period with retention bonuses tied to post-migration decommission completion
 2. **Cross-train 3–4 Java developers** on COBOL reading (not writing): focus on copybook interpretation, EVALUATE/IF logic tracing, and CICS command patterns
-3. **Front-load COBOL-intensive phases:** Complete Phase 5 (Financial — the most complex COBOL logic) before Phase 7 (Optional), reducing SME dependency in later phases
+3. **Front-load COBOL-intensive phases:** Complete Phase 4 (Transaction — the most complex COBOL logic) before Phase 5 (Authorization), reducing SME dependency in later phases
 4. **Leverage existing documentation:** The 4 PR #18 artifacts provide comprehensive program inventories, data dictionaries, dependency maps, and hotspot rankings that reduce the need for exploratory COBOL reading
 5. **Use AI-assisted COBOL analysis** tools to generate Java pseudo-code from COBOL for developer review
 
@@ -401,12 +401,12 @@ The ACCTDATA file (300-byte records, `app/cpy/CVACT01Y.cpy`) faces similar risks
 **Mitigation Strategy:**
 1. **Build the ETL pipeline using IBM's Record Generator for Java** or a proven COBOL-to-Java data conversion library that handles COMP-3, COMP, and signed numeric correctly
 2. **Validate with checksum comparison:** After each migration batch, compute `SUM(TRAN-AMT)` and `SUM(ACCT-CURR-BAL)` on both VSAM and PostgreSQL and compare to 2 decimal places
-3. **Test with production-scale data:** Use the `app/data/` EBCDIC sample datasets for unit tests, but validate with full production volume during Phase 0
+3. **Test with production-scale data:** Use the `app/data/` EBCDIC sample datasets for unit tests, but validate with full production volume during the Prerequisites phase
 4. **Handle edge cases explicitly:** Test negative balances, zero amounts, max-value fields (`S9(10)V99` max = 9,999,999,999.99), and special characters in `TRAN-DESC`
 5. **Preserve VSAM keys as-is:** Map `TRAN-ID` to `VARCHAR(16)` in PostgreSQL (not auto-generated IDs) to maintain referential integrity
 
 **Contingency Plan:**
-If systematic conversion errors are discovered post-migration, rerun the ETL from the VSAM backup (GDG files created by TRANBKP.jcl). VSAM data is never deleted during migration — it remains the authoritative source until Phase 8 (Decommission).
+If systematic conversion errors are discovered post-migration, rerun the ETL from the VSAM backup (GDG files created by TRANBKP.jcl). VSAM data is never deleted during migration — it remains the authoritative source until post-migration decommission.
 
 **Early Warning Indicators:**
 - `SUM(TRAN-AMT)` differs between VSAM and PostgreSQL after ETL
@@ -414,7 +414,7 @@ If systematic conversion errors are discovered post-migration, rerun the ETL fro
 - COMP-3 conversion test failures for negative or zero values
 - Production data volume exceeds test data volume by >10× (indicating test coverage gap)
 
-**Related Cutover Phase:** Phase 0 (Pre-Migration Preparation — ETL pipeline build), Phase 5 (Financial Operations — live data migration)
+**Related Cutover Phase:** Prerequisites (CUTOVER_PLAN §2 — ETL pipeline build), Phase 4 (Transaction Management — live data migration)
 
 **Related Domain:** Transaction Management, Account Management
 
@@ -443,21 +443,21 @@ Subtle behavioral differences are likely in screen navigation edge cases: what h
 **Risk Score:** 4 (2 × 2)
 
 **Mitigation Strategy:**
-1. **Build a CICS screen-scrape test harness** (referenced in CUTOVER_PLAN.md §Phase 2 validation strategy): capture CICS 3270 screen outputs for every AID key combination and compare with REST API responses
+1. **Build a CICS screen-scrape test harness** (referenced in CUTOVER_PLAN.md Phase 2 validation strategy): capture CICS 3270 screen outputs for every AID key combination and compare with REST API responses
 2. **Map each EVALUATE branch to a test case:** For COACTUPC's 20 EVALUATE statements, create at least one test per branch (minimum 20 test cases for this program alone)
 3. **Preserve COMMAREA field semantics in the REST API:** Use a session context object that mirrors `CDEMO-PGM-CONTEXT`, `CDEMO-FROM-PROGRAM`, `CDEMO-TO-PROGRAM` for the SPA router
-4. **Migrate read-only screens first** (COACTVWC, COCRDSLC, COTRN01C in Phase 2) to establish the pattern before tackling CRUD screens
+4. **Migrate read-only screens first** (COACTVWC, COCRDSLC, COTRN01C in Phase 2 Customer + Card) to establish the pattern before tackling CRUD screens
 5. **Document every PF key → HTTP method mapping** explicitly before implementation begins
 
 **Contingency Plan:**
-If behavioral equivalence cannot be achieved for COACTUPC within the Phase 4 timeline, decompose the migration: migrate view and simple-edit paths first, keep complex paths (multi-field edit + confirm) on CICS via a hybrid UI that routes some flows to the legacy system.
+If behavioral equivalence cannot be achieved for COACTUPC within the Phase 3 timeline, decompose the migration: migrate view and simple-edit paths first, keep complex paths (multi-field edit + confirm) on CICS via a hybrid UI that routes some flows to the legacy system.
 
 **Early Warning Indicators:**
-- UAT testers report >5 navigation-flow discrepancies per screen during Phase 2 testing
+- UAT testers report >5 navigation-flow discrepancies per screen during Phase 2 (Customer + Card) testing
 - Screen-scrape comparison shows field value mismatches (not just formatting differences)
-- COACTUPC migration estimate exceeds 6 weeks (budgeted for 4 weeks in CUTOVER_PLAN.md)
+- COACTUPC migration estimate exceeds 6 weeks (budgeted for 4 weeks in CUTOVER_PLAN.md Phase 3)
 
-**Related Cutover Phase:** Phase 2 (Read-Only), Phase 4 (CRUD Operations — COACTUPC is critical path)
+**Related Cutover Phase:** Phase 2 (Customer + Card), Phase 3 (Account Management — COACTUPC is critical path)
 
 **Related Domain:** Account Management (COACTUPC), Credit Card Management (COCRDLIC/COCRDUPC/COCRDSLC), Transaction Management
 
@@ -503,7 +503,7 @@ If the new scheduler cannot replicate Control-M behavior reliably, keep Control-
 - Batch window overruns (OPENFIL completes after business hours) more than once per month
 - Operations team reports difficulty mapping Control-M alerts to the new monitoring system
 
-**Related Cutover Phase:** Phase 5 (Financial Operations — batch chains are most critical), Phase 6 (Reporting/ETL)
+**Related Cutover Phase:** Phase 4 (Transaction Management — batch chains are most critical), Phase 5 (Authorization & Fraud)
 
 **Related Domain:** All domains (CLOSEFIL/OPENFIL is cross-cutting); Transaction Management and Account Management (POSTTRAN, INTCALC chains)
 
@@ -522,7 +522,7 @@ The CardDemo COBOL estate has **zero automated tests** — no unit tests, no int
 - CBSTM03A: 924 LOC, 97 I/O operations (highest in estate)
 - CBACT04C: 652 LOC, 17 I/O operations, interest calculation logic
 
-Without tests, every migrated program requires **manual verification** of behavioral equivalence. The CUTOVER_PLAN.md prescribes 44 programs across 8 phases over ~55 weeks. If each program requires manual testing of all code paths, the QA effort could exceed the development effort.
+Without tests, every migrated program requires **manual verification** of behavioral equivalence. The CUTOVER_PLAN.md prescribes 44 programs across 5 phases over ~55 weeks. If each program requires manual testing of all code paths, the QA effort could exceed the development effort.
 
 The highest regression risk is in batch programs that modify financial data: CBTRN01C (post transactions), CBTRN02C (validate/reject), CBACT04C (interest calculation). An undetected regression in any of these programs could result in incorrect account balances for the entire portfolio.
 
@@ -533,7 +533,7 @@ The highest regression risk is in batch programs that modify financial data: CBT
 **Risk Score:** 9 (3 × 3)
 
 **Mitigation Strategy:**
-1. **Build a golden-file test harness in Phase 0** (CUTOVER_PLAN.md §Phase 0, task 0.7): run each COBOL program against sample data, capture all outputs (VSAM writes, report files, display records), and use these as the expected output for Java program validation
+1. **Build a golden-file test harness during Prerequisites** (CUTOVER_PLAN.md §2): run each COBOL program against sample data, capture all outputs (VSAM writes, report files, display records), and use these as the expected output for Java program validation
 2. **Mandate 80%+ line coverage** for all new Java code — enforce via CI/CD coverage gates
 3. **Create property-based tests** for financial calculations: for CBACT04C (interest), verify that `interest = balance × rate × (days / 365)` holds for random inputs
 4. **Implement production-shadow testing** in Phases 4–5: route a copy of production data to the Java system, compare outputs, but do not write results to production
@@ -544,13 +544,13 @@ The highest regression risk is in batch programs that modify financial data: CBT
 If golden-file tests reveal behavioral discrepancies that cannot be resolved before the phase deadline, extend the parallel-run period for the affected programs. The COBOL system remains the production system of record until the Java replacement passes all golden-file tests. Budget 2 additional weeks per phase for test remediation.
 
 **Early Warning Indicators:**
-- Golden-file test pass rate <90% for any Phase 2+ program
+- Golden-file test pass rate <90% for any Phase 1+ program
 - UAT defect rate >3 defects per program during acceptance testing
 - Java code coverage <60% at end of any phase (below 80% target)
 - Production incidents attributed to migrated programs within 30 days of cutover
 - Phase timeline slippage >2 weeks due to testing delays
 
-**Related Cutover Phase:** All phases (testing is required for every phase), but highest impact in Phase 5 (Financial Operations)
+**Related Cutover Phase:** All phases (testing is required for every phase), but highest impact in Phase 4 (Transaction Management)
 
 **Related Domain:** All domains, with highest impact on Transaction Management and Account Management
 
@@ -609,7 +609,7 @@ graph TD
 | **RISK-06 + RISK-10** | COBOL SME departure leaves no one to verify Java behavioral equivalence; automated tests become the only safety net, but they don't exist yet | Front-load golden-file test creation while SMEs are available; have SMEs review test assertions |
 | **RISK-02 + RISK-09** | Scheduling chain failures extend the batch window; extended batch windows increase online downtime — a feedback loop | Implement circuit breakers in scheduling chains; fail-fast rather than retry indefinitely |
 | **RISK-07 + RISK-04** | Data migration conversion errors propagate through dual-store sync; reconciliation catches the symptom but the root cause is in the ETL | Validate ETL conversion correctness independently before enabling sync |
-| **RISK-03 + RISK-10** | The IMS/DB2/MQ domain is the most complex to migrate and has no tests to validate correctness | Build the IMS-to-JPA prototype in Phase 0 and create integration tests before Phase 7 |
+| **RISK-03 + RISK-10** | The IMS/DB2/MQ domain is the most complex to migrate and has no tests to validate correctness | Build the IMS-to-JPA prototype during Prerequisites and create integration tests before Phase 5 |
 
 ---
 
