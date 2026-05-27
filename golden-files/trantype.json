@@ -1,0 +1,58 @@
+{
+  "file": "trantype.txt",
+  "copybook_layout": "trantype",
+  "record_count": 7,
+  "field_definitions": [
+    {
+      "field": "TRAN-TYPE",
+      "pic": "X(2)",
+      "start_byte": 1,
+      "length": 2,
+      "description": "Transaction type code (2-char key, e.g. 01=Purchase, 02=Payment)"
+    },
+    {
+      "field": "TRAN-TYPE-DESC",
+      "pic": "X(50)",
+      "start_byte": 3,
+      "length": 50,
+      "description": "Transaction type description"
+    }
+  ],
+  "records": [
+    {
+      "TRAN-TYPE": "01",
+      "TRAN-TYPE-DESC": "Purchase",
+      "_line_number": 1
+    },
+    {
+      "TRAN-TYPE": "02",
+      "TRAN-TYPE-DESC": "Payment",
+      "_line_number": 2
+    },
+    {
+      "TRAN-TYPE": "03",
+      "TRAN-TYPE-DESC": "Credit",
+      "_line_number": 3
+    },
+    {
+      "TRAN-TYPE": "04",
+      "TRAN-TYPE-DESC": "Authorization",
+      "_line_number": 4
+    },
+    {
+      "TRAN-TYPE": "05",
+      "TRAN-TYPE-DESC": "Refund",
+      "_line_number": 5
+    },
+    {
+      "TRAN-TYPE": "06",
+      "TRAN-TYPE-DESC": "Reversal",
+      "_line_number": 6
+    },
+    {
+      "TRAN-TYPE": "07",
+      "TRAN-TYPE-DESC": "Adjustment",
+      "_line_number": 7
+    }
+  ]
+}
