@@ -13,9 +13,13 @@ This document captures the domain-driven design (DDD) analysis of the AWS CardDe
    - [Credit Card Management](#14-credit-card-management)
    - [Transaction Management](#15-transaction-management)
    - [Authorization / Fraud Management](#16-authorization--fraud-management)
+   - [What Can You Take From This](#17-what-can-you-take-from-this)
 2. [Inter-Domain Dependencies](#2-inter-domain-dependencies)
+   - [What Can You Take From This](#23-what-can-you-take-from-this)
 3. [Batch Processing Analysis](#3-batch-processing-analysis)
+   - [What Can You Take From This](#35-what-can-you-take-from-this)
 4. [VSAM-to-DB2 Simplification Analysis](#4-vsam-to-db2-simplification-analysis)
+   - [What Can You Take From This](#45-what-can-you-take-from-this)
 
 ---
 
@@ -237,6 +241,14 @@ The Customer Management domain does not have dedicated CICS transactions for dir
 
 **CRUD Actions:** Process authorization requests (via MQ), View authorization summaries and details, Mark transactions as fraudulent (writes to DB2 `AUTHFRDS`), Purge expired authorizations (batch), Load/unload IMS authorization database.
 
+### 1.7 What Can You Take From This
+
+- **Six clean bounded contexts exist.** Despite being a monolithic COBOL/CICS application, CardDemo already has natural domain boundaries visible in its data structures (copybooks), screen flows (BMS maps), and CICS transaction IDs. These boundaries map directly to microservice candidates.
+- **REST APIs can be derived mechanically.** Each domain's CRUD actions translate to a predictable set of REST endpoints. The CICS transaction codes (COSG, CACV, CCLI, CT00, CPAU) become the basis for API route naming.
+- **Customer Management is a hidden domain.** There are no dedicated CICS screens for customer CRUD — customers are accessed indirectly through Card and Account screens. This means the Customer domain is a strong candidate for a standalone service that the other domains consume via API, rather than via direct VSAM reads.
+- **The CARDXREF copybook is the Rosetta Stone.** Understanding `CVACT03Y.cpy` (Card ↔ Customer ↔ Account cross-reference) is essential for any modernization effort — it is the join table that ties three domains together.
+- **Authorization is the most complex domain.** It spans three storage technologies (IMS HIDAM, DB2, VSAM) and uses MQ for asynchronous processing. Plan to modernize this domain last or as a separate workstream.
+
 ---
 
 ## 2. Inter-Domain Dependencies
@@ -283,6 +295,14 @@ This section documents the tight couplings identified between bounded contexts. 
                             │   (DB2)      │               │  (VSAM)  │
                             └──────────────┘               └──────────┘
 ```
+
+### 2.3 What Can You Take From This
+
+- **CARDXREF is the #1 migration risk.** The bidirectional Card ↔ Account ↔ Customer coupling through the XREF file means you cannot independently deploy any of these three domains without a shared lookup mechanism (API gateway composition, shared database view, or event-based sync).
+- **POSTTRAN/INTCALC are the #2 risk.** These batch jobs mutate Account balances from the Transaction domain. In a microservices world, this becomes an eventual-consistency problem requiring event-driven architecture (e.g., domain events, sagas, or CQRS).
+- **Security is the easiest to extract.** The cross-cutting authentication pattern (`SEC-USR-TYPE` gating) maps directly to an API gateway or OAuth2/JWT filter. Extract this first to establish the modernized security perimeter.
+- **The dual-store sync pattern is a modernization smell.** Anytime you see data mastered in one store (DB2) and replicated to another (VSAM) via batch, that's a coupling that should be eliminated early. Direct DB2 access from CICS programs is already proven by the `app-transaction-type-db2` extension.
+- **Use the dependency diagram as a migration sequencing tool.** Migrate LOW-risk dependencies first (Security), then MEDIUM (Authorization, Transaction Types), then HIGH (CARDXREF, POSTTRAN/INTCALC) last.
 
 ---
 
@@ -395,6 +415,14 @@ These IDCAMS-based jobs define VSAM clusters and are run during initial setup or
 | **Dual-Store Sync** | TRANEXTR, TRANCATG, TRANTYPE, MNTTRDB2 | DB2 reference data must be extracted and rebuilt as VSAM files for online programs. |
 | **Data Migration** | CBEXPORT, CBIMPORT, READxxxx | Bulk data movement for branch migration and system integration. |
 
+### 3.5 What Can You Take From This
+
+- **The Close-Process-Open pattern is the single biggest operational constraint.** Every batch chain requires VSAM files to be closed to CICS, creating a daily maintenance window where online users are locked out. Eliminating this pattern (via DB2 migration) is the highest-value modernization win for operational availability.
+- **Not all batch is created equal.** Some jobs exist purely because of VSAM limitations (CLOSEFIL/OPENFIL, IDCAMS definitions, AIX rebuilds) and can be eliminated entirely. Others exist for genuine business reasons (INTCALC, CREASTMT, POSTTRAN) and will survive modernization in some form (scheduled tasks, event-driven processors, or stored procedures).
+- **Control-M and CA7 define different chains for the same logical workflows.** When modernizing, reconcile both scheduler definitions to ensure no job is missed. The CA7 definition includes jobs (CREASTMT, TXT2PDF1, PRTCATBL, READxxxx) that are not in the Control-M definition.
+- **The batch pattern summary table is your modernization checklist.** Each pattern maps to a specific modernization action: VSAM Exclusive Access → eliminate with DB2; Dual-Store Sync → eliminate with direct DB2 access; Volume Processing → convert to event-driven or scheduled SQL; Compute-Intensive Sweep → convert to stored procedure or scheduled microservice job.
+- **GDG (Generation Data Group) backup is a VSAM-era artifact.** With DB2, standard database backup/recovery (point-in-time restore, transaction logs) replaces the need for TRANBKP and GDG management jobs.
+
 ---
 
 ## 4. VSAM-to-DB2 Simplification Analysis
@@ -495,6 +523,14 @@ Batch jobs that perform business logic (POSTTRAN, INTCALC, COMBTRAN, CREASTMT) s
 2. **Phase 2 - Core Entities:** Migrate CUSTDATA, ACCTDATA, CARDDATA, CARDXREF to DB2 tables. Convert EXEC CICS READ/WRITE to embedded SQL. Eliminate CLOSEFIL/OPENFIL for daily batch.
 3. **Phase 3 - Transactions:** Migrate TRANSACT and DALYTRAN to DB2. Refactor POSTTRAN, INTCALC, COMBTRAN to use SQL. Eliminate GDG-based backup in favor of DB2 backup/recovery.
 4. **Phase 4 - Authorization:** Evaluate consolidating IMS HIDAM authorization data into DB2, unifying all data access under a single RDBMS.
+
+### 4.5 What Can You Take From This
+
+- **VSAM-to-DB2 is a high-leverage, low-risk first step.** It does not require rewriting business logic or changing the CICS program structure. It only changes the data access layer — and the `app-transaction-type-db2` extension already proves the pattern works within this codebase.
+- **The migration eliminates ~23 batch jobs/steps.** Between CLOSEFIL/OPENFIL instances (~10), dual-store sync (4), IDCAMS infrastructure (9), and AIX management, roughly half of all batch complexity exists solely because of VSAM limitations.
+- **The CARDXREF join pattern is the key code change.** Converting the 3-step VSAM read pattern (XREF → Account → Customer) to a single SQL JOIN is the most impactful code change per line. It reduces error handling, simplifies debugging, and improves performance.
+- **Follow the 4-phase migration sequence.** Start with Reference Data (already partially done), then Core Entities (highest business value), then Transactions (highest volume), then Authorization (highest complexity). Each phase is independently deployable and testable.
+- **What does NOT change is equally important.** Business logic, CICS transaction structure, IMS+MQ integration, and the need for batch scheduling all survive the VSAM-to-DB2 migration. Set stakeholder expectations accordingly — this migration improves operations and simplifies code, but it is not a full modernization to microservices.
 
 ---
 
