@@ -95,8 +95,8 @@ Combining all five dimensions (normalized 0-10 scale per dimension):
 |------|---------|-----|--------|-----|-------|------|----------------|----------------|
 | **1** | **COACTUPC.cbl** | 10 | 10 | 9 | 10 | 6 | **45** | Online (CICS) |
 | **2** | **COCRDLIC.cbl** | 6 | 7 | 10 | 7 | 7 | **37** | Online (CICS) |
-| **3** | **COCRDUPC.cbl** | 7 | 8 | 6 | 9 | 5 | **35** | Online (CICS) |
-| **4** | **COPAUA0C.cbl** | 5 | 9 | 10 | 5 | 7 | **36** | Online (CICS+MQ+DB2) |
+| **3** | **COPAUA0C.cbl** | 5 | 9 | 10 | 5 | 7 | **36** | Online (CICS+MQ+DB2) |
+| **4** | **COCRDUPC.cbl** | 7 | 8 | 6 | 9 | 5 | **35** | Online (CICS) |
 | **5** | **COTRTLIC.cbl** | 9 | 6 | 8 | 5 | 4 | **32** | Online (CICS+DB2) |
 | **6** | **CBTRN02C.cbl** | 4 | 5 | 5 | 8 | 8 | **30** | Batch |
 | **7** | **COTRTUPC.cbl** | 8 | 7 | 7 | 4 | 4 | **30** | Online (CICS+DB2) |

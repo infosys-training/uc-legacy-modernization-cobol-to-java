@@ -2,7 +2,7 @@
 
 ## Overview
 
-The CardDemo application is a multi-tier mainframe credit card management system built on COBOL, CICS, VSAM, DB2, IMS, and MQ. It comprises **44 COBOL programs**, **30 copybooks**, and **40 JCL jobs** organized across a main application and three sub-applications.
+The CardDemo application is a multi-tier mainframe credit card management system built on COBOL, CICS, VSAM, DB2, IMS, and MQ. It comprises **44 COBOL programs**, **30 copybooks**, and **46 JCL jobs** organized across a main application and three sub-applications.
 
 ---
 
