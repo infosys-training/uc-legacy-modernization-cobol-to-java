@@ -350,7 +350,9 @@ Parent segment in IMS hierarchy containing account-level authorization summary.
 
 ### COCOM01Y.cpy — CardDemo Communication Area (COMMAREA)
 
-Shared inter-program communication structure passed via CICS XCTL COMMAREA.
+Shared inter-program communication structure passed via CICS XCTL COMMAREA. Contains 16 leaf-level fields across 5 groups.
+
+**Group: CDEMO-GENERAL-INFO**
 
 | Field | PIC Clause | Type | Business Meaning | Validation (88-level) |
 |-------|-----------|------|------------------|-----------------------|
@@ -360,9 +362,36 @@ Shared inter-program communication structure passed via CICS XCTL COMMAREA.
 | `CDEMO-TO-PROGRAM` | `X(08)` | Alphanumeric | Target program name | — |
 | `CDEMO-USER-ID` | `X(08)` | Alphanumeric | Logged-in user ID | — |
 | `CDEMO-USER-TYPE` | `X(01)` | Alphanumeric | User type | `CDEMO-USRTYP-ADMIN` = 'A', `CDEMO-USRTYP-USER` = 'U' |
+| `CDEMO-PGM-CONTEXT` | `9(01)` | Numeric | Program entry context flag | `CDEMO-PGM-ENTER` = 0, `CDEMO-PGM-REENTER` = 1 |
+
+**Group: CDEMO-CUSTOMER-INFO**
+
+| Field | PIC Clause | Type | Business Meaning | Validation (88-level) |
+|-------|-----------|------|------------------|-----------------------|
 | `CDEMO-CUST-ID` | `9(09)` | Numeric | Selected customer ID | — |
+| `CDEMO-CUST-FNAME` | `X(25)` | Alphanumeric | Customer first name | — |
+| `CDEMO-CUST-MNAME` | `X(25)` | Alphanumeric | Customer middle name | — |
+| `CDEMO-CUST-LNAME` | `X(25)` | Alphanumeric | Customer last name | — |
+
+**Group: CDEMO-ACCOUNT-INFO**
+
+| Field | PIC Clause | Type | Business Meaning | Validation (88-level) |
+|-------|-----------|------|------------------|-----------------------|
 | `CDEMO-ACCT-ID` | `9(11)` | Numeric | Selected account ID | — |
+| `CDEMO-ACCT-STATUS` | `X(01)` | Alphanumeric | Account status in transit | — |
+
+**Group: CDEMO-CARD-INFO**
+
+| Field | PIC Clause | Type | Business Meaning | Validation (88-level) |
+|-------|-----------|------|------------------|-----------------------|
 | `CDEMO-CARD-NUM` | `9(16)` | Numeric | Selected card number | — |
+
+**Group: CDEMO-MORE-INFO**
+
+| Field | PIC Clause | Type | Business Meaning | Validation (88-level) |
+|-------|-----------|------|------------------|-----------------------|
+| `CDEMO-LAST-MAP` | `X(7)` | Alphanumeric | Last BMS map name displayed | — |
+| `CDEMO-LAST-MAPSET` | `X(7)` | Alphanumeric | Last BMS mapset name | — |
 
 ### COMEN02Y.cpy — Menu Options Configuration
 
