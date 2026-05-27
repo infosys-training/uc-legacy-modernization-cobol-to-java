@@ -1,5 +1,68 @@
 # Risk Register — CardDemo COBOL-to-Java Migration
 
+## Quick Summary
+
+### What Does This Document Mean?
+
+**For Business Analysts:**
+- This document identifies the top 10 things that could go wrong during the CardDemo mainframe-to-Java migration, ranked by likelihood and business impact.
+- Each risk is tied to specific business domains and migration phases, so you can see which business functions are most exposed.
+- Mitigation strategies and contingency plans describe what the team will do to prevent or respond to each risk.
+
+**For Developers:**
+- Each risk references specific COBOL programs, copybooks, and data stores — these are the code areas where problems are most likely to surface.
+- Early warning indicators (per risk) tell you what signals to watch for in your development and testing work.
+- The CARDXREF tri-domain coupling (RISK-01) and lack of automated test coverage (RISK-10) are the two risks that most directly affect your daily work.
+
+**For Architects:**
+- The risk heat map and interdependency diagram (Section 4) show how risks compound — a failure in data sync (RISK-04) can trigger batch chain failures (RISK-09) and regression issues (RISK-10).
+- Risks are mapped to cutover phases, so you can see which phases carry the highest accumulated risk.
+- The IMS/DB2/MQ multi-technology complexity in the Authorization domain (RISK-03) is flagged as the highest-complexity architectural challenge.
+
+**For Product Owners / Project Managers:**
+- The Risk Register Table (Section 2) gives you a one-page view of all 10 risks with scores, mitigations, and owner roles.
+- Three risks score 9/9 (highest) — these need executive attention and dedicated mitigation budgets.
+- The monitoring plan (Section 5) defines review cadence and escalation triggers for your governance process.
+
+**For a Total Beginner:**
+- Every big technology project has risks — things that might go wrong. This document lists the 10 biggest ones for this migration.
+- Each risk has a score (1–9) based on how likely it is to happen and how bad it would be if it did.
+- For each risk, there's a plan to prevent it and a backup plan if it happens anyway.
+
+### How Can I Use This Document?
+
+**For Business Analysts:**
+- Review risks tagged to your domain to understand what business-impact scenarios to plan for.
+- Use the contingency plans to draft business continuity procedures for each migration phase.
+
+**For Developers:**
+- Check early warning indicators for risks related to your domain — flag these signals to your team lead immediately if observed.
+- RISK-10 (no automated tests) directly impacts you: prioritize writing test suites for the COBOL programs you're migrating.
+
+**For Architects:**
+- Use the risk interdependency diagram to design monitoring and alerting that catches cascading failures early.
+- Ensure your integration architecture addresses the top-3 risks (CARDXREF coupling, VSAM batch window, IMS/DB2/MQ complexity).
+
+**For Product Owners / Project Managers:**
+- Add the Risk Register Table to your project dashboard and review it at every steering committee meeting.
+- Use the risk monitoring plan cadence (Section 5) to schedule regular risk reviews.
+
+**For a Total Beginner:**
+- Read the Executive Summary heat map (Section 1) for a visual overview of risk severity.
+- Then read the Risk Register Table (Section 2) for a one-line summary of each risk before diving into details.
+
+### Key Sections and What They Indicate
+
+| Section | What It Tells You |
+|---------|-------------------|
+| 1. Executive Summary | Risk heat map (likelihood vs. impact matrix) with top 3 risks highlighted |
+| 2. Risk Register Table | One-row-per-risk summary with scores, mitigations, and owner roles |
+| 3. Detailed Risk Analyses | Deep dive on each of 10 risks: description, scoring justification, mitigation, contingency, early warnings, and phase/domain mapping |
+| 4. Risk Interdependencies | Which risks compound each other, with a Mermaid relationship diagram |
+| 5. Risk Monitoring Plan | Review cadence, escalation triggers, and governance process |
+
+---
+
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)

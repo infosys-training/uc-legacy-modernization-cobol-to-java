@@ -1,5 +1,73 @@
 # Domain Decomposition Analysis — CardDemo COBOL Estate
 
+## Quick Summary
+
+### What Does This Document Mean?
+
+**For Business Analysts:**
+- This document maps the CardDemo mainframe system into 6 distinct business domains (Security, Customer, Account, Card, Transaction, Authorization) with clear boundaries.
+- It shows which programs, data files, and batch jobs belong to each domain — making it clear where business logic lives today.
+- The data ownership analysis reveals which datasets are shared across domains, directly impacting how independently each area can evolve.
+
+**For Developers:**
+- The copybook-sharing matrix (Section 3) shows exactly which data structures each COBOL program uses — this is your coupling map.
+- Each bounded context definition lists the programs, copybooks, data stores, and CICS transactions you'll own in the target microservice.
+- The microservice mapping table (Section 8) gives you candidate service names, API boundaries, and dependencies at a glance.
+
+**For Architects:**
+- The Context Map (Section 7) uses DDD relationship types (Shared Kernel, Customer-Supplier, Anti-Corruption Layer) to define how bounded contexts interact.
+- Data store ownership analysis (Section 5) classifies each VSAM dataset as Domain-Private, Shared-Read, or Shared-Mutable — directly informing database-per-service decisions.
+- CARDXREF tri-domain coupling analysis (Section 9) is the single biggest architectural challenge and gets dedicated treatment.
+
+**For Product Owners / Project Managers:**
+- This document defines the team boundaries for the migration — each bounded context maps to a candidate microservice and potentially a separate team.
+- Cross-domain dependencies indicate where teams need to coordinate and where they can work independently.
+- The JCL job grouping (Section 4) shows which batch processes span multiple domains, requiring cross-team planning.
+
+**For a Total Beginner:**
+- A large mainframe application is like a building with many rooms — this document draws the floor plan showing which rooms belong together.
+- "Bounded context" is a fancy term for a group of programs that handle one area of the business (e.g., all the programs that manage customer data).
+- The goal is to split the monolith into smaller, independent services that can be developed and deployed separately.
+
+### How Can I Use This Document?
+
+**For Business Analysts:**
+- Use the bounded context definitions (Section 6) to validate that domain boundaries align with your business process understanding.
+- The data store ownership analysis helps identify where business data flows between domains.
+
+**For Developers:**
+- Look up any COBOL program in the Appendix matrix (Section 10) to see all its copybook dependencies and which domain it belongs to.
+- Use the microservice mapping table (Section 8) as the starting point for your service design.
+
+**For Architects:**
+- Use the Context Map and data ownership analysis to design the target-state service topology and data access patterns.
+- The Shared-Mutable dataset list is your priority list for designing event-driven or API-based data access replacements.
+
+**For Product Owners / Project Managers:**
+- Use the microservice mapping to plan team structures — each candidate service is a potential squad.
+- Cross-cutting JCL jobs (Section 4) indicate integration work that needs to be budgeted separately.
+
+**For a Total Beginner:**
+- Start with the Executive Summary (Section 1) for the high-level domain breakdown, then look at the Context Map diagram (Section 7) for a visual overview.
+- The Methodology section (Section 2) explains how these boundaries were identified if you want to understand the reasoning.
+
+### Key Sections and What They Indicate
+
+| Section | What It Tells You |
+|---------|-------------------|
+| 1. Executive Summary | Overview of 6 bounded contexts with program counts, data stores, and candidate service names |
+| 2. Methodology | How bounded contexts were identified from COBOL source analysis |
+| 3. Copybook-Sharing Matrix | Which data structures are shared across programs/domains — reveals coupling hotspots |
+| 4. JCL Job Domain Mapping | Which batch jobs belong to which domain, and which span multiple domains |
+| 5. Data Store Ownership | Classification of each VSAM dataset as private, shared-read, or shared-mutable |
+| 6. Bounded Context Definitions | Detailed inventory per context: programs, copybooks, data stores, transactions, APIs |
+| 7. Context Map | Mermaid diagram of inter-context relationships using DDD patterns |
+| 8. Microservice Mapping | One-row-per-service summary table with endpoints and dependencies |
+| 9. Data Ownership & Migration | Target-state data ownership decisions, especially for CARDXREF |
+| 10. Appendix | Complete raw program-to-copybook matrix for all 44 programs and 30 copybooks |
+
+---
+
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)

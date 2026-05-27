@@ -1,5 +1,68 @@
 # Modernization Blueprint — CardDemo COBOL Application
 
+## Quick Summary
+
+### What Does This Document Mean?
+
+**For Business Analysts:**
+- This document evaluates how each of the 6 business domains in the CardDemo mainframe system should be modernized.
+- It compares four migration strategies per domain and recommends the best fit based on risk, effort, and business value.
+- Use it to understand which parts of the system change first and why.
+
+**For Developers:**
+- Each domain section lists the exact COBOL programs, copybooks, CICS transactions, and data stores you'll be working with.
+- The recommended strategy (Rewrite, Strangler, Replatform, or Refactor) tells you what kind of development work each domain requires.
+- Technology stack recommendations (Section 9) specify the target Java/Spring Boot architecture and middleware replacements.
+
+**For Architects:**
+- This is the authoritative strategy-per-domain decision document with detailed trade-off analysis across effort, risk, maintainability, and time-to-value.
+- Cross-domain considerations (Section 8) cover shared data structures like CARDXREF, sequencing constraints, and integration patterns during transition.
+- Use it to validate or challenge the recommended strategies before detailed design begins.
+
+**For Product Owners / Project Managers:**
+- The Executive Summary table shows the recommended strategy, effort level, risk, and timeline estimate for each domain at a glance.
+- Each domain's "Prerequisites" and "Dependencies on other domains" sections inform sequencing and resourcing decisions.
+- This document is the basis for building sprint plans and staffing models for the migration.
+
+**For a Total Beginner:**
+- CardDemo is a mainframe credit card system written in COBOL — a 60-year-old programming language running on specialized hardware.
+- This document is the plan for how to move each piece of that system to modern technology (Java, cloud databases, web APIs).
+- It evaluates four different approaches for each piece and picks the best one, explaining why.
+
+### How Can I Use This Document?
+
+**For Business Analysts:**
+- Cross-reference domain sections with your existing business process documentation to validate coverage.
+- Use the "Current State Assessment" subsections to map COBOL business logic to business requirements.
+
+**For Developers:**
+- Start with the domain you'll be working on — read its "Recommended Strategy" block for your marching orders.
+- Reference the Appendix program-to-domain table to find which domain owns any given COBOL program.
+
+**For Architects:**
+- Review the Strategy Comparison Matrices to validate or challenge each recommendation.
+- Use Section 8 (Cross-Domain Considerations) to design the integration layer and API gateway strategy.
+
+**For Product Owners / Project Managers:**
+- Use the Executive Summary table to build your migration roadmap and resource plan.
+- Each domain's effort indicator and timeline estimate feeds directly into project scheduling.
+
+**For a Total Beginner:**
+- Read the Executive Summary (Section 1) first for the big picture, then the Glossary (Section 10.2) for any unfamiliar terms.
+- Each domain section follows the same structure, so once you understand one, you can navigate them all.
+
+### Key Sections and What They Indicate
+
+| Section | What It Tells You |
+|---------|-------------------|
+| 1. Executive Summary | High-level estate overview and strategy-per-domain recommendation table |
+| 2–7. Domain Sections | Deep analysis of each domain: current state, four strategy evaluations, comparison matrix, and final recommendation |
+| 8. Cross-Domain Considerations | Shared data coupling (CARDXREF), migration sequencing constraints, and integration patterns needed during transition |
+| 9. Technology Stack | Target tech stack (Java/Spring Boot, PostgreSQL, Kafka) and middleware replacement mappings |
+| 10. Appendix | Complete program-to-domain mapping (all 44 programs) and COBOL-to-Java terminology glossary |
+
+---
+
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)

@@ -1,5 +1,69 @@
 # Phased Migration Cutover Plan — CardDemo Application
 
+## Quick Summary
+
+### What Does This Document Mean?
+
+**For Business Analysts:**
+- This document defines the order in which the 6 CardDemo business domains will be migrated from mainframe to modern technology, across 5 phases.
+- Each phase specifies which business functions move, what data is affected, and what acceptance criteria must be met before proceeding.
+- Rollback plans ensure that if any phase fails, the business can revert to the working mainframe system without data loss.
+
+**For Developers:**
+- Each phase lists the exact COBOL programs (by filename) being migrated and their target technology (Java/Spring Boot).
+- Integration bridge specifications (Sections 3–7, subsection d) describe the temporary COBOL-to-Java adapters and data sync mechanisms you'll need to build.
+- Acceptance criteria define the functional, performance, and data integrity tests your code must pass before the next phase begins.
+
+**For Architects:**
+- The Phase Dependency Map (Section 9) shows which phases can overlap and which must be sequential, with a Mermaid diagram.
+- The Parallel Run Strategy (Section 8) covers traffic splitting (shadow mode, canary, blue-green) and data reconciliation approaches.
+- Integration bridges account for CARDXREF tri-domain coupling — the most complex cross-cutting concern in the migration.
+
+**For Product Owners / Project Managers:**
+- The 5-phase structure with relative timing (weeks, not calendar dates) gives you the skeleton for your project schedule.
+- Go/no-go decision points (Section 10) define stakeholder checkpoints between phases.
+- Each phase's estimated scope (program count, LOC, complexity) helps with effort estimation and team sizing.
+
+**For a Total Beginner:**
+- Migrating a mainframe system is like renovating a building floor by floor while people still work in it — you can't shut everything down at once.
+- This document is the renovation schedule: which floors get done first, how to keep the building running during construction, and what to do if something goes wrong.
+- There are 5 phases, starting with the simplest domain (Security) and ending with the most complex (Authorization & Fraud).
+
+### How Can I Use This Document?
+
+**For Business Analysts:**
+- Review each phase's acceptance criteria to ensure business-critical scenarios are covered in the testing plan.
+- Use the rollback plans to understand the safety net at each stage.
+
+**For Developers:**
+- Find your phase, read the program list and integration bridge specs, and use those as your implementation requirements.
+- The acceptance criteria section defines your "definition of done" for each phase.
+
+**For Architects:**
+- Use the Phase Dependency Map to design the CI/CD pipeline stages and environment promotion strategy.
+- The Parallel Run Strategy informs your infrastructure and monitoring architecture during transition.
+
+**For Product Owners / Project Managers:**
+- Map each phase to sprints or quarters in your project management tool.
+- Use the go/no-go checkpoints to schedule steering committee reviews.
+
+**For a Total Beginner:**
+- Read the Executive Summary (Section 1) for the overall approach, then look at the Phase Dependency Map diagram (Section 9) for a visual timeline.
+- The Prerequisites section (Section 2) lists what needs to be set up before any migration work starts.
+
+### Key Sections and What They Indicate
+
+| Section | What It Tells You |
+|---------|-------------------|
+| 1. Executive Summary | 5-phase overview with domains, strategies, and relative timing per phase |
+| 2. Prerequisites | Infrastructure, tooling, and team readiness required before Phase 1 |
+| 3–7. Phase Definitions | Per-phase details: programs migrating, data stores affected, integration bridges, rollback plans, and acceptance criteria |
+| 8. Parallel Run Strategy | How old and new systems run side-by-side with traffic splitting and data reconciliation |
+| 9. Phase Dependency Map | Mermaid diagram showing phase sequencing, overlaps, and dependencies |
+| 10. Communication & Stakeholder Checkpoints | Go/no-go decision points and sign-off requirements between phases |
+
+---
+
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
