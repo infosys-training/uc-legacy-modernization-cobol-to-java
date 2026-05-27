@@ -2,7 +2,7 @@
 
 ## Overview
 
-The CardDemo application is a multi-tier mainframe credit card management system comprising **44 COBOL programs** across 4 sub-directories, **41 JCL jobs**, and supporting copybooks, BMS maps, and data files. The system manages credit card accounts, customers, transactions, authorization, and reporting.
+The CardDemo application is a multi-tier mainframe credit card management system comprising **44 COBOL programs** across 4 sub-directories, **46 JCL jobs**, and supporting copybooks, BMS maps, and data files. The system manages credit card accounts, customers, transactions, authorization, and reporting.
 
 ---
 
