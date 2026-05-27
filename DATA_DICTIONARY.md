@@ -366,28 +366,30 @@ Shared inter-program communication structure passed via CICS XCTL COMMAREA.
 
 ### COMEN02Y.cpy — Menu Options Configuration
 
-Defines the 12 available menu options with program routing.
+Defines the 11 available menu options with program routing (`CDEMO-MENU-OPT-COUNT` = 11).
 
 | Field | PIC Clause | Type | Business Meaning |
 |-------|-----------|------|-----------------|
-| `CDEMO-MENU-OPT-NUM` | `9(02)` | Numeric | Menu option number (1–12) |
+| `CDEMO-MENU-OPT-COUNT` | `9(02)` | Numeric | Total menu option count (VALUE 11) |
+| `CDEMO-MENU-OPT-NUM` | `9(02)` | Numeric | Menu option number (1–11) |
 | `CDEMO-MENU-OPT-NAME` | `X(35)` | Alphanumeric | Menu option display name |
 | `CDEMO-MENU-OPT-PGMNAME` | `X(08)` | Alphanumeric | Target program name |
-| `CDEMO-MENU-OPT-USRTYPE` | `X(01)` | Alphanumeric | Required user type ('A' or 'U') |
+| `CDEMO-MENU-OPT-USRTYPE` | `X(01)` | Alphanumeric | Required user type |
 
 **Menu option mapping:**
 | # | Name | Program | User Type |
 |---|------|---------|-----------|
 | 1 | Account View | COACTVWC | U |
-| 2 | Account Update | COACTUPC | A |
+| 2 | Account Update | COACTUPC | U |
 | 3 | Credit Card List | COCRDLIC | U |
-| 4 | Credit Card Update | COCRDUPC | A |
-| 5 | Transaction List | COTRN00C | U |
-| 6 | Transaction View | COTRN01C | U |
-| 7 | Transaction Add | COTRN02C | A |
-| 8 | Reports | CORPT00C | U |
-| 9 | Bill Payment | COBIL00C | U |
-| 10 | Pending Authorization View | COPAUS0C | U |
+| 4 | Credit Card View | COCRDSLC | U |
+| 5 | Credit Card Update | COCRDUPC | U |
+| 6 | Transaction List | COTRN00C | U |
+| 7 | Transaction View | COTRN01C | U |
+| 8 | Transaction Add | COTRN02C | U |
+| 9 | Transaction Reports | CORPT00C | U |
+| 10 | Bill Payment | COBIL00C | U |
+| 11 | Pending Authorization View | COPAUS0C | U |
 
 ---
 
