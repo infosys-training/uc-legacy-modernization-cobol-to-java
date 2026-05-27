@@ -530,3 +530,102 @@ Common header fields:
 | `EXPORT-SEQUENCE-NUM` | `9(9) COMP` | Binary | Record sequence number |
 | `EXPORT-BRANCH-ID` | `X(4)` | Alphanumeric | Source branch ID |
 | `EXPORT-REGION-CODE` | `X(5)` | Alphanumeric | Region code |
+
+---
+
+## 11. PII (Personally Identifiable Information) Fields
+
+This section catalogs all fields containing personally identifiable information across the estate. These fields require special handling during modernization: encryption at rest, masking in logs, access controls, and GDPR/CCPA compliance.
+
+### 11.1 High-Sensitivity PII (Direct Identifiers)
+
+| Copybook | Field | PIC Clause | PII Category | Risk Level | Notes |
+|----------|-------|-----------|--------------|------------|-------|
+| `CVCUS01Y.cpy` | `CUST-SSN` | `9(09)` | Social Security Number | **Critical** | Stored unencrypted in VSAM; must be encrypted or tokenized in target |
+| `CVCUS01Y.cpy` | `CUST-GOVT-ISSUED-ID` | `X(20)` | Government ID (passport/DL) | **Critical** | Alternative national identifier |
+| `CVCUS01Y.cpy` | `CUST-DOB-YYYY-MM-DD` | `X(10)` | Date of Birth | **High** | Combined with name = identity theft risk |
+| `CVACT02Y.cpy` | `CARD-NUM` | `X(16)` | Credit Card Number (PAN) | **Critical** | PCI-DSS regulated; must never be stored in cleartext |
+| `CVACT02Y.cpy` | `CARD-CVV-CD` | `9(03)` | Card Verification Value | **Critical** | PCI-DSS prohibits storage post-authorization |
+| `CSUSR01Y.cpy` | `SEC-USR-PWD` | `X(08)` | User Password | **Critical** | Stored in plaintext; must be hashed in target system |
+| `CUSTREC.cpy` | `CUST-SSN` | `9(09)` | Social Security Number | **Critical** | Duplicate layout of CVCUS01Y (used by CBSTM03A) |
+
+### 11.2 Medium-Sensitivity PII (Indirect Identifiers / Contact Info)
+
+| Copybook | Field | PIC Clause | PII Category | Risk Level | Notes |
+|----------|-------|-----------|--------------|------------|-------|
+| `CVCUS01Y.cpy` | `CUST-FIRST-NAME` | `X(25)` | Person Name | **Medium** | Combined with other fields = identity |
+| `CVCUS01Y.cpy` | `CUST-MIDDLE-NAME` | `X(25)` | Person Name | **Medium** | — |
+| `CVCUS01Y.cpy` | `CUST-LAST-NAME` | `X(25)` | Person Name | **Medium** | — |
+| `CVCUS01Y.cpy` | `CUST-ADDR-LINE-1` | `X(50)` | Physical Address | **Medium** | Street address |
+| `CVCUS01Y.cpy` | `CUST-ADDR-LINE-2` | `X(50)` | Physical Address | **Medium** | — |
+| `CVCUS01Y.cpy` | `CUST-ADDR-LINE-3` | `X(50)` | Physical Address | **Medium** | — |
+| `CVCUS01Y.cpy` | `CUST-ADDR-ZIP` | `X(10)` | ZIP/Postal Code | **Medium** | Can narrow to household level |
+| `CVCUS01Y.cpy` | `CUST-PHONE-NUM-1` | `X(15)` | Phone Number | **Medium** | Primary contact |
+| `CVCUS01Y.cpy` | `CUST-PHONE-NUM-2` | `X(15)` | Phone Number | **Medium** | Secondary contact |
+| `CVCUS01Y.cpy` | `CUST-EFT-ACCOUNT-ID` | `X(10)` | Bank Account Number | **High** | EFT routing — financial PII |
+| `CVACT02Y.cpy` | `CARD-EMBOSSED-NAME` | `X(50)` | Cardholder Name | **Medium** | Name as printed on card |
+| `CVACT02Y.cpy` | `CARD-EXPIRAION-DATE` | `X(10)` | Card Expiration | **Medium** | PCI-DSS sensitive when combined with PAN |
+| `CSUSR01Y.cpy` | `SEC-USR-ID` | `X(08)` | User Login ID | **Low** | May correlate to employee identity |
+| `CSUSR01Y.cpy` | `SEC-USR-FNAME` | `X(20)` | Person Name | **Medium** | System user first name |
+| `CSUSR01Y.cpy` | `SEC-USR-LNAME` | `X(20)` | Person Name | **Medium** | System user last name |
+
+### 11.3 Account/Financial Identifiers
+
+| Copybook | Field | PIC Clause | PII Category | Risk Level | Notes |
+|----------|-------|-----------|--------------|------------|-------|
+| `CVACT01Y.cpy` | `ACCT-ID` | `9(11)` | Account Number | **High** | Unique financial account identifier |
+| `CVACT01Y.cpy` | `ACCT-CURR-BAL` | `S9(10)V99` | Financial Balance | **Medium** | Sensitive financial data |
+| `CVACT03Y.cpy` | `XREF-CARD-NUM` | `X(16)` | Credit Card Number | **Critical** | PAN in cross-reference file |
+| `CVACT03Y.cpy` | `XREF-CUST-ID` | `9(09)` | Customer ID | **Medium** | Links to full customer record |
+| `CVTRA05Y.cpy` | `TRAN-CARD-NUM` | `X(16)` | Credit Card Number | **Critical** | PAN stored in every transaction record |
+| `CVTRA05Y.cpy` | `TRAN-AMT` | `S9(09)V99` | Transaction Amount | **Low** | Financial data — sensitive in aggregate |
+| `CVTRA06Y.cpy` | `DALYTRAN-CARD-NUM` | `X(16)` | Credit Card Number | **Critical** | PAN in daily transaction input |
+| `COSTM01.CPY` | `TRNX-CARD-NUM` | `X(16)` | Credit Card Number | **Critical** | PAN in statement transaction record |
+| `COCOM01Y.cpy` | `CDEMO-CARD-NUM` | `9(16)` | Credit Card Number | **Critical** | PAN passed in CICS COMMAREA |
+| `COCOM01Y.cpy` | `CDEMO-CUST-ID` | `9(09)` | Customer ID | **Medium** | Customer identifier in transit |
+
+### 11.4 PII in Export/Migration Structures
+
+| Copybook | Field | PIC Clause | PII Category | Risk Level | Notes |
+|----------|-------|-----------|--------------|------------|-------|
+| `CVEXPORT.cpy` | `EXP-CUST-FIRST-NAME` | `X(25)` | Person Name | **Medium** | Name in export file |
+| `CVEXPORT.cpy` | `EXP-CUST-LAST-NAME` | `X(25)` | Person Name | **Medium** | — |
+| `CVEXPORT.cpy` | `EXP-CUST-SSN` | `9(09)` | Social Security Number | **Critical** | SSN in flat export file — high exposure risk |
+| `CVEXPORT.cpy` | `EXP-CUST-PHONE-NUM` | `X(15)` (×2) | Phone Number | **Medium** | — |
+| `CVEXPORT.cpy` | `EXP-CARD-NUM` | `X(16)` | Credit Card Number | **Critical** | PAN in export — must encrypt in transit |
+| `CVEXPORT.cpy` | `EXP-TRAN-CARD-NUM` | `X(16)` | Credit Card Number | **Critical** | PAN in transaction export |
+
+### 11.5 PII in Authorization Structures (IMS/MQ)
+
+| Copybook | Field | PIC Clause | PII Category | Risk Level | Notes |
+|----------|-------|-----------|--------------|------------|-------|
+| `CCPAURQY.cpy` | `PA-RQ-CARD-NUM` | `X(16)` | Credit Card Number | **Critical** | PAN in MQ auth request message |
+| `CIPAUDTY.cpy` | `PA-CARD-NUM` | `X(16)` | Credit Card Number | **Critical** | PAN in IMS auth detail segment |
+| `CIPAUDTY.cpy` | `PA-MERCHANT-ID` | `X(15)` | Merchant Identifier | **Low** | Business identifier, not personal PII |
+| `CIPAUSMY.cpy` | `PA-ACCT-ID` | `S9(11) COMP-3` | Account Number | **High** | Account ID in IMS summary segment |
+
+### 11.6 Summary: PII Exposure by VSAM File
+
+| VSAM File | Critical PII Fields | Programs with Access | Compliance Concern |
+|-----------|--------------------|--------------------|-------------------|
+| **CUSTFILE** | SSN, Govt ID, DOB, Name, Address, Phone | CBCUS01C, CBEXPORT, CBIMPORT, CBTRN01C, CBSTM03A | GDPR Art. 17 (right to erasure), CCPA |
+| **CARDDAT** | Card Number (PAN), CVV, Expiration | CBACT02C, CBEXPORT, CBIMPORT, CBTRN01C/02C, COCRDLIC/SLC/UPC, COPAUA0C | PCI-DSS Req. 3 (protect stored data) |
+| **TRANSACT** | Card Number (PAN) per transaction | CBTRN01C/02C/03C, CBACT04C, COTRN00C/01C/02C, CBEXPORT | PCI-DSS — PAN in every record |
+| **XREFFILE** | Card Number (PAN), Customer ID | CBACT03C/04C, CBTRN01C/02C/03C, CBSTM03A, CBEXPORT | Links PAN to customer identity |
+| **USRSEC** | Password (plaintext), User names | COSGN00C, COUSR00C/01C/02C/03C | Credential exposure risk |
+| **EXPORT-FILE** | All PII (SSN, PAN, names, addresses) | CBEXPORT, CBIMPORT | Highest risk — all PII in one sequential file |
+| **IMS PAUTBDB** | Card Number (PAN), Account ID | CBPAUP0C, COPAUA0C, DBUNLDGS, PAUDBLOD/PAUDBUNL | PAN in IMS segments |
+| **MQ Queues** | Card Number (PAN), Auth details | COPAUA0C, COACCT01, CODATE01 | PAN in transit (MQ messages) |
+
+### 11.7 Modernization Recommendations for PII
+
+| Priority | Action | Affected Components |
+|----------|--------|-------------------|
+| **P0** | Tokenize or encrypt PAN (card numbers) at rest — currently stored in plaintext across 6+ files | CARDDAT, TRANSACT, XREFFILE, EXPORT-FILE, IMS PAUTBDB |
+| **P0** | Remove CVV storage entirely — PCI-DSS prohibits retention post-authorization | CARDDAT (CARD-CVV-CD) |
+| **P0** | Hash passwords — currently plaintext in USRSEC | USRSEC (SEC-USR-PWD) |
+| **P1** | Encrypt SSN at rest — implement field-level encryption or tokenization | CUSTFILE (CUST-SSN), EXPORT-FILE |
+| **P1** | Encrypt export file in transit — contains all PII in a single flat file | CBEXPORT/CBIMPORT pipeline |
+| **P2** | Implement data masking for non-production environments | All files containing PII |
+| **P2** | Add access audit logging for PII field reads | All CICS programs reading CUSTFILE/CARDDAT |
+| **P3** | Implement GDPR right-to-erasure capability | CUSTFILE, CARDDAT, TRANSACT, XREFFILE (cascading delete) |
