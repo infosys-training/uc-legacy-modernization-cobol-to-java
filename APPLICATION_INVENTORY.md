@@ -25,7 +25,7 @@ CardDemo is an AWS mainframe modernization sample application implementing a **c
 |--------|-------|
 | COBOL programs | 31 |
 | Copybooks | 30 |
-| JCL jobs | 37 |
+| JCL jobs | 38 |
 | Business domains | 8 (Account, Card, Customer, Transaction, Reporting, Security, Bill Pay, Data Migration) |
 
 **Architecture:** Batch programs (prefix `CB`) run as standalone executables; online programs (prefix `CO`) execute under CICS with BMS map-driven 3270 terminal UIs. All data is stored in VSAM KSDS files — no DB2 tables are accessed.
