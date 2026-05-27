@@ -480,7 +480,7 @@ The following table classifies every JCL job by execution frequency, based on ev
 | **OPENFIL.jcl** | Daily | DAILY-TransactionBackup | Control-M: `DAYS="ALL"`, terminal job in chain | Reopen CICS files after batch window |
 | **POSTTRAN.jcl** | Daily | Daily Transaction Processing | CA-7: triggered by CBPAUP0J (SCHID=030) | Post validated transactions to VSAM |
 | **CBPAUP0J.jcl** | Daily | Daily Transaction Processing | CA-7: triggered by CLOSEFIL (SCHID=030) | Purge expired pending authorizations |
-| **COMBTRAN.jcl** | Daily + Monthly | Daily Transaction / Monthly Interest | Control-M: Monthly; CA-7: also in daily chain | Combine & validate daily transactions |
+| **COMBTRAN.jcl** | Monthly | MONTHLY-InterestCalculation | Control-M: Monthly folder, chained after INTCALC | Combine & validate interest transactions |
 | **MNTTRDB2** (inline) | Weekly | WEEKLY-TransactionTypesDBRefresh | Control-M: folder runs Saturdays (`DAYS="SA"`) | Update transaction types in DB2 |
 | **DISCGRP.jcl** | Weekly | WEEKLY-DisclosureGroupsRefresh | Control-M: `DAYS="SA"`, chained after MNTTRDB2→CLOSEFIL | Refresh disclosure groups from DB2 |
 | **TRANEXTR** (inline) | Weekly | WEEKLY-TransactionTypesDBRefresh | Control-M: `DAYS="SA"`, chained after MNTTRDB2 | Extract transaction types from DB2 to VSAM |
@@ -525,15 +525,15 @@ The following table classifies every JCL job by execution frequency, based on ev
 | Frequency | Job Count | Characteristics |
 |-----------|-----------|-----------------|
 | **Daily** | 6 | Core batch window: close files → backup → process → reopen. Runs 365 days/year. |
-| **Weekly** | 5 | Reference data refresh from DB2. Runs Saturdays during extended maintenance window. |
-| **Monthly** | 7 | Interest calculation, statement generation, file audits, balance reports. Runs end-of-cycle. |
-| **On-Demand** | 25 | Initial setup (IDCAMS), migrations (export/import), maintenance (IMS), utilities. Manual trigger only. |
+| **Weekly** | 6 | Reference data refresh from DB2. Runs Saturdays during extended maintenance window. |
+| **Monthly** | 9 | Interest calculation, statement generation, file audits, balance reports. Runs end-of-cycle. |
+| **On-Demand** | 24 | Initial setup (IDCAMS), migrations (export/import), maintenance (IMS), utilities. Manual trigger only. |
 
 **Key observations:**
 - Jobs like CLOSEFIL, WAITSTEP, and OPENFIL are **shared utility jobs** — they appear in daily, weekly, and monthly pipelines but are counted once at their highest frequency.
-- COMBTRAN is dual-frequency: runs daily for transaction validation and monthly as part of interest calculation.
+- COMBTRAN runs monthly as part of the interest calculation pipeline (validates interest-generated transactions).
 - The CA-7 scheduler uses SCHID values to distinguish pipeline instances (030 = daily, 031/032 = weekly sub-chains).
-- All 25 on-demand jobs lack scheduler entries entirely — they exist for initial provisioning, ad-hoc migrations, or manual maintenance.
+- All 24 on-demand jobs lack scheduler entries entirely — they exist for initial provisioning, ad-hoc migrations, or manual maintenance.
 
 ---
 
