@@ -217,21 +217,58 @@ def check_rejection_criteria(
     xref_card_nums: set[str],
     acct_ids: set[str],
     active_acct_ids: set[str],
+    xref_card_to_acct: Optional[dict[str, str]] = None,
     card_field: str = "DALYTRAN-CARD-NUM",
 ) -> CheckResult:
-    """POSTTRAN rule: every rejected transaction must have a valid rejection reason."""
+    """POSTTRAN rule: every rejected transaction must have a valid rejection reason.
+
+    A rejection is justified if at least one of the following holds:
+      (a) DALYTRAN-CARD-NUM not found in CARDXREF
+      (b) Resolved XREF-ACCT-ID not found in ACCTDATA
+      (c) Resolved account's ACCT-ACTIVE-STATUS ≠ 'Y'
+
+    Args:
+        rejected_records: Records written to DALYREJS.
+        xref_card_nums: Set of all card numbers present in CARDXREF.
+        acct_ids: Set of all account IDs present in ACCTDATA.
+        active_acct_ids: Subset of acct_ids whose ACCT-ACTIVE-STATUS = 'Y'.
+        xref_card_to_acct: Mapping from XREF-CARD-NUM → XREF-ACCT-ID. Required
+            to validate criteria (b) and (c). If omitted, only criterion (a)
+            is checked and any rejection of a card that exists in CARDXREF
+            is reported as unjustified.
+        card_field: Field name in the rejected record that holds the card num.
+    """
     unjustified = []
     for i, rec in enumerate(rejected_records):
         card_num = str(rec.get(card_field, "")).strip()
 
+        # Criterion (a): card not in xref → justified
         if card_num not in xref_card_nums:
-            continue  # Valid rejection: card not in xref
-        # If we get here, card is in xref — check further
-        # (In practice, we'd also check the resolved account from xref)
-        # For this check, we verify the card is at least resolvable
-        # If the account is active, the rejection is unjustified
-        # Note: simplified check — full check needs xref→acct resolution
-        continue  # All rejections are assumed justified at this level
+            continue
+
+        # Need card→acct mapping to check (b) and (c)
+        if xref_card_to_acct is None:
+            unjustified.append(
+                f"Record {i}: card={card_num} exists in xref "
+                f"(cannot verify acct/status without xref_card_to_acct)"
+            )
+            continue
+
+        resolved_acct = str(xref_card_to_acct.get(card_num, "")).strip()
+
+        # Criterion (b): resolved acct not in acctdata → justified
+        if resolved_acct not in acct_ids:
+            continue
+
+        # Criterion (c): account not active → justified
+        if resolved_acct not in active_acct_ids:
+            continue
+
+        # All three criteria failed: card exists, acct exists, acct is active
+        unjustified.append(
+            f"Record {i}: card={card_num}, acct={resolved_acct} "
+            f"(card in xref, acct exists and is active)"
+        )
 
     return CheckResult(
         check_name="POSTTRAN rejection criteria",

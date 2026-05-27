@@ -18,6 +18,8 @@ from test_harness.copybook_layouts import (
     DAILY_TRANSACTION_RECORD,
     DISCLOSURE_GROUP_RECORD,
     TRAN_CAT_BAL_RECORD,
+    TRAN_CATEGORY_RECORD,
+    TRAN_TYPE_RECORD,
 )
 from test_harness.parser import parse_file
 
@@ -279,8 +281,8 @@ def run_all_checks(data_dir: Path) -> ReconciliationReport:
         ("dailytran.txt", DAILY_TRANSACTION_RECORD,     300),
         ("discgrp.txt",   DISCLOSURE_GROUP_RECORD,       51),
         ("tcatbal.txt",   TRAN_CAT_BAL_RECORD,           50),
-        ("trancatg.txt",  None,                          18),
-        ("trantype.txt",  None,                           7),
+        ("trancatg.txt",  TRAN_CATEGORY_RECORD,          18),
+        ("trantype.txt",  TRAN_TYPE_RECORD,               7),
     ]
     for fname, layout, expected in file_layout_pairs:
         fpath = data / fname
