@@ -488,3 +488,124 @@ This document identifies bounded contexts within the CardDemo application by ana
 4. **Batch programs create the hardest seams.** CBTRN02C accesses 6 files in a single job step. CBSTM03B reads across 4 domains. These bulk-access patterns don't map naturally to microservice APIs and may require a shared database or data lake during the transition.
 
 5. **The CXACAIX alternate index is a hidden coupling point.** Multiple programs use this VSAM AIX to look up accounts by card-cross-reference account ID. This lookup pattern must be preserved in the new architecture (likely as a secondary index or JOIN in the relational database).
+
+---
+
+## Strangler API Specifications
+
+For each bounded context that will be wrapped with APIs, the following defines the target API surface that replaces the CICS program functionality.
+
+### BC-2: Account Management APIs
+
+| Legacy Program | New Endpoint | Method | Description |
+|---|---|---|---|
+| COACTVWC | `/api/accounts/{id}` | GET | View account details. Maps to VSAM READ ACCTDAT by ACCT-ID. |
+| COACTUPC | `/api/accounts/{id}` | PUT | Update account. Must replicate all 25+ validation rules from COACTUPC (SSN, phone, date, credit limit). |
+| COACTUPC | `/api/accounts/{id}/validate` | POST | Shadow-mode validation endpoint — runs both COBOL and Java validation, returns comparison result. |
+| CBACT01C | Retire | — | Replaced by `SELECT * FROM accounts` or admin dashboard. |
+
+**COACTUPC Validation Rules to Replicate:**
+1. SSN: 3-part with IRS exclusion (000, 666, 900–999 in area) — `COACTUPC.cbl:117–146`
+2. US Phone: `(xxx)xxx-xxxx` via REDEFINES overlay — `COACTUPC.cbl:82–115`
+3. Date: CEEDAYS Lilian validation — `COACTUPC.cbl:166` + CSUTLDTC
+4. Credit Limit: `ACCT-CURR-BAL <= ACCT-CREDIT-LIMIT`
+5. Cash Credit Limit: `ACCT-CURR-BAL <= ACCT-CASH-CREDIT-LIMIT`
+6. Signed Numbers: COMP-3 `PIC S9(10)V99` validation — `COACTUPC.cbl:56–80`
+7. Mandatory fields: SPACES/LOW-VALUES checks on required fields
+8. Yes/No flags: 88-level condition validation for all boolean fields
+9. Account status: Valid status code enumeration
+10. ZIP code: Format validation
+
+### BC-3: Credit Card Management APIs
+
+| Legacy Program | New Endpoint | Method | Description |
+|---|---|---|---|
+| COCRDLIC (admin mode) | `/api/cards?page={n}&size=10` | GET | Browse all cards. Replaces STARTBR/READNEXT on CARDDAT. |
+| COCRDLIC (user mode) | `/api/accounts/{id}/cards?page={n}&size=10` | GET | Browse cards by account. Replaces STARTBR on CXACAIX alternate index + READ CARDDAT. |
+| COCRDSLC | `/api/cards/{number}` | GET | View card details with account context from CCXREF and ACCTDAT. |
+| COCRDUPC | `/api/cards/{number}` | PUT | Update card. Replicate COCRDUPC validation rules. |
+| CBACT02C | Retire | — | Replaced by SQL query on cards table. |
+
+### BC-4: Transaction Processing APIs
+
+| Legacy Program | New Endpoint | Method | Description |
+|---|---|---|---|
+| COTRN00C | `/api/transactions?cardNumber={num}&page={n}&size=10` | GET | List transactions with pagination. Replaces VSAM browse. |
+| COTRN01C | `/api/transactions/{tranId}` | GET | View single transaction by TRAN-ID key. |
+| COTRN02C | `/api/transactions` | POST | **Most complex endpoint.** Creates transaction: resolves card, validates account, checks credit limit, writes transaction + updates balance atomically. |
+| COBIL00C | `/api/payments` | POST | Bill payment: reads balance, creates payment transaction, updates balance. Amount=0 means pay full balance. |
+| CBTRN01C/02C | `/api/batch/daily-posting` | POST | Async batch job trigger. Returns job ID. Spring Batch processes DALYTRAN file. |
+| CBTRN03C | `/api/batch/transaction-report` | POST | Async report generation. |
+
+**POST /api/transactions Internal Flow (replacing COTRN02C):**
+```
+1. Resolve card: SELECT FROM card_xref WHERE card_num = ? → account_id, customer_id
+2. Validate card: SELECT FROM cards WHERE card_num = ? → status must be active
+3. Validate account: SELECT FROM accounts WHERE acct_id = ? → status must be active
+4. Check credit limit: acct_curr_bal + amount <= acct_credit_limit
+5. Generate tran_id (sequence)
+6. BEGIN TRANSACTION
+     INSERT INTO transactions (...)
+     UPDATE accounts SET acct_curr_bal = acct_curr_bal + amount WHERE acct_id = ?
+   COMMIT
+   ↑ Key improvement: steps 5+6 are atomic in RDBMS but were NOT atomic in VSAM
+```
+
+---
+
+## Transaction-First Extraction Guide
+
+If the organization chooses to extract Transaction Processing (BC-4) as the first microservice instead of Identity (BC-1), the following addresses the cross-domain data dependencies.
+
+### Shared Data Dependencies for Transaction Extraction
+
+| VSAM File | Owner Domain | Transaction's Usage | Handling Strategy |
+|---|---|---|---|
+| TRANSACT | Transaction (owns) | Read/Write — core store | Migrate to PostgreSQL `transactions` table |
+| DALYTRAN | Transaction (owns) | Read — batch input | File upload to S3 → Spring Batch reader |
+| DALYREJS | Transaction (owns) | Write — rejected output | `rejected_transactions` table |
+| TCATBALF | Transaction (owns) | Read/Write — category balances | Migrate to PostgreSQL |
+| TRANTYPE | Transaction (owns) | Read — reference lookup | Migrate to PostgreSQL |
+| TRANCATG | Transaction (owns) | Read — reference lookup | Migrate to PostgreSQL |
+| ACCTDAT | **Account (BC-2)** | Read/Write — balance updates | **Shared DB** — read/write via `accounts` table in same PostgreSQL instance |
+| CARDDAT | **Card (BC-3)** | Read — card validation | **Shared DB** — read via `cards` table |
+| CCXREF | **Account (BC-2)** | Read — card-to-account lookup | **Shared DB** — read via `card_xref` table |
+| CUSTDAT | **Customer (BC-5)** | Read — customer validation | **Shared DB** — read via `customers` table |
+
+### Architecture: Shared Database Approach (Recommended for Transaction-First)
+
+```
+┌──────────────────┐        ┌───────────────────┐
+│  New Web UI       │───────▶│ transaction-service│
+└──────────────────┘        │  (Spring Boot)     │
+                            │                    │
+┌──────────────────┐        │  Owns: transactions│
+│  3270 Terminal    │──┐     │  Reads: accounts,  │
+│  (remaining CICS) │  │     │  cards, customers, │
+└──────────────────┘  │     │  card_xref (shared │
+                      │     │  DB, not API calls)│
+                      ▼     └────────┬────────────┘
+               ┌──────────┐          │
+               │ CICS     │          ▼
+               │ Region   │   ┌──────────────┐
+               │ (legacy) │   │  PostgreSQL   │◄── CDC from VSAM
+               └────┬─────┘   │  (shared DB)  │──▶ Sync back to VSAM
+                    │         └──────────────┘
+                    ▼
+              ┌──────────┐
+              │  VSAM    │
+              │  Files   │
+              └──────────┘
+```
+
+**Why shared DB, not API calls:** Since `account-service`, `card-service`, and `customer-service` don't exist yet, the transaction service reads directly from shared PostgreSQL tables. When those services are extracted later, the transaction service switches from direct DB access to API calls. This avoids building throwaway API wrappers.
+
+### Extraction Sequence for Transaction-First
+
+1. **Set up CDC:** VSAM → PostgreSQL replication for all 10 files
+2. **Build `transaction-service`** with direct PostgreSQL reads/writes (shared DB)
+3. **Deploy strangler facade:** API gateway routes `/api/transactions/*` to new service; everything else stays on CICS
+4. **Validate online transactions:** Parallel-run COTRN02C (CICS) vs POST /api/transactions for 30 days
+5. **Validate batch posting:** Parallel-run CBTRN01C/CBTRN02C (COBOL) vs Spring Batch for 30 business days
+6. **Cut over** to new service
+7. **Later:** Extract Account, Card, Customer into their own services; transaction-service switches from shared DB to API calls

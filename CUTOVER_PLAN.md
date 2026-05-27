@@ -102,18 +102,50 @@ Extract the three domains with isolated data stores: Identity/User Management, T
 ### Objective
 Wrap Account Management and Credit Card Management with APIs (strangler pattern). Build the data migration ETL pipelines. Migrate data import/export and reporting capabilities.
 
+**Critical dependency:** COACTUPC (4,236 LOC) contains 25+ undocumented validation rules that must be reverse-engineered before the strangler wrapper can be replaced with native Java validation. This phase begins with read-only API wrapping and defers write validation replacement to Phase 3.
+
 ### Programs Migrated
 
-| Legacy Program | New Service | Function |
-|---|---|---|
-| COACTVWC | `account-service` (read API) | View account → GET /api/accounts/{id} |
-| COACTUPC | `account-service` (write API) — **strangler wrapper initially** | Update account → PUT /api/accounts/{id} |
-| COCRDLIC | `card-service` (read API) | List cards → GET /api/cards |
-| COCRDSLC | `card-service` (read API) | View card → GET /api/cards/{number} |
-| COCRDUPC | `card-service` (write API) — **strangler wrapper initially** | Update card → PUT /api/cards/{number} |
-| CBEXPORT | New ETL pipeline | Data export → Spring Batch job |
-| CBIMPORT | New ETL pipeline | Data import → Spring Batch job |
-| CORPT00C | `reporting-service` | Report trigger → async API call |
+| Legacy Program | LOC | New Service | Migration Approach | Risk |
+|---|---|---|---|---|
+| COACTVWC | 941 | `account-service` (read API) | Direct rewrite — read-only, straightforward | Low |
+| COACTUPC | 4,236 | `account-service` (write API) | **Strangler wrapper** — delegates to CICS initially; native Java validation in Phase 3 | **Critical** |
+| COCRDLIC | 1,459 | `card-service` (read API) | Rewrite with dual-mode pagination (admin vs. user browse replaces CXACAIX) | High |
+| COCRDSLC | 887 | `card-service` (read API) | Direct rewrite — read-only | Low |
+| COCRDUPC | 1,560 | `card-service` (write API) | **Strangler wrapper** — similar pattern to COACTUPC | High |
+| CBEXPORT | 582 | New ETL pipeline | Spring Batch job — also used for VSAM-to-RDBMS data migration | Medium |
+| CBIMPORT | 487 | New ETL pipeline | Spring Batch job | Medium |
+| CORPT00C | 649 | `reporting-service` | Rewrite — replaces TDQ/internal reader with async API + job scheduler | Medium |
+
+**COACTUPC Strangler Approach (Phase 2a → 2b):**
+```
+Phase 2a (immediate): PUT /api/accounts/{id}
+  → New Java controller receives request
+  → Delegates validation + write to CICS COACTUPC via COMMAREA adapter
+  → Returns result to caller
+  (CICS is still the system of record for account updates)
+
+Phase 2b (parallel mode): PUT /api/accounts/{id}
+  → Java controller runs BOTH:
+    1. Java validation (new code replicating COACTUPC rules)
+    2. CICS COACTUPC validation (via adapter)
+  → Compare results; log discrepancies; return CICS result
+  → Goal: 0 discrepancies for 30 days before Phase 3 cutover
+```
+
+**COCRDLIC Dual-Mode Browse Replacement:**
+```
+Admin mode:  GET /api/cards?page={n}&size=10
+  → SELECT * FROM cards ORDER BY card_num LIMIT 10 OFFSET ?
+  (replaces STARTBR/READNEXT on CARDDAT)
+
+User mode:   GET /api/accounts/{id}/cards?page={n}&size=10  
+  → SELECT c.* FROM cards c JOIN card_xref x ON c.card_num = x.card_num
+    WHERE x.account_id = ? ORDER BY c.card_num LIMIT 10 OFFSET ?
+  (replaces STARTBR on CXACAIX alternate index + READ CARDDAT)
+
+⚠️ Verify sort order matches VSAM EBCDIC key sequence
+```
 
 ### Data Stores Affected
 
@@ -153,18 +185,41 @@ Wrap Account Management and Credit Card Management with APIs (strangler pattern)
 ## Phase 3: Core Transaction Processing & Payment (Weeks 25–36)
 
 ### Objective
-Rewrite online transaction processing and bill payment. Migrate the transaction data store from VSAM to PostgreSQL as the system of record. Complete the account/card domain migration by replacing strangler wrappers with native implementations.
+Rewrite online transaction processing and bill payment. Migrate the transaction data store from VSAM to PostgreSQL as the system of record. Complete the account/card domain migration by replacing strangler wrappers with native Java implementations.
+
+**Critical dependency:** The COACTUPC validation rules must be fully replicated in Java and validated through shadow-mode (Phase 2b) before this phase can begin. The COTRN02C non-atomic TRANSACT+ACCTDAT write pattern is replaced with a proper database transaction.
 
 ### Programs Migrated
 
-| Legacy Program | New Service | Function |
-|---|---|---|
-| COTRN00C | `transaction-service` | List transactions → GET /api/transactions |
-| COTRN01C | `transaction-service` | View transaction → GET /api/transactions/{id} |
-| COTRN02C | `transaction-service` | Add transaction → POST /api/transactions |
-| COBIL00C | `transaction-service` (or `payment-service`) | Bill payment → POST /api/payments |
-| COACTUPC | `account-service` **(native impl replaces strangler wrapper)** | Full validation logic now in Java |
-| COCRDUPC | `card-service` **(native impl replaces strangler wrapper)** | Full update logic now in Java |
+| Legacy Program | LOC | New Service | Migration Approach | Risk |
+|---|---|---|---|---|
+| COTRN02C | 783 | `transaction-service` | Rewrite — POST /api/transactions with atomic DB transaction (fixes non-atomic VSAM write) | **High** |
+| COTRN00C | 699 | `transaction-service` | Rewrite — GET /api/transactions with SQL pagination | Medium |
+| COTRN01C | 330 | `transaction-service` | Rewrite — GET /api/transactions/{id} (straightforward) | Low |
+| COBIL00C | 572 | `transaction-service` | Rewrite — POST /api/payments (read balance → create payment → update balance atomically) | Medium |
+| COACTUPC | 4,236 | `account-service` | **Native Java replaces strangler wrapper** — all 25+ validation rules now in Java, validated by Phase 2b shadow-mode (0 discrepancies for 30 days) | **Critical** |
+| COCRDUPC | 1,560 | `card-service` | **Native Java replaces strangler wrapper** | High |
+
+**COTRN02C Atomic Transaction Fix:**
+```
+COBOL (current — non-atomic):
+  WRITE TRANSACT-RECORD    ← if this succeeds but next fails = orphan transaction
+  REWRITE ACCOUNT-RECORD   ← balance not updated
+
+Java (new — atomic):
+  @Transactional
+  public Transaction createTransaction(TransactionRequest req) {
+    Transaction txn = transactionRepo.save(newTransaction);
+    accountRepo.updateBalance(req.getAccountId(), req.getAmount());
+    return txn;  // both succeed or both roll back
+  }
+```
+
+**COACTUPC Validation Cutover Gate:**
+- Phase 2b shadow-mode must show **0 discrepancies** for **30 consecutive days** across ALL validation rules
+- Minimum test case count: 500+ covering every 88-level condition path in COACTUPC
+- SSN validation must cover boundary values: 000-xx-xxxx, 666-xx-xxxx, 899-xx-xxxx, 900-xx-xxxx, 999-xx-xxxx
+- Date validation must cover: Feb 29 leap/non-leap, month boundaries, year boundaries
 
 ### Data Stores Affected
 
@@ -210,16 +265,46 @@ Rewrite all batch transaction processing, interest calculation, and statement ge
 
 ### Programs Migrated
 
-| Legacy Program | New Service | Function |
-|---|---|---|
-| CBTRN01C | `transaction-service` (Spring Batch) | Post daily transactions |
-| CBTRN02C | `transaction-service` (Spring Batch) | Post daily transactions (with rejections) |
-| CBTRN03C | `reporting-service` (Spring Batch) | Transaction detail report |
-| CBACT04C | `reporting-service` (Spring Batch) | Interest calculation |
-| CBSTM03A | `reporting-service` (Spring Batch) | Statement generation (text + HTML) |
-| CBSTM03B | `reporting-service` (Spring Batch) | Statement file I/O (merged into CBSTM03A replacement) |
-| COBSWAIT | Retire | Timer utility (replaced by scheduler) |
-| CSUTLDTC | Retire | Date validation (replaced by java.time) |
+| Legacy Program | LOC | New Service | Migration Approach | Risk |
+|---|---|---|---|---|
+| CBTRN02C | 731 | `transaction-service` (Spring Batch) | Rewrite — most data-coupled (6 files). Rejection logic must replicate VSAM status-code-based decisions. | **Critical** |
+| CBTRN01C | 494 | `transaction-service` (Spring Batch) | Rewrite — touches 7 files. Card/account/customer validation before posting. | **High** |
+| CBACT04C | 652 | `reporting-service` (Spring Batch) | Rewrite with `BigDecimal(setScale(2, RoundingMode.DOWN))` — COMP-3 precision must match exactly. | **Critical** |
+| CBSTM03A | 924 | `reporting-service` (Spring Batch) | Manual rewrite required — ALTER/GO TO, mainframe control blocks, 2D arrays. Auto-translation will fail. | **Critical** |
+| CBSTM03B | 230 | `reporting-service` (Spring Batch) | Merge into CBSTM03A replacement — subroutine I/O logic absorbed. | Medium |
+| CBTRN03C | 649 | `reporting-service` (Spring Batch) | Rewrite — multi-file join report. Output format must match exactly. | Medium |
+| COBSWAIT | 41 | Retire | Replace with scheduler-based delays or `Thread.sleep()`. | Low |
+| CSUTLDTC | 157 | Retire | Replace with `java.time.LocalDate` parsing. Validate against CEEDAYS boundary cases. | Medium |
+
+**CBTRN02C Rejection Logic Replication (implicit in COBOL — must be made explicit in Java):**
+```
+COBOL: READ CCXREF → IF file-status = '23' → write to DALYREJS
+   (rejection reason = "card not found in xref" — but reason is NOT stored)
+
+Java:  CardXref xref = cardXrefRepo.findByCardNum(cardNum);
+       if (xref == null) {
+         rejectedTransactionRepo.save(new RejectedTransaction(
+           dailyTran, RejectionReason.CARD_NOT_IN_XREF));  // ← improvement: store reason
+         continue;
+       }
+```
+
+**CBACT04C Interest Calculation — Precision Requirements:**
+```
+COBOL: COMPUTE INTEREST = TRAN-CAT-BAL * DIS-INT-RATE
+  PIC S9(09)V99  ×  PIC S9(04)V99  →  truncated to PIC S9(10)V99
+  (truncation, NOT rounding — this is a COBOL PIC clause behavior)
+
+Java:  BigDecimal interest = catBalance.multiply(intRate)
+         .setScale(2, RoundingMode.DOWN);  // MUST be DOWN, not HALF_UP
+```
+
+**CBSTM03A Manual Rewrite Notes:**
+- ALTER/GO TO makes control flow non-deterministic at compile time — cannot be auto-translated
+- Mainframe control block addressing has no Java equivalent — must be replaced with alternative logic
+- 2D array for statement line items — map to `List<StatementLine>` in Java
+- Subroutine call to CBSTM03B via LINKAGE SECTION — merge into single class
+- Output: both plain text AND HTML — must generate both formats and diff against COBOL output
 
 ### Data Stores Affected
 

@@ -69,17 +69,50 @@ CardDemo is a mainframe credit card management system comprising **44 COBOL prog
 **Programs:** COACTVWC (941 LOC), COACTUPC (4,236 LOC)
 **Copybooks:** CVACT01Y (account), CVACT02Y (card), CVACT03Y (xref), COCOM01Y, CSUTLDWY (date), COACTVW/COACTUP (BMS)
 **Data Stores:** ACCTDAT (VSAM KSDS — 300-byte records), CARDDAT (VSAM KSDS — 150-byte), CCXREF (VSAM KSDS — 50-byte), CXACAIX (VSAM AIX)
-**Complexity:** High
+**Complexity:** High — **HIGHEST RISK AREA IN THE CODEBASE**
+
+**Program-Level Risk Assessment:**
+
+| Program | LOC | Risk | Key Concern |
+|---|---|---|---|
+| COACTUPC | 4,236 | **Critical** | Largest program; 25+ undocumented validation rules embedded in 88-level conditions and REDEFINES overlays |
+| COACTVWC | 941 | Medium | Read-only; simpler but shares all data dependencies |
+
+**Embedded Business Rules in COACTUPC (undocumented — must be reverse-engineered):**
+
+| Rule | Location (approx. lines) | Description | Migration Danger |
+|---|---|---|---|
+| SSN Validation | lines 117–146 | 3-part SSN with IRS exclusion: area ≠ 000, 666, 900–999. Uses REDEFINES to overlay alphanumeric/numeric views. Three independent flags (PART1, PART2, PART3). | High — `INVALID-SSN-PART1 VALUES 0, 666, 900 THRU 999` is a regulatory rule; missing it = compliance violation |
+| US Phone Format | lines 82–115 | 15-char field parsed via REDEFINES into area code (3) + exchange (3) + number (4) with delimiters. Each part validated independently. Format `(xxx)xxx-xxxx` enforced by overlay, not procedural code. | High — format enforcement is implicit in the REDEFINES structure, not in IF statements; easy to miss |
+| Date Validation | line 166 | COPY 'CSUTLDWY' + CALL to CSUTLDTC which invokes z/OS `CEEDAYS` API for Lilian date conversion. Validates dates including leap years. | High — CEEDAYS is IBM LE-specific; exact valid-date ranges may differ from `java.time` |
+| Credit Limit Check | within PROCESS-UPDATE | `ACCT-CURR-BAL` must not exceed `ACCT-CREDIT-LIMIT` and `ACCT-CASH-CREDIT-LIMIT` | Medium — straightforward but must handle COMP-3 signed decimals |
+| Signed Number Validation | lines 56–80 | Generic framework using 88-level conditions with LOW-VALUES/blanks/'0' states for valid/invalid/blank field detection | Medium — the 3-state flag pattern (blank/invalid/valid) is reused throughout; must replicate exactly |
+| Mandatory Field Checks | throughout | Multiple fields checked for SPACES and LOW-VALUES before processing | Low — straightforward null checks |
+| Yes/No Flag Validation | throughout | 88-level conditions for Y/N fields with specific error messages per field | Low — simple but numerous |
+
+**Cross-Domain Data Dependencies:**
+
+| VSAM File | Access | Programs | Sharing Domains |
+|---|---|---|---|
+| ACCTDAT | Read/Write | COACTVWC, COACTUPC, CBACT01C | Card, Transaction (online+batch), Bill Payment, Interest Calc, Statement Gen, Export — **6 other domains** |
+| CCXREF | Read/Write | COACTVWC, COACTUPC | Card, Transaction, Bill Payment, Interest Calc, Statement Gen, Export — **6 other domains** |
+| CXACAIX | Read | COACTUPC | Card, Bill Payment — **2 other domains** |
+| CARDDAT | Read | COACTUPC | Card, Transaction (batch), Interest Calc — **3 other domains** |
 
 | Strategy | Assessment |
 |---|---|
-| **(a) Strangler** | Wrap CICS programs with APIs, incrementally replace. Feasible but COACTUPC contains extensive validation logic (SSN, phone, date, credit limit, etc.) that would need careful extraction. |
-| **(b) Replatform** | Move to AWS M2. Preserves complex validation but delays modernization of tightly coupled account/card/xref data. |
-| **(c) Refactor** | Restructure COACTUPC (4,236 LOC with deep validation logic). Significant effort, unclear benefit. |
-| **(d) Rewrite** | Translate to Java/Kotlin service. Complex but highest long-term value. |
+| **(a) Strangler** | Wrap CICS programs with APIs, incrementally replace. Feasible but COACTUPC's 25+ validation rules must be extracted carefully. The read-only view (COACTVWC) can be wrapped immediately. |
+| **(b) Replatform** | Move to AWS M2. Preserves complex validation but delays modernization of the most tightly coupled data store (ACCTDAT accessed by 15+ programs). |
+| **(c) Refactor** | Restructure COACTUPC (4,236 LOC with deep validation logic). Significant effort, unclear benefit — the interleaving of BMS screen I/O with validation makes separation difficult in COBOL. |
+| **(d) Rewrite** | Translate to Java/Kotlin service. Highest long-term value but highest immediate risk — 25+ validation rules to replicate perfectly. |
 
 **Recommendation: (a) Strangler Pattern** — Wrap with APIs first, then incrementally rewrite.
-- **Justification:** COACTUPC is the largest and most complex program (4,236 LOC) with intricate field-level validation (US phone format, SSN validation with IRS exclusion rules, date validation via CEEDAYS, credit limit enforcement). The account domain also has the most data coupling — it touches ACCTDAT, CARDDAT, CCXREF, and the CXACAIX alternate index. Rewriting all at once carries high risk of regression. The strangler pattern allows the team to expose read operations (COACTVWC) as APIs first, then incrementally replace the update logic while maintaining the CICS programs as a fallback.
+- **Justification:** COACTUPC is the **single riskiest program to migrate** — 4,236 LOC with 25+ undocumented validation rules, 4 shared VSAM files, and z/OS-specific API dependencies (CEEDAYS). The validation rules use COBOL-specific patterns (88-level conditions, REDEFINES overlays, COMP-3 signed arithmetic) that cannot be auto-translated reliably. The strangler pattern allows the team to:
+  1. **Phase 2a:** Expose read operations (COACTVWC) as `GET /api/accounts/{id}` — low risk, immediate value
+  2. **Phase 2b:** Wrap COACTUPC writes, initially delegating to the CICS program via COMMAREA adapter
+  3. **Phase 3:** Incrementally replace validation rules in Java, validated by shadow-mode comparison (run both COBOL and Java validation on every request, compare results, alert on discrepancies)
+  4. **Phase 3 gate:** Only cut over when shadow-mode shows 0 discrepancies for 30 days
+- **Critical prerequisite:** Before any rewrite, generate a validation rules catalog and 500+ golden test cases from the COBOL program covering every 88-level condition path.
 
 ---
 
@@ -90,15 +123,43 @@ CardDemo is a mainframe credit card management system comprising **44 COBOL prog
 **Data Stores:** CARDDAT, CCXREF, CXACAIX, ACCTDAT (all VSAM KSDS)
 **Complexity:** High
 
+**Program-Level Risk Assessment:**
+
+| Program | LOC | Risk | Key Concern |
+|---|---|---|---|
+| COCRDLIC | 1,459 | **High** | Dual-mode VSAM browse (admin: all cards via CARDDAT; user: by account via CXACAIX alternate index). Pagination state management via first/last key tracking. |
+| COCRDUPC | 1,560 | **High** | Card update with own validation rules (card number, expiration, CVV, status changes). BMS-interleaved business logic similar to COACTUPC pattern. |
+| COCRDSLC | 887 | Medium | Read-only card detail view with CCXREF and ACCTDAT lookups. |
+
+**COCRDLIC Browse Complexity:**
+COCRDLIC implements two completely different browse algorithms depending on user type:
+- **Admin mode:** STARTBR on CARDDAT KSDS, READNEXT through all cards, page forward/backward by saving first/last card number per page
+- **User mode:** STARTBR on CXACAIX (alternate index on CCXREF by account ID), READNEXT through xref records, then READ each card from CARDDAT
+- Edge cases: empty result set, single-page result, last page with fewer records — all handled via CICS RESP code checking
+- The exact ordering of results depends on VSAM key sequence (EBCDIC collation) which may differ from SQL `ORDER BY` if character set encoding differs
+
+**Cross-Domain Data Dependencies:**
+
+| VSAM File | Access | Sharing Domains |
+|---|---|---|
+| CARDDAT | Read/Write | Transaction (batch, card validation), Interest Calc — **2 other domains** |
+| CCXREF | Read/Write | Account, Transaction, Bill Payment, Interest Calc, Statement, Export — **6 other domains** |
+| ACCTDAT | Read only | Account (owner), Transaction, Bill Payment, Interest Calc, Statement, Export — **6 other domains** |
+
 | Strategy | Assessment |
 |---|---|
-| **(a) Strangler** | Wrap list/view/update as APIs. Good fit — card operations are well-defined but share data stores with Account domain. |
+| **(a) Strangler** | Wrap list/view/update as APIs. Good fit — card operations are well-defined but share data stores with Account domain. COCRDLIC's dual-mode browse is the main challenge. |
 | **(b) Replatform** | Move to cloud runtime. Delays necessary decoupling from account data. |
 | **(c) Refactor** | Improve COBOL structure. Large programs with UI-interleaved business logic make this expensive. |
 | **(d) Rewrite** | Build as a microservice. Clean domain but shares VSAM files with Account domain. |
 
 **Recommendation: (a) Strangler Pattern** — Co-evolve with Account Management.
-- **Justification:** Credit Card Management is deeply coupled to Account Management through shared VSAM files (CARDDAT, CCXREF, ACCTDAT, CXACAIX). The COCRDLIC program implements a browsable list with forward/backward pagination via CICS STARTBR/READNEXT, which is complex to replicate. The programs are large (total ~3,906 LOC) and contain UI logic interleaved with business rules. The strangler pattern allows wrapping these as APIs while keeping the shared data store intact, then extracting them alongside the Account domain when data migration occurs.
+- **Justification:** Credit Card Management is deeply coupled to Account Management through shared VSAM files (CARDDAT, CCXREF, ACCTDAT, CXACAIX). COCRDLIC's dual-mode browse with CXACAIX alternate index positioning is complex state management — the admin vs. user mode uses completely different VSAM access paths. COCRDUPC contains its own set of validation rules with 88-level flags similar to COACTUPC. The programs are large (total ~3,906 LOC) and contain UI logic interleaved with business rules.
+- **Strangler API shape:**
+  - `GET /api/cards?page={n}&size=10` (admin) or `GET /api/accounts/{id}/cards?page={n}&size=10` (user) — replaces COCRDLIC's dual-mode browse
+  - `GET /api/cards/{number}` — replaces COCRDSLC
+  - `PUT /api/cards/{number}` — replaces COCRDUPC (wrap initially, then rewrite validation)
+- **Must co-migrate with Account domain** because CCXREF ownership is shared.
 
 ---
 
@@ -109,6 +170,35 @@ CardDemo is a mainframe credit card management system comprising **44 COBOL prog
 **Data Stores:** TRANSACT (VSAM KSDS — 350-byte), ACCTDAT, CCXREF, CXACAIX
 **Complexity:** Medium–High
 
+**Program-Level Risk Assessment:**
+
+| Program | LOC | Risk | Key Concern |
+|---|---|---|---|
+| COTRN02C | 783 | **High** | Transaction creation writes to TRANSACT AND updates ACCTDAT balance — two-file operation with no ACID guarantee. Also reads CCXREF + CXACAIX for card-to-account resolution. |
+| COTRN00C | 699 | Medium | List transactions with VSAM browse/pagination. Same pattern as COCRDLIC but single-mode. |
+| COTRN01C | 330 | Low | Read-only transaction view by key. Straightforward. |
+
+**COTRN02C Transaction Creation Flow (cross-domain writes):**
+```
+1. Read CCXREF by card number → get account ID, customer ID
+2. Read ACCTDAT by account ID → validate active, check credit limit
+3. Read CXACAIX → alternate index validation
+4. Generate TRAN-ID (next sequential key in TRANSACT)
+5. Write new record to TRANSACT (350 bytes)
+6. Update ACCT-CURR-BAL in ACCTDAT (+= transaction amount)
+   ⚠️ Steps 5 and 6 are NOT atomic — if step 6 fails, orphan
+   transaction exists with no balance update
+```
+
+**Cross-Domain Data Dependencies:**
+
+| VSAM File | Access in Online Trans | Access in Batch Trans | Sharing Domains |
+|---|---|---|---|
+| TRANSACT | Read/Write | Read/Write | Bill Payment, Reports, Statement — **3 other domains** |
+| ACCTDAT | Read/Write (balance) | Read/Write (balance) | Account (owner), Card, Bill Payment, Interest, Statement, Export — **6 other domains** |
+| CCXREF | Read | Read | Account, Card, Bill Payment, Interest, Statement, Export — **6 other domains** |
+| CXACAIX | Read | — | Account, Card, Bill Payment — **3 other domains** |
+
 | Strategy | Assessment |
 |---|---|
 | **(a) Strangler** | Wrap list/view/add as APIs. Transaction creation (COTRN02C) updates both TRANSACT and ACCTDAT, requiring careful coordination. |
@@ -117,7 +207,12 @@ CardDemo is a mainframe credit card management system comprising **44 COBOL prog
 | **(d) Rewrite** | Build as an event-driven transaction service. Highest value — enables proper ACID guarantees, audit trail, scalability. |
 
 **Recommendation: (d) Rewrite** — after Account/Card domains are stabilized via strangler.
-- **Justification:** Transaction processing is the core revenue-generating capability. COTRN02C creates transactions by writing to TRANSACT VSAM and updating account balances in ACCTDAT — essentially a two-phase operation with no true ACID guarantees in the VSAM model. Rewriting this as an event-driven service with a relational database provides proper transactional integrity, audit logging, and scalability. However, this should happen *after* the Account and Card domains are API-wrapped, so the new Transaction service can call those APIs rather than directly accessing VSAM files.
+- **Justification:** Transaction processing is the core revenue-generating capability. COTRN02C creates transactions by writing to TRANSACT VSAM and updating account balances in ACCTDAT — a two-phase operation with **no ACID guarantees** in the VSAM model (if the ACCTDAT write fails after TRANSACT is written, you have an orphan transaction). Rewriting this as a service with a relational database provides proper transactional integrity within a single DB transaction.
+- **Strangler API shape (if extracted first with shared DB approach):**
+  - `GET /api/transactions?cardNumber={num}&page={n}&size=10` — replaces COTRN00C browse
+  - `GET /api/transactions/{tranId}` — replaces COTRN01C
+  - `POST /api/transactions` — replaces COTRN02C; internally does: resolve card → validate account → check credit limit → create transaction + update balance atomically
+- **If extracted first:** Must use shared PostgreSQL database (Option A from analysis) since `account-service` and `card-service` don't exist yet. Cross-domain reads become SQL JOINs rather than API calls. See DOMAIN_DECOMPOSITION.md for full extraction guide.
 
 ---
 
@@ -126,7 +221,49 @@ CardDemo is a mainframe credit card management system comprising **44 COBOL prog
 **Programs:** CBTRN01C (494 LOC), CBTRN02C (731 LOC), CBTRN03C (649 LOC)
 **Copybooks:** CVTRA05Y, CVTRA06Y (daily tran), CVTRA01Y (cat balance), CVTRA02Y (disc group), CVTRA03Y (tran type), CVTRA04Y (tran category), CVACT01Y, CVACT02Y, CVACT03Y, CVCUS01Y
 **Data Stores:** DALYTRAN (sequential), TRANSACT, ACCTDAT, CARDDAT, CUSTDAT, CCXREF, TCATBALF, DISCGRP, TRANCATG, TRANTYPE, DALYREJS (sequential)
-**Complexity:** High
+**Complexity:** High — **MOST DATA-COUPLED AREA IN THE SYSTEM**
+
+**Program-Level Risk Assessment:**
+
+| Program | LOC | Risk | Files Touched | Key Concern |
+|---|---|---|---|---|
+| CBTRN02C | 731 | **Critical** | 6 (DALYTRAN, TRANSACT, CCXREF, ACCTDAT, TCATBALF, DALYREJS) | Most data-coupled program. Rejection logic based on VSAM READ return codes (status '23' = not found) rather than explicit business rules. |
+| CBTRN01C | 494 | **High** | 7 (DALYTRAN, TRANSACT, CCXREF, ACCTDAT, CARDDAT, CUSTDAT, DALYREJS) | Validates card, account, AND customer before posting. Broader validation than CBTRN02C. |
+| CBTRN03C | 649 | Medium | 4 (TRANSACT, CCXREF, TRANTYPE, TRANCATG) | Report generation with multi-file joins. Output format must match exactly. |
+
+**CBTRN02C Rejection Logic (implicit — must be reverse-engineered):**
+```
+For each record in DALYTRAN:
+  READ CCXREF by card number
+    IF status = '23' (not found) → WRITE to DALYREJS (rejected)
+  READ ACCTDAT by account ID (from xref)
+    IF status = '23' → WRITE to DALYREJS
+    IF ACCT-ACTIVE-STATUS ≠ 'Y' → WRITE to DALYREJS
+  IF valid:
+    WRITE to TRANSACT
+    UPDATE ACCT-CURR-BAL in ACCTDAT
+    UPDATE TCATBALF category balance
+
+⚠️ The rejection reason is NOT stored — the rejected record is written
+as-is to DALYREJS. In Java, rejection reasons should be added.
+⚠️ Account balance update is PIC S9(10)V99 (COMP-3) — truncation
+semantics, not rounding.
+```
+
+**Cross-Domain Data Dependency Matrix:**
+
+| VSAM File | CBTRN01C | CBTRN02C | CBTRN03C | Owner Domain |
+|---|---|---|---|---|
+| DALYTRAN | Read | Read | — | Transaction (own) |
+| TRANSACT | Write | Write | Read | Transaction (own) |
+| DALYREJS | Write | Write | — | Transaction (own) |
+| TCATBALF | — | Read/Write | — | Transaction (own) / Interest Calc reads |
+| TRANTYPE | — | — | Read | Transaction (own) |
+| TRANCATG | — | — | Read | Transaction (own) |
+| ACCTDAT | Read/Write | Read/Write | — | **Account** (BC-2) |
+| CARDDAT | Read | — | — | **Card** (BC-3) |
+| CUSTDAT | Read | — | — | **Customer** (BC-5) |
+| CCXREF | Read | Read | Read | **Account** (BC-2) |
 
 | Strategy | Assessment |
 |---|---|
@@ -136,7 +273,8 @@ CardDemo is a mainframe credit card management system comprising **44 COBOL prog
 | **(d) Rewrite** | Translate to Spring Batch / modern ETL. Complex but eliminates mainframe dependency. |
 
 **Recommendation: (b) Replatform first, then (d) Rewrite.**
-- **Justification:** Batch transaction processing is the most data-coupled area in the entire system — CBTRN02C alone touches 6 VSAM files (DALYTRAN, TRANSACT, XREF, ACCTDAT, TCATBALF, DALYREJS). CBTRN03C generates reports from TRANSACT joined with XREF, TRANTYPE, and TRANCATG. These programs implement critical end-of-day processing including transaction posting, balance updates, rejection handling, and report generation. Replatforming first (running the COBOL batch on a cloud runtime) preserves correctness while the team builds parallel Spring Batch implementations that can be validated against the COBOL output. This dual-run approach is the safest path for batch workloads.
+- **Justification:** CBTRN02C is the most data-coupled program in the system (6 files) and CBTRN01C touches 7 files. The rejection logic is particularly dangerous: transactions are rejected based on VSAM READ status codes ('23' = not found), not explicit business rules — if the Java replacement uses SQL that returns null instead of an exception, the rejection behavior could differ subtly. The batch programs also modify account balances using COMP-3 packed decimal arithmetic with truncation semantics that must be matched exactly in `BigDecimal`.
+- **Parallel-run validation is mandatory:** Run COBOL batch and Spring Batch on the same DALYTRAN input, compare: (1) posted transactions (TRANSACT records), (2) rejected transactions (DALYREJS records), (3) account balance changes (ACCTDAT diffs), (4) category balance changes (TCATBALF diffs). Zero discrepancies for 30 consecutive business days before cutover.
 
 ---
 
@@ -145,17 +283,55 @@ CardDemo is a mainframe credit card management system comprising **44 COBOL prog
 **Programs:** CBACT04C (652 LOC), CBSTM03A (924 LOC), CBSTM03B (230 LOC)
 **Copybooks:** CVTRA01Y, CVTRA02Y, CVACT01Y, CVACT03Y, COSTM01, CVCUS01Y
 **Data Stores:** TCATBALF, DISCGRP, CCXREF, ACCTDAT, TRANSACT, CUSTDAT
-**Complexity:** High (financial calculations with regulatory implications)
+**Complexity:** High — **HIGHEST PRECISION RISK; INTENTIONALLY DIFFICULT TO MIGRATE**
+
+**Program-Level Risk Assessment:**
+
+| Program | LOC | Risk | Key Concern |
+|---|---|---|---|
+| CBSTM03A | 924 | **Critical** | Intentionally exercises hardest COBOL constructs: ALTER/GO TO (self-modifying control flow), mainframe control block addressing, COMP-3, 2D arrays, subroutine calls. Header explicitly states these are modernization test cases. |
+| CBACT04C | 652 | **Critical** | Financial interest calculation with packed decimal (COMP-3). Multi-step rate lookup: CCXREF → ACCTDAT (get group ID) → DISCGRP (get rate by group+type+category) → compute interest on TCATBALF balance. |
+| CBSTM03B | 230 | Medium | Subroutine called by CBSTM03A for file I/O. Reads TRANSACT, CCXREF, CUSTDAT, ACCTDAT via LINKAGE SECTION. |
+
+**CBSTM03A Intentional Migration Challenges (from program header):**
+```
+* Constructs exercised (per source code comments):
+*  1. Mainframe Control block addressing    — NO Java equivalent
+*  2. Alter and GO TO statements            — Self-modifying control flow
+*  3. COMP and COMP-3 variables             — Packed decimal precision
+*  4. 2 dimensional array                   — Statement line items
+*  5. Call to Subroutine                    — CBSTM03B via LINKAGE SECTION
+```
+ALTER/GO TO dynamically changes the target of a GO TO statement at runtime — the control flow graph is not statically determinable. Automated translation tools cannot handle this reliably. Only manual rewrite with exhaustive output comparison is safe.
+
+**CBACT04C Interest Rate Lookup Chain (undocumented):**
+```
+For each CCXREF record:
+  Read ACCTDAT by account ID → get ACCT-GROUP-ID
+  For each TCATBALF record matching account:
+    Read DISCGRP by (GROUP-ID + TRAN-TYPE-CD + TRAN-CAT-CD) → get DIS-INT-RATE
+    Interest = TRAN-CAT-BAL × DIS-INT-RATE
+    ⚠️ Uses PIC S9(04)V99 for rate, PIC S9(09)V99 for balance
+    ⚠️ COBOL truncates intermediate result to target PIC — NOT rounding
+    ⚠️ Java BigDecimal MUST use setScale(2, RoundingMode.DOWN) to match
+```
+Even a 1-cent discrepancy per account compounds across thousands of accounts and can trigger regulatory audit findings.
 
 | Strategy | Assessment |
 |---|---|
 | **(a) Strangler** | Not applicable — batch programs with no API surface. |
 | **(b) Replatform** | Keep running on cloud. Safe for interest calculations where precision matters. |
-| **(c) Refactor** | Improve COBOL — CBSTM03A uses ALTER/GO TO, COMP-3, and mainframe control block addressing intentionally as modernization test cases. |
+| **(c) Refactor** | Improve COBOL — but CBSTM03A was *intentionally designed* to resist refactoring. |
 | **(d) Rewrite** | Translate to Java with BigDecimal. Must be validated extensively for numeric precision. |
 
 **Recommendation: (b) Replatform first, then (d) Rewrite with extensive parallel testing.**
-- **Justification:** Interest calculation (CBACT04C) combines per-category balance data from TCATBALF with interest rates from DISCGRP to compute charges per account. Statement generation (CBSTM03A/B) produces both plain text and HTML output from transaction data joined with customer/account/xref data. These programs contain financial business rules where even minor precision differences can have regulatory consequences. CBSTM03A intentionally uses challenging COBOL constructs (ALTER, GO TO, COMP-3 arithmetic, 2D arrays, subroutine calls) making automated translation unreliable. Replatform first to maintain business continuity, then build a Java replacement with BigDecimal arithmetic validated against the COBOL output through parallel-run comparison.
+- **Justification:** These two programs represent the **highest financial risk** and the **hardest technical migration** in the entire codebase. CBACT04C's interest calculation combines COMP-3 arithmetic with a multi-table lookup chain where COBOL's truncation behavior (not rounding) must be replicated exactly. CBSTM03A was explicitly designed as a modernization challenge — ALTER/GO TO makes the control flow non-deterministic at compile time, and mainframe control block addressing has no Java equivalent.
+- **Mandatory controls:**
+  1. Replatform first to maintain business continuity (run on AWS M2)
+  2. Build Java replacement using `BigDecimal` with `setScale(2, RoundingMode.DOWN)` for ALL financial fields
+  3. Parallel-run for **3 full billing cycles** (not just 30 days) — compare interest charges per account to the cent
+  4. Statement output diff comparison (text AND HTML) — must match character-for-character
+  5. Keep COBOL version on standby for 3 additional billing cycles after cutover
 
 ---
 
@@ -295,21 +471,43 @@ CardDemo is a mainframe credit card management system comprising **44 COBOL prog
 
 ## Key Decision Factors
 
-### Business Logic Complexity
-- **Highest:** COACTUPC (4,236 LOC of validation), CBACT04C (interest calc), CBSTM03A (statement generation with ALTER/GO TO patterns)
-- **Medium:** Transaction posting (CBTRN01C/02C), Credit Card CRUD (COCRDLIC/COCRDSLC/COCRDUPC)
-- **Lowest:** Authentication, User Admin, Data Utilities
+### Business Logic Complexity (Ranked by Migration Difficulty)
 
-### Data Coupling
-- **Tightly Coupled:** Account, Card, Transaction, and Bill Payment all share ACCTDAT, CARDDAT, CCXREF, and TRANSACT VSAM files
-- **Isolated:** USRSEC (auth/admin only), TCATBALF/DISCGRP/TRANCATG/TRANTYPE (reference data), IMS databases (authorization module only)
+| Rank | Program | LOC | Key Risk | Documentation Level |
+|---|---|---|---|---|
+| 1 | COACTUPC | 4,236 | 25+ undocumented validation rules (SSN/IRS exclusions, phone format via REDEFINES, CEEDAYS date validation) | **None** — rules in 88-level conditions |
+| 2 | CBSTM03A | 924 | Intentionally difficult: ALTER/GO TO, mainframe control blocks, COMP-3, 2D arrays | **Minimal** — header lists constructs |
+| 3 | CBACT04C | 652 | COMP-3 interest calculation with multi-step rate lookup chain; truncation (not rounding) semantics | **None** — rate lookup chain is implicit |
+| 4 | CBTRN02C | 731 | 6-file batch posting; rejection based on VSAM status codes, not explicit business rules | **None** — rejection is implicit |
+| 5 | COCRDLIC | 1,459 | Dual-mode VSAM browse (admin vs. user) with CXACAIX alternate index; EBCDIC collation dependencies | **None** |
+| 6 | COCRDUPC | 1,560 | Card validation rules with BMS-interleaved logic; similar pattern to COACTUPC | **None** |
+| 7 | CBTRN01C | 494 | 7-file batch posting with card, account, AND customer validation | **None** |
+| 8 | COTRN02C | 783 | Non-atomic two-file write (TRANSACT + ACCTDAT balance update) | **None** |
+| 9 | COBIL00C | 572 | Payment interaction with pending transactions; unclear balance calculation timing | **None** |
+| 10 | All others | Various | Low complexity — straightforward CRUD, reads, or utilities | Low |
+
+### Data Coupling (VSAM File Access Heatmap)
+
+| VSAM File | Owner | Total Accessor Programs | Accessor Domains | Extraction Difficulty |
+|---|---|---|---|---|
+| ACCTDAT | Account | 15+ | Account, Card, Trans (online+batch), Bill Pay, Interest, Statement, Export | **Critical** — most shared file |
+| CCXREF | Account | 10+ | Account, Card, Trans, Bill Pay, Interest, Statement, Export | **Critical** |
+| TRANSACT | Transaction | 8+ | Transaction, Bill Pay, Reports, Statement, Export | **High** |
+| CARDDAT | Card | 5+ | Card, Trans (batch), Interest Calc | **Medium** |
+| CUSTDAT | Customer | 4+ | Customer, Trans (batch), Statement, Export/Import | **Medium** |
+| TCATBALF | Transaction | 3 | Transaction (batch), Interest Calc | **Low** |
+| USRSEC | Identity | 6 | Identity only | **Isolated** |
+| DISCGRP | Reference | 1 writer + 1 reader | Reference, Interest Calc | **Isolated** |
+| TRANTYPE | Reference | 1 writer + 1 reader | Reference, Transaction (report) | **Isolated** |
+| TRANCATG | Reference | 1 writer + 1 reader | Reference, Transaction (report) | **Isolated** |
 
 ### Team Skill Availability
 - **Java/Spring Boot:** Assumed available for the "to-Java" target
-- **COBOL:** Needed during strangler/replatform phases for maintenance and parallel validation
-- **Mainframe Ops (JCL/CICS/VSAM):** Critical for replatform phases; can be wound down as domains migrate
+- **COBOL (critical path):** Needed throughout Phases 1–4 for: (a) reverse-engineering COACTUPC validation rules, (b) maintaining replatformed runtime, (c) diagnosing parallel-run discrepancies, (d) understanding COMP-3/packed decimal behavior
+- **Mainframe Ops (JCL/CICS/VSAM):** Critical for Phase 0 replatform, Phase 2 dual-write sync, and Phase 4 batch sequencing
+- **Risk:** COBOL skill attrition during the 48–60 week migration is the #8 risk in the RISK_REGISTER — knowledge capture must happen before Phase 1
 
 ### Risk Tolerance
-- **Low-risk areas first:** Authentication, User Admin, Reference Data, Utilities
-- **High-risk areas last:** Financial calculations, batch transaction posting, authorization
-- **Parallel-run validation:** Essential for all financial processing domains
+- **Low-risk areas first:** Authentication, User Admin, Reference Data, Utilities — all have isolated data stores
+- **High-risk areas last:** Financial calculations (CBACT04C — precision risk), batch transaction posting (CBTRN02C — 6-file coupling), statement generation (CBSTM03A — ALTER/GO TO)
+- **Parallel-run validation:** Essential for ALL financial processing domains. Minimum durations: 30 days for transaction posting, 3 billing cycles for interest calculation, character-for-character output comparison for statements

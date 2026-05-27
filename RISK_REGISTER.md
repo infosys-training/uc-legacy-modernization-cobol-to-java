@@ -33,25 +33,33 @@ This document identifies the top 10 migration risks for the CardDemo modernizati
 COACTUPC is the largest program (4,236 LOC) and contains extensive field-level validation for account updates: US phone number format validation (area code + exchange + number with specific delimiter checking), SSN validation (with IRS-mandated exclusion of area numbers 000, 666, and 900–999), date validation (via CEEDAYS Language Environment call), credit limit enforcement, leap year calculation, and mandatory field checks. These rules are deeply embedded in COBOL paragraph logic and not documented externally. Several validation rules use 88-level condition names with complex REDEFINES, making them easy to misinterpret during translation.
 
 **Evidence from codebase:**
-- `COACTUPC.cbl:117–146` — SSN validation with `INVALID-SSN-PART1 VALUES 0, 666, 900 THRU 999`
-- `COACTUPC.cbl:82–115` — US phone number format with 3-part numeric validation
-- `COACTUPC.cbl:166` — COPY 'CSUTLDWY' for date validation via CEEDAYS
-- `COACTUPC.cbl:56–80` — Signed number validation with blank/invalid/valid flag states
+- `COACTUPC.cbl:117–146` — SSN validation with `INVALID-SSN-PART1 VALUES 0, 666, 900 THRU 999`. Uses REDEFINES to overlay `PIC X(09)` as three separate numeric fields (area 3 digits, group 2 digits, serial 4 digits). Three independent 88-level flag sets (PART1, PART2, PART3) each with VALID/INVALID states.
+- `COACTUPC.cbl:82–115` — US phone number format with REDEFINES splitting 15-char field into area code (3), exchange (3), number (4) with delimiter positions. Format `(xxx)xxx-xxxx` is enforced by the REDEFINES overlay structure — the delimiters are implicit in the field positions, not checked procedurally. This means a developer reading only the PROCEDURE DIVISION will miss the format constraint.
+- `COACTUPC.cbl:166` — `COPY 'CSUTLDWY'` includes date validation working storage; program calls CSUTLDTC which invokes z/OS `CEEDAYS` API to convert to Lilian date format. CEEDAYS rejects invalid dates including Feb 29 on non-leap years. The exact date range boundaries (earliest/latest valid date) are IBM Language Environment-specific.
+- `COACTUPC.cbl:56–80` — Generic signed number validation framework with 3-state flag pattern: LOW-VALUES/SPACES = blank (optional field not entered), '0' = invalid (entered but malformed), '1' = valid. This pattern is reused across multiple fields. The flag field names are generic (e.g., `WS-SIGN-FLG`) and could easily be confused with other validation states.
 
 **Likelihood:** High — Every mainframe migration encounters undocumented business rules. COACTUPC's 4,236 LOC of interleaved UI and validation logic is especially prone to misinterpretation.
 
 **Impact:** High — Incorrect validation allows bad data into the system (e.g., invalid SSNs, malformed phone numbers) or rejects valid updates that COBOL would have accepted.
 
 **Mitigation Strategy:**
-1. **Extract validation rules catalog:** Before rewriting, create a formal specification document for every validation in COACTUPC by tracing each 88-level condition and PERFORM paragraph.
-2. **Generate test cases from production data:** Run the COBOL program with a representative set of production account updates and capture the accept/reject decisions as golden test cases.
-3. **Property-based testing:** For each validation rule, generate boundary-value test cases (e.g., SSN 000-xx-xxxx, 666-xx-xxxx, 899-xx-xxxx, 900-xx-xxxx).
-4. **Shadow mode deployment:** Run the Java validation alongside the COBOL validation for 30 days, comparing results for every transaction.
+1. **Extract validation rules catalog:** Before rewriting, create a formal specification document for every validation in COACTUPC by tracing each 88-level condition and PERFORM paragraph. Target: 25+ rules documented with input examples and expected outcomes.
+2. **Generate test cases from production data:** Run the COBOL program with a representative set of production account updates and capture the accept/reject decisions as golden test cases. Minimum: 500 test cases covering every 88-level condition path.
+3. **Property-based testing:** For each validation rule, generate boundary-value test cases:
+   - SSN: 000-xx-xxxx, 666-xx-xxxx, 899-xx-xxxx, 900-xx-xxxx, 999-xx-xxxx, valid 001-01-0001
+   - Phone: missing delimiter, wrong area code length, exchange starting with 0/1
+   - Date: Feb 29 leap/non-leap, Dec 31 → Jan 1, month 00, month 13, day 00, day 32
+   - Credit Limit: at limit, $0.01 over, at zero, negative balance
+4. **Shadow mode deployment (Phase 2b):** Java validation runs alongside COBOL validation on every account update. Both results logged; COBOL result returned to user. Alert on any discrepancy. Gate: 0 discrepancies for 30 consecutive days before cutover.
+5. **Formal code review:** Each validation rule's Java implementation reviewed by both a Java developer AND a COBOL-literate developer.
 
 **Early Warning Indicators:**
-- Test case count for COACTUPC replacement is less than 500 (insufficient coverage)
-- Shadow mode comparison shows >0.1% disagreement rate
-- Java implementation has fewer validation rules than the number of 88-level conditions in COACTUPC
+- Test case count for COACTUPC replacement is less than 500 (insufficient coverage for 4,236 LOC)
+- Shadow mode comparison shows >0.1% disagreement rate (target: 0%)
+- Java implementation has fewer validation rules than the number of 88-level conditions in COACTUPC (count the 88s in lines 56–146 as minimum baseline)
+- Validation rules catalog not completed before Phase 2 development begins
+- No COBOL-literate reviewer assigned to the account update validation PR
+- Java phone validation uses regex instead of positional field parsing (would miss the REDEFINES-based format enforcement)
 
 ---
 
@@ -81,9 +89,12 @@ CBSTM03A intentionally uses `COMP-3` variables and `COMP` counters as modernizat
 4. **Code review gate:** No financial calculation code merges without a review by someone who understands both COBOL decimal semantics and Java BigDecimal behavior.
 
 **Early Warning Indicators:**
-- Any `double` or `float` usage in financial calculation code
+- Any `double` or `float` usage in financial calculation code (grep for `double` and `float` in all financial service code)
 - Java code using `BigDecimal.ROUND_HALF_UP` instead of `ROUND_DOWN` (COBOL truncates, it doesn't round)
 - Parallel-run showing >0 cent-level discrepancies in any account
+- Interest calculation test suite has fewer than 1,000 test cases (must cover all combinations of: group IDs × transaction types × categories × balance ranges)
+- CBACT04C replacement does not match the multi-step lookup chain: CCXREF → ACCTDAT (group ID) → DISCGRP (rate by group+type+category)
+- CBSTM03A replacement output differs from COBOL output in any character (must be character-for-character match for text AND HTML)
 
 ---
 
@@ -99,9 +110,19 @@ Five core VSAM files (ACCTDAT, CARDDAT, CCXREF, TRANSACT, TCATBALF) are accessed
 
 This means no domain can be extracted to its own database without either (a) maintaining a sync mechanism to keep VSAM and RDBMS consistent, or (b) migrating all coupled domains simultaneously.
 
+**Evidence from codebase — VSAM File Access Heatmap:**
+
+| VSAM File | Accessor Programs | Domains |
+|---|---|---|
+| ACCTDAT | COACTVWC, COACTUPC, CBACT01C, COCRDLIC, COCRDSLC, COCRDUPC, COTRN02C, CBTRN01C, CBTRN02C, COBIL00C, CBACT04C, CBSTM03B, CBEXPORT | 6 |
+| CCXREF | COACTVWC, COACTUPC, COCRDLIC, COCRDSLC, COCRDUPC, CBACT03C, COTRN02C, CBTRN01C, CBTRN02C, CBTRN03C, COBIL00C, CBACT04C, CBSTM03B, CBEXPORT | 6 |
+| TRANSACT | COTRN00C, COTRN01C, COTRN02C, CBTRN01C, CBTRN02C, CBTRN03C, COBIL00C, CBSTM03B, CBEXPORT, CORPT00C | 4 |
+| CARDDAT | COCRDLIC, COCRDSLC, COCRDUPC, CBACT02C, CBTRN01C, CBACT04C | 3 |
+| CUSTDAT | CBCUS01C, CBTRN01C, CBSTM03B, CBEXPORT, CBIMPORT | 3 |
+
 **Likelihood:** High — This is an architectural characteristic of the application, not a risk that might not materialize.
 
-**Impact:** Medium — Does not prevent migration but significantly increases complexity, extends timeline, and introduces synchronization failure modes.
+**Impact:** Medium — Does not prevent migration but significantly increases complexity, extends timeline, and introduces synchronization failure modes (dual-write drift, CDC lag, reverse-sync conflicts).
 
 **Mitigation Strategy:**
 1. **Shared database phase:** During Phases 2–3, all new services share a single PostgreSQL database with tables mapped from VSAM files. This avoids distributed data problems while still enabling API-based access.
