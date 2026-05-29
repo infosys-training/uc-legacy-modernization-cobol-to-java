@@ -1,5 +1,67 @@
 # Migration Testing Strategy
 
+## Quick Summary
+
+### What Does This Document Mean?
+
+#### For Business Analysts
+- This document defines how we will verify that the migrated Java system produces the same business results as the current COBOL programs.
+- It maps every data file and batch job to specific test cases, so you can trace any business rule back to a validation check.
+- The four testing pillars (golden-file, differential, reconciliation, contract) ensure no business logic is lost or altered during migration.
+
+#### For Developers
+- This is your testing playbook: it tells you exactly which copybook layouts to parse, what tolerance rules to apply, and how to structure test projects.
+- The golden-file approach gives you a complete JSON fixture set for all 9 data files — use these as expected values in JUnit 5 tests.
+- The differential testing section specifies how to handle COBOL-specific quirks (overpunch signs, trailing spaces, FILLER fields) when comparing outputs.
+
+#### For Architects
+- This document defines the test infrastructure architecture: a multi-module Maven project with golden-file generation, test harness, and shared utilities.
+- It establishes the contract testing approach for migrating CICS programs to REST APIs, including COMMAREA-to-DTO mapping validation.
+- Use it to validate that the test strategy covers all integration points and data flows between the 38 JCL jobs.
+
+#### For Product Owner / Project Manager
+- This strategy ensures migration quality by testing all 31 programs across four complementary approaches — no single point of validation failure.
+- The program inventory table (Section 5) shows migration priority for each program, helping you sequence sprints.
+- Record counts are small (7–300 per file), meaning golden-file tests cover 100% of data — no sampling risk.
+
+#### For a Total Beginner
+- We're moving a credit card system from an old language (COBOL) to a modern one (Java), and this document explains how we'll check that nothing breaks.
+- Think of it like a recipe for quality checks: we save the "correct answers" from the old system, run the new system, and compare results.
+- It covers 31 programs and 9 data files, with specific rules for handling differences in how old and new systems format numbers and text.
+
+### How Can I Use This Document?
+
+#### For Business Analysts
+- Use the Data File Inventory (Section 4) to understand what business data is being tested and how records relate to each other.
+- Reference the Reconciliation Testing section to see how cross-reference integrity (card→account→customer) is validated.
+
+#### For Developers
+- Start with Section 3 (Test Infrastructure) for project structure, then implement parsers using the copybook-to-file mapping in Section 2A.
+- Use the tolerance rules in Section 2B as your FieldByFieldComparator configuration — they define what differences are acceptable.
+
+#### For Architects
+- Review Section 2D (Contract Testing) to validate the CICS-to-REST endpoint mapping aligns with your API gateway design.
+- Use Section 3 to confirm the test infrastructure integrates with your CI/CD pipeline and build tooling.
+
+#### For Product Owner / Project Manager
+- Use Section 5 (Program Inventory) to plan migration waves based on the priority column.
+- Section 6 (Future Scope) shows what's deferred — use it for roadmap planning beyond the initial migration.
+
+#### For a Total Beginner
+- Read the Executive Summary (Section 1) first, then the Data File Inventory (Section 4) to see what data the system processes.
+- The "Golden-File Testing" section (2A) is the easiest to understand — it's simply "save correct answers, then check the new system matches."
+
+### Key Sections in This Document
+
+- **Executive Summary (Section 1)**: Provides the overall scope — 31 programs broken into batch, online, statement, utility, and wait categories. Establishes that only the core `app/` directory is in scope.
+- **Testing Approaches (Section 2)**: The heart of the strategy — four complementary testing pillars that together validate functional equivalence. Each pillar addresses a different failure mode (data parsing, logic differences, data integrity, API contracts).
+- **Test Infrastructure (Section 3)**: Defines the Java/Maven/JUnit 5 project structure and key utility classes. This is the implementation blueprint for the test harness itself.
+- **Data File Inventory (Section 4)**: Complete reference table of all 9 ASCII data files with their copybook mappings, record lengths, actual line lengths, and record counts. Essential for implementing parsers.
+- **Program Inventory (Section 5)**: Full catalog of all 31 COBOL programs with type classification, functional description, and migration priority. Use this for planning and tracking.
+- **Future Scope (Section 6)**: Placeholder for three sub-applications not covered in the initial migration. Signals what work remains after the core migration is complete.
+
+---
+
 ## 1. Executive Summary
 
 ### Purpose
