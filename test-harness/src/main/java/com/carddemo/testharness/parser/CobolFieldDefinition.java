@@ -44,6 +44,7 @@ public class CobolFieldDefinition {
     }
 
     public String getName() { return name; }
+    public String getJsonName() { return name.replace('-', '_'); }
     public PicType getPicType() { return picType; }
     public int getOffset() { return offset; }
     public int getLength() { return length; }
