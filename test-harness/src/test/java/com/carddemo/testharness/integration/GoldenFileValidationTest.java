@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 @Tag("integration")
 class GoldenFileValidationTest {
 
-    private static final Path GOLDEN_OUTPUT_DIR = Paths.get("golden-files", "output");
+    private static final Path GOLDEN_OUTPUT_DIR = Paths.get("..", "golden-files", "output");
     private static final Path COBOL_INPUT_DIR = Paths.get("..", "app", "data", "ASCII");
 
     private FieldByFieldComparator comparator;
