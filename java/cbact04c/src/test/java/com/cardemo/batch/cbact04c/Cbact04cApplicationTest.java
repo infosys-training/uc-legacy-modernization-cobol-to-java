@@ -1176,9 +1176,32 @@ class Cbact04cApplicationTest {
         // --- CVE: Path Traversal (CWE-22) ---
 
         @Test
-        void testPathTraversalRejected() {
-            assertThrows(IllegalArgumentException.class, () ->
-                    Cbact04cApplication.validateFilePath("../../etc/passwd", false));
+        void testPathTraversalInputRejected() {
+            // Set allowed base to a confined directory for testing
+            Path savedBase = Cbact04cApplication.allowedBase;
+            try {
+                Cbact04cApplication.allowedBase = securityTempDir;
+                // Attempting to escape securityTempDir via ../ should be rejected
+                assertThrows(IllegalArgumentException.class, () ->
+                        Cbact04cApplication.validateFilePath(
+                                securityTempDir.resolve("../etc/passwd").toString(), false));
+            } finally {
+                Cbact04cApplication.allowedBase = savedBase;
+            }
+        }
+
+        @Test
+        void testPathTraversalOutputRejected() {
+            // Output paths must also be confined to allowed base
+            Path savedBase = Cbact04cApplication.allowedBase;
+            try {
+                Cbact04cApplication.allowedBase = securityTempDir;
+                assertThrows(IllegalArgumentException.class, () ->
+                        Cbact04cApplication.validateFilePath(
+                                securityTempDir.resolve("../../tmp/evil.txt").toString(), true));
+            } finally {
+                Cbact04cApplication.allowedBase = savedBase;
+            }
         }
 
         @Test
@@ -1201,22 +1224,54 @@ class Cbact04cApplicationTest {
 
         @Test
         void testValidInputPathAccepted() throws IOException {
-            Path tempFile = Files.createTempFile(securityTempDir, "test", ".txt");
-            assertDoesNotThrow(() ->
-                    Cbact04cApplication.validateFilePath(tempFile.toString(), false));
+            Path savedBase = Cbact04cApplication.allowedBase;
+            try {
+                Cbact04cApplication.allowedBase = securityTempDir;
+                Path tempFile = Files.createTempFile(securityTempDir, "test", ".txt");
+                assertDoesNotThrow(() ->
+                        Cbact04cApplication.validateFilePath(tempFile.toString(), false));
+            } finally {
+                Cbact04cApplication.allowedBase = savedBase;
+            }
         }
 
         @Test
         void testValidOutputPathAccepted() {
-            Path outputFile = securityTempDir.resolve("output.txt");
-            assertDoesNotThrow(() ->
-                    Cbact04cApplication.validateFilePath(outputFile.toString(), true));
+            Path savedBase = Cbact04cApplication.allowedBase;
+            try {
+                Cbact04cApplication.allowedBase = securityTempDir;
+                Path outputFile = securityTempDir.resolve("output.txt");
+                assertDoesNotThrow(() ->
+                        Cbact04cApplication.validateFilePath(outputFile.toString(), true));
+            } finally {
+                Cbact04cApplication.allowedBase = savedBase;
+            }
         }
 
         @Test
         void testNonExistentInputFileRejected() {
-            assertThrows(IllegalArgumentException.class, () ->
-                    Cbact04cApplication.validateFilePath("/nonexistent/file.txt", false));
+            Path savedBase = Cbact04cApplication.allowedBase;
+            try {
+                Cbact04cApplication.allowedBase = securityTempDir;
+                assertThrows(IllegalArgumentException.class, () ->
+                        Cbact04cApplication.validateFilePath(
+                                securityTempDir.resolve("nonexistent.txt").toString(), false));
+            } finally {
+                Cbact04cApplication.allowedBase = savedBase;
+            }
+        }
+
+        @Test
+        void testAbsolutePathOutsideBaseRejected() {
+            // Even absolute paths outside allowed base should be rejected
+            Path savedBase = Cbact04cApplication.allowedBase;
+            try {
+                Cbact04cApplication.allowedBase = securityTempDir;
+                assertThrows(IllegalArgumentException.class, () ->
+                        Cbact04cApplication.validateFilePath("/etc/shadow", true));
+            } finally {
+                Cbact04cApplication.allowedBase = savedBase;
+            }
         }
 
         // --- CVE: Date Input Validation ---

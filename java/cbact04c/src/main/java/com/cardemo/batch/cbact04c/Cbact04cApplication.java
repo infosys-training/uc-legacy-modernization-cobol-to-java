@@ -109,12 +109,20 @@ public class Cbact04cApplication {
     }
 
     /**
+     * The allowed base directory for all file operations.
+     * Defaults to the repo root (grandparent of the project working directory java/cbact04c/).
+     * Package-private for testability.
+     */
+    static Path allowedBase = Paths.get("").toAbsolutePath().normalize().getParent().getParent();
+
+    /**
      * Validates that a file path is safe (no path traversal, valid characters).
      * For input files, also verifies the file exists.
+     * All resolved paths must fall within the allowed base directory.
      *
      * @param pathStr the file path string to validate
      * @param isOutput true if this is an output file path (does not need to exist)
-     * @return the normalized, validated Path
+     * @return the resolved, normalized Path
      * @throws IllegalArgumentException if path is invalid or unsafe
      */
     static Path validateFilePath(String pathStr, boolean isOutput) {
@@ -122,22 +130,20 @@ public class Cbact04cApplication {
             throw new IllegalArgumentException("File path cannot be null or blank");
         }
 
-        Path path;
-        try {
-            path = Paths.get(pathStr).normalize();
-        } catch (InvalidPathException e) {
-            throw new IllegalArgumentException("Invalid file path: contains illegal characters");
-        }
-
         // Reject paths containing null bytes
         if (pathStr.contains("\0")) {
             throw new IllegalArgumentException("Invalid file path: contains null bytes");
         }
 
-        // Check for path traversal: normalized path must not escape working directory
-        // by going above the base reference point
-        Path absolutePath = path.toAbsolutePath().normalize();
-        if (absolutePath.toString().contains("..")) {
+        Path path;
+        try {
+            path = Paths.get(pathStr).toAbsolutePath().normalize();
+        } catch (InvalidPathException e) {
+            throw new IllegalArgumentException("Invalid file path: contains illegal characters");
+        }
+
+        // Path traversal check: resolved path must be within the allowed base directory
+        if (!path.startsWith(allowedBase)) {
             throw new IllegalArgumentException("Invalid file path: path traversal detected");
         }
 
