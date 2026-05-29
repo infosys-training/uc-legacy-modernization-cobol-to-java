@@ -6,3 +6,5 @@ batch-app/markers/*
 /.idea/
 .DS_Store
 **/.DS_Store
+java/cbcus01c/.gradle/
+java/cbcus01c/build/
