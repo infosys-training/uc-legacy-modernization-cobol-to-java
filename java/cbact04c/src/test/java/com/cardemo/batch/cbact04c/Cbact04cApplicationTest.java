@@ -539,7 +539,7 @@ class Cbact04cApplicationTest {
             BigDecimal balance = new BigDecimal("5000.00");
             BigDecimal rate = new BigDecimal("1.50");
             BigDecimal expected = balance.multiply(rate)
-                    .divide(new BigDecimal("1200"), 2, java.math.RoundingMode.HALF_UP);
+                    .divide(new BigDecimal("1200"), 2, java.math.RoundingMode.DOWN);
             BigDecimal actual = InterestCalculatorService.computeInterest(balance, rate);
             assertEquals(expected, actual);
         }
