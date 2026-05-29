@@ -1,11 +1,8 @@
-package com.carddemo.golden.layout;
-
-import com.carddemo.golden.parser.CobolFieldDefinition;
-import com.carddemo.golden.parser.CobolRecordLayout;
+package com.carddemo.parser;
 
 import java.util.List;
 
-import static com.carddemo.golden.parser.CobolFieldDefinition.*;
+import static com.carddemo.parser.CobolFieldDefinition.*;
 
 public final class RecordLayouts {
 
@@ -44,7 +41,7 @@ public final class RecordLayouts {
         ));
     }
 
-    /** cardxref.txt - CVACT03Y.cpy - CARD-XREF-RECORD (50 bytes, actual 36) */
+    /** cardxref.txt - CVACT03Y.cpy - CARD-XREF-RECORD (50 bytes) */
     public static CobolRecordLayout cardXrefRecord() {
         return new CobolRecordLayout("CARD-XREF-RECORD", List.of(
                 alphanumeric("XREF-CARD-NUM", 16),

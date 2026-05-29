@@ -1,8 +1,8 @@
 package com.carddemo.golden;
 
-import com.carddemo.golden.layout.RecordLayouts;
-import com.carddemo.golden.parser.CobolAsciiRecordParser;
-import com.carddemo.golden.parser.CobolRecordLayout;
+import com.carddemo.parser.CobolRecordLayout;
+import com.carddemo.parser.CobolRecordParser;
+import com.carddemo.parser.RecordLayouts;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -48,7 +48,7 @@ public class GoldenFileGenerator {
         Path dataFile = DATA_DIR.resolve(dataFileName);
         List<String> lines = Files.readAllLines(dataFile);
 
-        CobolAsciiRecordParser parser = new CobolAsciiRecordParser(layout);
+        CobolRecordParser parser = new CobolRecordParser(layout);
         List<Map<String, Object>> records = new ArrayList<>();
 
         for (String line : lines) {

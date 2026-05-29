@@ -1,9 +1,11 @@
-package com.carddemo.golden.parser;
+package com.carddemo.parser;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 public final class CobolSignDecoder {
+
+    public record SignedValue(String digits, boolean positive) {}
 
     private CobolSignDecoder() {
     }
@@ -51,5 +53,41 @@ public final class CobolSignDecoder {
         }
 
         return value.setScale(decimalPlaces, RoundingMode.UNNECESSARY);
+    }
+
+    public static SignedValue decodeRaw(String rawValue) {
+        if (rawValue == null || rawValue.isEmpty()) {
+            throw new IllegalArgumentException("Raw value must not be null or empty");
+        }
+
+        char lastChar = rawValue.charAt(rawValue.length() - 1);
+        String prefix = rawValue.substring(0, rawValue.length() - 1);
+
+        if (Character.isDigit(lastChar)) {
+            return new SignedValue(rawValue, true);
+        }
+
+        int lastDigit;
+        boolean positive;
+
+        if (lastChar == '{') {
+            lastDigit = 0;
+            positive = true;
+        } else if (lastChar >= 'A' && lastChar <= 'I') {
+            lastDigit = lastChar - 'A' + 1;
+            positive = true;
+        } else if (lastChar == '}') {
+            lastDigit = 0;
+            positive = false;
+        } else if (lastChar >= 'J' && lastChar <= 'R') {
+            lastDigit = lastChar - 'J' + 1;
+            positive = false;
+        } else {
+            throw new IllegalArgumentException(
+                    "Invalid sign character: " + lastChar);
+        }
+
+        String digits = prefix + lastDigit;
+        return new SignedValue(digits, positive);
     }
 }

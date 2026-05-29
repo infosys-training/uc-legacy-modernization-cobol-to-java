@@ -1,4 +1,4 @@
-package com.carddemo.golden.layout;
+package com.carddemo.parser;
 
 import org.junit.jupiter.api.Test;
 

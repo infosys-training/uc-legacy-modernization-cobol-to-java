@@ -1,11 +1,11 @@
 package com.carddemo.testharness.integration;
 
+import com.carddemo.parser.CobolRecordLayout;
+import com.carddemo.parser.CobolRecordParser;
+import com.carddemo.parser.RecordLayouts;
 import com.carddemo.testharness.comparator.ComparisonResult;
 import com.carddemo.testharness.comparator.FieldByFieldComparator;
 import com.carddemo.testharness.comparator.ToleranceRule;
-import com.carddemo.testharness.model.RecordLayout;
-import com.carddemo.testharness.model.RecordLayouts;
-import com.carddemo.testharness.parser.CobolRecordParser;
 import com.carddemo.testharness.validator.CrossReferenceValidator;
 import com.carddemo.testharness.validator.NumericSumValidator;
 import com.carddemo.testharness.validator.RecordCountValidator;
@@ -44,7 +44,6 @@ class GoldenFileValidationTest {
     private static final Path GOLDEN_OUTPUT_DIR = Paths.get("golden-files", "output");
     private static final Path COBOL_INPUT_DIR = Paths.get("..", "app", "data", "ASCII");
 
-    private CobolRecordParser parser;
     private FieldByFieldComparator comparator;
     private RecordCountValidator recordCountValidator;
     private NumericSumValidator numericSumValidator;
@@ -52,7 +51,6 @@ class GoldenFileValidationTest {
 
     @BeforeEach
     void setUp() {
-        parser = new CobolRecordParser();
         comparator = new FieldByFieldComparator();
         recordCountValidator = new RecordCountValidator();
         numericSumValidator = new NumericSumValidator();
@@ -66,10 +64,11 @@ class GoldenFileValidationTest {
         assumeThat(Files.exists(goldenFile)).isTrue();
 
         Path cobolFile = COBOL_INPUT_DIR.resolve("acctdata.txt");
-        RecordLayout layout = RecordLayouts.acctdata();
+        CobolRecordLayout layout = RecordLayouts.accountRecord();
+        CobolRecordParser parser = new CobolRecordParser(layout);
 
-        List<Map<String, Object>> expected = parser.parseFile(cobolFile, layout);
-        List<Map<String, Object>> actual = parser.parseFile(goldenFile, layout);
+        List<Map<String, Object>> expected = parser.parseFile(cobolFile);
+        List<Map<String, Object>> actual = parser.parseFile(goldenFile);
 
         ValidationResult countResult = recordCountValidator.validate(expected, actual);
         assertThat(countResult.isValid())
@@ -84,10 +83,11 @@ class GoldenFileValidationTest {
         assumeThat(Files.exists(goldenFile)).isTrue();
 
         Path cobolFile = COBOL_INPUT_DIR.resolve("acctdata.txt");
-        RecordLayout layout = RecordLayouts.acctdata();
+        CobolRecordLayout layout = RecordLayouts.accountRecord();
+        CobolRecordParser parser = new CobolRecordParser(layout);
 
-        List<Map<String, Object>> expected = parser.parseFile(cobolFile, layout);
-        List<Map<String, Object>> actual = parser.parseFile(goldenFile, layout);
+        List<Map<String, Object>> expected = parser.parseFile(cobolFile);
+        List<Map<String, Object>> actual = parser.parseFile(goldenFile);
 
         Set<ToleranceRule> tolerances = EnumSet.of(
             ToleranceRule.TRAILING_SPACES,
@@ -115,12 +115,15 @@ class GoldenFileValidationTest {
         assumeThat(Files.exists(xrefFile)).isTrue();
         assumeThat(Files.exists(cardFile)).isTrue();
 
-        List<Map<String, Object>> xrefRecords = parser.parseFile(xrefFile, RecordLayouts.cardxref());
-        List<Map<String, Object>> cardRecords = parser.parseFile(cardFile, RecordLayouts.carddata());
+        CobolRecordParser xrefParser = new CobolRecordParser(RecordLayouts.cardXrefRecord());
+        CobolRecordParser cardParser = new CobolRecordParser(RecordLayouts.cardRecord());
+
+        List<Map<String, Object>> xrefRecords = xrefParser.parseFile(xrefFile);
+        List<Map<String, Object>> cardRecords = cardParser.parseFile(cardFile);
 
         ValidationResult result = crossReferenceValidator.validate(
-            xrefRecords, "XREF-CARD-NUM",
-            cardRecords, "CARD-NUM");
+            xrefRecords, "XREF_CARD_NUM",
+            cardRecords, "CARD_NUM");
 
         assertThat(result.isValid())
             .as("Cross-reference integrity: %s", result.getMessage())
@@ -134,15 +137,16 @@ class GoldenFileValidationTest {
         Path cobolFile = COBOL_INPUT_DIR.resolve("acctdata.txt");
         assumeThat(Files.exists(goldenFile)).isTrue();
 
-        RecordLayout layout = RecordLayouts.acctdata();
-        List<Map<String, Object>> expected = parser.parseFile(cobolFile, layout);
-        List<Map<String, Object>> actual = parser.parseFile(goldenFile, layout);
+        CobolRecordLayout layout = RecordLayouts.accountRecord();
+        CobolRecordParser parser = new CobolRecordParser(layout);
+        List<Map<String, Object>> expected = parser.parseFile(cobolFile);
+        List<Map<String, Object>> actual = parser.parseFile(goldenFile);
 
         BigDecimal expectedSum = expected.stream()
-            .map(r -> (BigDecimal) r.get("ACCT-CURR-BAL"))
+            .map(r -> (BigDecimal) r.get("ACCT_CURR_BAL"))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        ValidationResult result = numericSumValidator.validate(actual, "ACCT-CURR-BAL", expectedSum);
+        ValidationResult result = numericSumValidator.validate(actual, "ACCT_CURR_BAL", expectedSum);
         assertThat(result.isValid())
             .as("Balance sum: %s", result.getMessage())
             .isTrue();

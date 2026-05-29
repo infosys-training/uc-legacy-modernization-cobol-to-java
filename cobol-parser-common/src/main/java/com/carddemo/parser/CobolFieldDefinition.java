@@ -1,4 +1,4 @@
-package com.carddemo.golden.parser;
+package com.carddemo.parser;
 
 public class CobolFieldDefinition {
 

@@ -1,4 +1,4 @@
-package com.carddemo.golden.parser;
+package com.carddemo.parser;
 
 import java.util.Collections;
 import java.util.List;

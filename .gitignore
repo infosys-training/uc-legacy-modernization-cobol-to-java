@@ -6,4 +6,5 @@ batch-app/markers/*
 /.idea/
 .DS_Store
 **/.DS_Store
-test-harness/target/
+**/target/
+golden-files/output/
