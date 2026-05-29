@@ -4,6 +4,8 @@ import com.cardemo.batch.cbact04c.io.*;
 import com.cardemo.batch.cbact04c.model.*;
 import com.cardemo.batch.cbact04c.service.InterestCalculatorService;
 
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -49,6 +51,11 @@ public class Cbact04cApplication {
             System.exit(1);
         }
 
+        if (!isValidDate(parmDate)) {
+            System.err.println("ERROR: --date must be a valid date in YYYY-MM-DD format");
+            System.exit(1);
+        }
+
         // Default data paths relative to project root
         String dataDir = "../../app/data/ASCII/";
         if (tcatbalPath == null) tcatbalPath = dataDir + "tcatbal.txt";
@@ -58,23 +65,30 @@ public class Cbact04cApplication {
         if (transactPath == null) transactPath = "output/transact.txt";
 
         try {
-            Path transactDir = Paths.get(transactPath).getParent();
+            // Validate all file paths to prevent path traversal
+            Path tcatbalFile = validateFilePath(tcatbalPath, false);
+            Path xrefFile = validateFilePath(xrefPath, false);
+            Path discgrpFile = validateFilePath(discgrpPath, false);
+            Path accountFile = validateFilePath(accountPath, false);
+            Path transactFile = validateFilePath(transactPath, true);
+
+            Path transactDir = transactFile.getParent();
             if (transactDir != null) {
-                java.nio.file.Files.createDirectories(transactDir);
+                Files.createDirectories(transactDir);
             }
 
             // Read input files
             List<TranCatBalRecord> tcatbalRecords =
-                    new TranCatBalFileReader(Paths.get(tcatbalPath)).readAll();
+                    new TranCatBalFileReader(tcatbalFile).readAll();
 
             Map<String, CardXrefRecord> xrefByAcct =
-                    new CardXrefFileReader(Paths.get(xrefPath)).readAllByAccountId();
+                    new CardXrefFileReader(xrefFile).readAllByAccountId();
 
             Map<String, DisclosureGroupRecord> discGroupByKey =
-                    new DisclosureGroupFileReader(Paths.get(discgrpPath)).readAllByKey();
+                    new DisclosureGroupFileReader(discgrpFile).readAllByKey();
 
             Map<String, AccountRecord> accountsByKey =
-                    new AccountFileReader(Paths.get(accountPath)).readAllByAccountId();
+                    new AccountFileReader(accountFile).readAllByAccountId();
 
             // Process
             InterestCalculatorService service = new InterestCalculatorService(
@@ -82,16 +96,63 @@ public class Cbact04cApplication {
             service.process();
 
             // Write output
-            new TransactionFileWriter(Paths.get(transactPath)).writeAll(service.getOutputTransactions());
-            AccountFileReader.rewriteAll(Paths.get(accountPath + ".updated"), service.getUpdatedAccounts());
+            new TransactionFileWriter(transactFile).writeAll(service.getOutputTransactions());
+            AccountFileReader.rewriteAll(Path.of(accountFile + ".updated"), service.getUpdatedAccounts());
 
             System.out.println("Transactions written: " + service.getOutputTransactions().size());
             System.out.println("Accounts updated: " + service.getUpdatedAccounts().size());
 
         } catch (Exception e) {
             System.err.println("ABENDING PROGRAM: " + e.getMessage());
-            e.printStackTrace();
             System.exit(999);
         }
+    }
+
+    /**
+     * Validates that a file path is safe (no path traversal, valid characters).
+     * For input files, also verifies the file exists.
+     *
+     * @param pathStr the file path string to validate
+     * @param isOutput true if this is an output file path (does not need to exist)
+     * @return the normalized, validated Path
+     * @throws IllegalArgumentException if path is invalid or unsafe
+     */
+    static Path validateFilePath(String pathStr, boolean isOutput) {
+        if (pathStr == null || pathStr.isBlank()) {
+            throw new IllegalArgumentException("File path cannot be null or blank");
+        }
+
+        Path path;
+        try {
+            path = Paths.get(pathStr).normalize();
+        } catch (InvalidPathException e) {
+            throw new IllegalArgumentException("Invalid file path: contains illegal characters");
+        }
+
+        // Reject paths containing null bytes
+        if (pathStr.contains("\0")) {
+            throw new IllegalArgumentException("Invalid file path: contains null bytes");
+        }
+
+        // Check for path traversal: normalized path must not escape working directory
+        // by going above the base reference point
+        Path absolutePath = path.toAbsolutePath().normalize();
+        if (absolutePath.toString().contains("..")) {
+            throw new IllegalArgumentException("Invalid file path: path traversal detected");
+        }
+
+        if (!isOutput && !Files.exists(path)) {
+            throw new IllegalArgumentException("Input file does not exist: " + path);
+        }
+
+        return path;
+    }
+
+    /**
+     * Validates PARM-DATE format (YYYY-MM-DD).
+     */
+    static boolean isValidDate(String date) {
+        if (date == null || date.length() != 10) return false;
+        return date.matches("\\d{4}-\\d{2}-\\d{2}");
     }
 }

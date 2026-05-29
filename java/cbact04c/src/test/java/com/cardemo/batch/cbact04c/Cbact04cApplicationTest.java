@@ -1162,4 +1162,194 @@ class Cbact04cApplicationTest {
         acct.setGroupId(groupId);
         return acct;
     }
+
+    // =====================================================================
+    // Security Vulnerability Tests
+    // =====================================================================
+
+    @Nested
+    class SecurityTests {
+
+        @TempDir
+        Path securityTempDir;
+
+        // --- CVE: Path Traversal (CWE-22) ---
+
+        @Test
+        void testPathTraversalRejected() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    Cbact04cApplication.validateFilePath("../../etc/passwd", false));
+        }
+
+        @Test
+        void testPathWithNullByteRejected() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    Cbact04cApplication.validateFilePath("file\u0000.txt", false));
+        }
+
+        @Test
+        void testBlankPathRejected() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    Cbact04cApplication.validateFilePath("", false));
+        }
+
+        @Test
+        void testNullPathRejected() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    Cbact04cApplication.validateFilePath(null, false));
+        }
+
+        @Test
+        void testValidInputPathAccepted() throws IOException {
+            Path tempFile = Files.createTempFile(securityTempDir, "test", ".txt");
+            assertDoesNotThrow(() ->
+                    Cbact04cApplication.validateFilePath(tempFile.toString(), false));
+        }
+
+        @Test
+        void testValidOutputPathAccepted() {
+            Path outputFile = securityTempDir.resolve("output.txt");
+            assertDoesNotThrow(() ->
+                    Cbact04cApplication.validateFilePath(outputFile.toString(), true));
+        }
+
+        @Test
+        void testNonExistentInputFileRejected() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    Cbact04cApplication.validateFilePath("/nonexistent/file.txt", false));
+        }
+
+        // --- CVE: Date Input Validation ---
+
+        @Test
+        void testValidDateAccepted() {
+            assertTrue(Cbact04cApplication.isValidDate("2022-06-10"));
+            assertTrue(Cbact04cApplication.isValidDate("2025-12-31"));
+        }
+
+        @Test
+        void testInvalidDateFormatRejected() {
+            assertFalse(Cbact04cApplication.isValidDate("06-10-2022"));
+            assertFalse(Cbact04cApplication.isValidDate("2022/06/10"));
+            assertFalse(Cbact04cApplication.isValidDate("not-a-date"));
+            assertFalse(Cbact04cApplication.isValidDate(null));
+            assertFalse(Cbact04cApplication.isValidDate(""));
+            assertFalse(Cbact04cApplication.isValidDate("20220610"));
+        }
+
+        @Test
+        void testDateWithInjectionAttemptRejected() {
+            assertFalse(Cbact04cApplication.isValidDate("2022-06-10; rm -rf /"));
+            assertFalse(Cbact04cApplication.isValidDate("$(whoami)--"));
+        }
+
+        // --- CVE: Input Validation / Integer Overflow (CWE-400, CWE-190) ---
+
+        @Test
+        void testParseUnsignedNumericOverlongInput() {
+            // Exceeds 18-digit limit (Long.MAX_VALUE is 19 digits)
+            assertThrows(IllegalArgumentException.class, () ->
+                    CobolFieldParser.parseUnsignedNumeric("1234567890123456789"));
+        }
+
+        @Test
+        void testParseUnsignedNumericNonDigitInput() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    CobolFieldParser.parseUnsignedNumeric("12abc"));
+        }
+
+        @Test
+        void testParseUnsignedNumericMaxSafeInput() {
+            // 18 digits should succeed
+            assertEquals(123456789012345678L,
+                    CobolFieldParser.parseUnsignedNumeric("123456789012345678"));
+        }
+
+        @Test
+        void testParseSignedDecimalOverlongInput() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    CobolFieldParser.parseSignedDecimal("1234567890123456789", 2));
+        }
+
+        // --- CVE: Integer Overflow in formatSignedDecimal (CWE-190) ---
+
+        @Test
+        void testTransactionRecordOverflowDetected() {
+            TransactionRecord rec = new TransactionRecord();
+            rec.setTransactionId("TEST123456789012");
+            rec.setTypeCode("01");
+            rec.setCategoryCode(5);
+            rec.setSource("System");
+            rec.setDescription("Overflow test");
+            // PIC S9(09)V99 max is 999999999.99 — set a value exceeding it
+            rec.setAmount(new BigDecimal("9999999999.99"));
+            rec.setMerchantId("000000000");
+            rec.setMerchantName("");
+            rec.setMerchantCity("");
+            rec.setMerchantZip("");
+            rec.setCardNumber("0000000000000000");
+            rec.setOrigTimestamp("2022-06-10-00.00.00.000000");
+            rec.setProcTimestamp("2022-06-10-00.00.00.000000");
+
+            assertThrows(ArithmeticException.class, rec::toFixedWidth);
+        }
+
+        @Test
+        void testAccountRecordOverflowDetected() {
+            AccountRecord acct = new AccountRecord();
+            acct.setAccountId("00000000001");
+            acct.setActiveStatus("Y");
+            // PIC S9(10)V99 max is 9999999999.99 — set a value exceeding it
+            acct.setCurrentBalance(new BigDecimal("99999999999.99"));
+            acct.setCreditLimit(BigDecimal.ZERO);
+            acct.setCashCreditLimit(BigDecimal.ZERO);
+            acct.setOpenDate("2020-01-01");
+            acct.setExpirationDate("2025-12-31");
+            acct.setReissueDate("2025-06-01");
+            acct.setCurrentCycleCredit(BigDecimal.ZERO);
+            acct.setCurrentCycleDebit(BigDecimal.ZERO);
+            acct.setAddressZip("00000");
+            acct.setGroupId("TESTGROUP ");
+
+            assertThrows(ArithmeticException.class, acct::toFixedWidth);
+        }
+
+        @Test
+        void testValidAmountDoesNotOverflow() {
+            TransactionRecord rec = new TransactionRecord();
+            rec.setTransactionId("TEST123456789012");
+            rec.setTypeCode("01");
+            rec.setCategoryCode(5);
+            rec.setSource("System");
+            rec.setDescription("Valid amount test");
+            rec.setAmount(new BigDecimal("999999999.99"));
+            rec.setMerchantId("000000000");
+            rec.setMerchantName("");
+            rec.setMerchantCity("");
+            rec.setMerchantZip("");
+            rec.setCardNumber("0000000000000000");
+            rec.setOrigTimestamp("2022-06-10-00.00.00.000000");
+            rec.setProcTimestamp("2022-06-10-00.00.00.000000");
+
+            assertDoesNotThrow(rec::toFixedWidth);
+        }
+
+        // --- CVE: Mutable Internal State Exposure (CWE-200) ---
+
+        @Test
+        void testOutputTransactionsListIsImmutable() {
+            List<TranCatBalRecord> tcatbals = new ArrayList<>();
+            Map<String, CardXrefRecord> xrefs = new HashMap<>();
+            Map<String, DisclosureGroupRecord> discGroups = new HashMap<>();
+            Map<String, AccountRecord> accounts = new HashMap<>();
+
+            InterestCalculatorService service = new InterestCalculatorService(
+                    "2022-06-10", tcatbals, xrefs, discGroups, accounts);
+            service.process();
+
+            List<TransactionRecord> transactions = service.getOutputTransactions();
+            assertThrows(UnsupportedOperationException.class, () ->
+                    transactions.add(new TransactionRecord()));
+        }
+    }
 }

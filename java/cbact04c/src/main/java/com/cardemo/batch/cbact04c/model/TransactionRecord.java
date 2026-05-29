@@ -98,8 +98,14 @@ public class TransactionRecord {
         if (value == null) value = BigDecimal.ZERO;
         boolean negative = value.signum() < 0;
         BigDecimal abs = value.abs();
-        long unscaled = abs.movePointRight(decDigits).longValue();
         int totalDigits = intDigits + decDigits;
+        BigDecimal shifted = abs.movePointRight(decDigits);
+        BigDecimal maxValue = new BigDecimal("9".repeat(totalDigits));
+        if (shifted.compareTo(maxValue) > 0) {
+            throw new ArithmeticException(
+                    "Value overflow: magnitude exceeds PIC S9(" + intDigits + ")V" + "9".repeat(decDigits) + " capacity");
+        }
+        long unscaled = shifted.longValue();
         String digits = String.format("%0" + totalDigits + "d", unscaled);
         if (digits.length() > totalDigits) {
             digits = digits.substring(digits.length() - totalDigits);

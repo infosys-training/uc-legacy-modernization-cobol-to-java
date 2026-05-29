@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -63,7 +64,6 @@ public class InterestCalculatorService {
         System.out.println("START OF EXECUTION OF PROGRAM CBACT04C");
 
         for (TranCatBalRecord tcatbal : tranCatBalRecords) {
-            System.out.println(tcatbal);
 
             String acctId = tcatbal.getAccountId();
 
@@ -79,14 +79,12 @@ public class InterestCalculatorService {
 
                 currentAccount = accountsByKey.get(acctId);
                 if (currentAccount == null) {
-                    System.out.println("ACCOUNT NOT FOUND: " + acctId);
-                    throw new RuntimeException("ERROR READING ACCOUNT FILE: " + acctId);
+                    throw new RuntimeException("ERROR READING ACCOUNT FILE");
                 }
 
                 currentXref = xrefByAcct.get(acctId);
                 if (currentXref == null) {
-                    System.out.println("ACCOUNT NOT FOUND IN XREF: " + acctId);
-                    throw new RuntimeException("ERROR READING XREF FILE: " + acctId);
+                    throw new RuntimeException("ERROR READING XREF FILE");
                 }
             }
 
@@ -95,9 +93,6 @@ public class InterestCalculatorService {
                     discGroupByKey, groupId, tcatbal.getTypeCode(), tcatbal.getCategoryCode());
 
             if (discGroup == null) {
-                System.out.println("DISCLOSURE GROUP RECORD MISSING for group=" + groupId +
-                        " type=" + tcatbal.getTypeCode() + " cat=" + tcatbal.getCategoryCode());
-                System.out.println("DEFAULT GROUP ALSO NOT FOUND");
                 throw new RuntimeException("ERROR READING DISCLOSURE GROUP FILE");
             }
 
@@ -162,7 +157,7 @@ public class InterestCalculatorService {
     }
 
     public List<TransactionRecord> getOutputTransactions() {
-        return outputTransactions;
+        return Collections.unmodifiableList(outputTransactions);
     }
 
     public Map<String, AccountRecord> getUpdatedAccounts() {

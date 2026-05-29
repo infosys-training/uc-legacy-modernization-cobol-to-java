@@ -28,27 +28,50 @@ public final class CobolFieldParser {
         return line.substring(start, end);
     }
 
+    private static final int MAX_NUMERIC_LENGTH = 18;
+
     /**
      * Parses a COBOL unsigned numeric PIC 9(n) field.
+     *
+     * @param field the raw numeric string (max 18 digits)
+     * @return the parsed long value
+     * @throws IllegalArgumentException if field exceeds maximum safe length or contains non-digits
      */
     public static long parseUnsignedNumeric(String field) {
         if (field == null || field.isBlank()) return 0;
-        return Long.parseLong(field.trim());
+        String trimmed = field.trim();
+        if (trimmed.length() > MAX_NUMERIC_LENGTH) {
+            throw new IllegalArgumentException(
+                    "Numeric field exceeds maximum length of " + MAX_NUMERIC_LENGTH + " digits");
+        }
+        for (int i = 0; i < trimmed.length(); i++) {
+            if (!Character.isDigit(trimmed.charAt(i))) {
+                throw new IllegalArgumentException(
+                        "Numeric field contains non-digit character");
+            }
+        }
+        return Long.parseLong(trimmed);
     }
 
     /**
      * Parses a COBOL signed decimal field with trailing overpunch sign.
      * PIC S9(intDigits)V99 — trailing overpunch on the last character.
      *
-     * @param field the raw COBOL field string
+     * @param field the raw COBOL field string (max 18 characters)
      * @param decimalPlaces number of implied decimal places (V99 = 2)
      * @return the parsed BigDecimal value
+     * @throws IllegalArgumentException if field exceeds maximum safe length
      */
     public static BigDecimal parseSignedDecimal(String field, int decimalPlaces) {
         if (field == null || field.isBlank()) return BigDecimal.ZERO;
 
         String trimmed = field.trim();
         if (trimmed.isEmpty()) return BigDecimal.ZERO;
+
+        if (trimmed.length() > MAX_NUMERIC_LENGTH) {
+            throw new IllegalArgumentException(
+                    "Signed decimal field exceeds maximum length of " + MAX_NUMERIC_LENGTH + " characters");
+        }
 
         char lastChar = trimmed.charAt(trimmed.length() - 1);
         String prefix = trimmed.substring(0, trimmed.length() - 1);
