@@ -120,7 +120,7 @@ public class InterestCalculatorService {
      * Computes monthly interest: (categoryBalance * interestRate) / 1200
      */
     public static BigDecimal computeInterest(BigDecimal categoryBalance, BigDecimal interestRate) {
-        return categoryBalance.multiply(interestRate).divide(TWELVE_HUNDRED, 2, RoundingMode.HALF_UP);
+        return categoryBalance.multiply(interestRate).divide(TWELVE_HUNDRED, 2, RoundingMode.DOWN);
     }
 
     /**
