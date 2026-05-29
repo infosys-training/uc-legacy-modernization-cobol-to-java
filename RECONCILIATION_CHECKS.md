@@ -16,12 +16,12 @@
 
 #### For Architects
 - This is the authoritative data-flow specification for all 38 batch jobs, documenting the VSAM file ecosystem and inter-job dependencies.
-- The data flow diagram (Section 6) shows the complete pipeline from file definition through daily processing to reporting.
+- The data flow diagram (Section 7) shows the complete pipeline from file definition through daily processing to reporting.
 - Use it to design the target batch architecture (Spring Batch, file-based vs DB-based) and validate that no data paths are lost in migration.
 
 #### For Product Owner / Project Manager
 - This document is the acceptance-criteria checklist for the batch migration workstream — every equation must pass before sign-off.
-- Record count validations (Section 5) provide concrete, measurable metrics for migration testing progress.
+- Record count validations (Section 6) provide concrete, measurable metrics for migration testing progress.
 - The cross-reference integrity checks define the data relationships that must be preserved across all nine data files.
 
 #### For a Total Beginner
@@ -40,16 +40,16 @@
 - Use the input/output file mappings to configure your Spring Batch job readers and writers correctly.
 
 #### For Architects
-- Review the data flow diagram (Section 6) to design the target file/database topology and batch orchestration.
+- Review the data flow diagram (Section 7) to design the target file/database topology and batch orchestration.
 - Use cross-reference integrity checks (Section 3) to define foreign key constraints in the target relational schema.
 
 #### For Product Owner / Project Manager
 - Track migration progress by checking off reconciliation equations as they pass in the test harness.
-- Use record count validations (Section 5) as sprint acceptance criteria for each batch job migration.
+- Use record count validations (Section 6) as sprint acceptance criteria for each batch job migration.
 
 #### For a Total Beginner
 - Start with Section 1 (Overview) to understand what batch jobs are and why reconciliation matters.
-- Read the data flow diagram (Section 6) to see how all the pieces fit together visually.
+- Read the data flow diagram (Section 7) to see how all the pieces fit together visually.
 
 ### Key Sections in This Document
 
@@ -58,10 +58,11 @@
 | 1. Overview | Purpose, scope, and the list of 9 data files and 38 JCL jobs covered by this checklist. |
 | 2. JCL Job Analysis | Per-job breakdown of every batch job organized by category: purpose, programs invoked, inputs, outputs, reconciliation equations, and business rules. |
 | 3. Cross-Reference Integrity Checks | Foreign-key relationships between the 9 data files (card-to-account, customer-to-card, transaction-to-card, account-group-to-disclosure). |
-| 4. Numeric Reconciliation Equations | System-wide balance equations derived from COBOL source: account balance, transaction category balance, and daily transaction totals. |
-| 5. Record Count Validations | Expected record counts per data file and batch-job-level assertions (records read vs written vs rejected). |
-| 6. Data Flow Diagram | Mermaid diagram showing the complete flow of data between the 9 data files through all batch jobs, including VSAM operations. |
-| 7. Future Scope | Placeholder for sub-applications not yet in scope: IMS DB2 MQ authorization, DB2 transaction types, and VSAM MQ processing. |
+| 4. Cross-Pipeline Referential Integrity Checks | End-to-end referential integrity validations across the Card→XREF→Account chain, TCATBAL foreign keys, and disclosure group completeness. |
+| 5. Numeric Reconciliation Equations | System-wide balance equations derived from COBOL source: account balance, transaction category balance, and daily transaction totals. |
+| 6. Record Count Validations | Expected record counts per data file and batch-job-level assertions (records read vs written vs rejected). |
+| 7. Data Flow Diagram | Mermaid diagram showing the complete flow of data between the 9 data files through all batch jobs, including VSAM operations. |
+| 8. Future Scope | Placeholder for sub-applications not yet in scope: IMS DB2 MQ authorization, DB2 transaction types, and VSAM MQ processing. |
 
 ---
 
@@ -76,10 +77,11 @@
    - [File Management](#25-file-management)
    - [Utility/Other](#26-utilityother)
 3. [Cross-Reference Integrity Checks](#3-cross-reference-integrity-checks)
-4. [Numeric Reconciliation Equations](#4-numeric-reconciliation-equations)
-5. [Record Count Validations](#5-record-count-validations)
-6. [Data Flow Diagram](#6-data-flow-diagram)
-7. [Future Scope](#7-future-scope)
+4. [Cross-Pipeline Referential Integrity Checks](#4-cross-pipeline-referential-integrity-checks)
+5. [Numeric Reconciliation Equations](#5-numeric-reconciliation-equations)
+6. [Record Count Validations](#6-record-count-validations)
+7. [Data Flow Diagram](#7-data-flow-diagram)
+8. [Future Scope](#8-future-scope)
 
 ---
 
@@ -475,6 +477,29 @@ This document provides a reconciliation verification checklist for the COBOL-to-
   - Rejected records written with 350-byte transaction data + 80-byte validation trailer (reason code + description)
   - RETURN-CODE set to 4 if any rejections occurred
   - TCATBAL records are created if they don't exist for the account/type/category combination
+- **Cycle Credit/Debit Segregation Check**:
+  ```
+  Σ(ACCT-CURR-CYC-CREDIT after) - Σ(ACCT-CURR-CYC-CREDIT before) = Σ(positive DALYTRAN-AMT accepted)
+  Σ(ACCT-CURR-CYC-DEBIT after) - Σ(ACCT-CURR-CYC-DEBIT before) = Σ(negative DALYTRAN-AMT accepted)
+  ```
+  - Source: `app/cbl/CBTRN02C.cbl` lines 547–552. The code splits: IF DALYTRAN-AMT >= 0 adds to CYC-CREDIT, else adds to CYC-DEBIT.
+- **TCATBAL Accumulation Check** (per transaction category group):
+  ```
+  For each (ACCT-ID, TYPE-CD, CAT-CD) group:
+    TRAN-CAT-BAL(after) = TRAN-CAT-BAL(before) + Σ(DALYTRAN-AMT for that group)
+  ```
+  - Source: `app/cbl/CBTRN02C.cbl` lines 503–508 (create new record), 526–528 (update existing). The program creates a new TCATBAL record if the (ACCT-ID, TYPE-CD, CAT-CD) key doesn't exist, or updates the existing one by adding DALYTRAN-AMT to TRAN-CAT-BAL.
+- **Reject File Structure and Reason Code Integrity**:
+  - Each reject record is 430 bytes: 350-byte original transaction (DALYTRAN-RECORD per CVTRA06Y.cpy) + 80-byte validation trailer
+  - Trailer structure: `WS-VALIDATION-FAIL-REASON` PIC 9(04) + `WS-VALIDATION-FAIL-REASON-DESC` PIC X(76)
+  - Valid reason codes and their meanings:
+    - `0100` — Invalid card number (DALYTRAN-CARD-NUM not found in cardxref). Source: lines 380–392.
+    - `0101` — Account record not found (XREF-ACCT-ID not in acctdata). Source: lines 393–399.
+    - `0102` — Overlimit transaction (`ACCT-CREDIT-LIMIT < ACCT-CURR-CYC-CREDIT - ACCT-CURR-CYC-DEBIT + DALYTRAN-AMT`). Source: lines 403–413.
+    - `0103` — Transaction after account expiration (`ACCT-EXPIRAION-DATE < DALYTRAN-ORIG-TS(1:10)`). Source: lines 414–420.
+    - `0109` — Account rewrite failed (INVALID KEY on REWRITE). Source: lines 554–558.
+  - Check: Every record in DALYREJS must have a reason code in {0100, 0101, 0102, 0103, 0109}. Any other code indicates corruption or a bug.
+  - Source: `app/cbl/CBTRN02C.cbl` lines 176–187 for the REJECT-RECORD structure.
 
 #### COMBTRAN.jcl
 - **Job Name**: COMBTRAN
@@ -494,6 +519,14 @@ This document provides a reconciliation verification checklist for the COBOL-to-
   - SORT merges two inputs and sorts by TRAN-ID ascending
   - SYMNAMES defines TRAN-ID as positions 1–16, character type
   - Combined file is then REPRO'd into VSAM (complete reload)
+- **Sort Order Verification**:
+  - After SORT step, output TRANSACT.COMBINED must be ordered by TRAN-ID (positions 1–16, character ascending). Source: `app/jcl/COMBTRAN.jcl` line 30: `SORT FIELDS=(TRAN-ID,A)`.
+  - Check: No duplicate TRAN-ID values should exist (POSTTRAN and INTCALC generate unique IDs with different prefixes).
+- **REPRO Fidelity Check**:
+  ```
+  count(TRANSACT.COMBINED flat file) = count(TRANSACT.VSAM.KSDS after IDCAMS REPRO)
+  ```
+  - Source: `app/jcl/COMBTRAN.jcl` lines 41–49, STEP10 REPRO. If REPRO encounters duplicate keys, records will be skipped — any count mismatch indicates key collision.
 
 #### DALYREJS.jcl
 - **Job Name**: DALYREJS
@@ -568,6 +601,11 @@ This document provides a reconciliation verification checklist for the COBOL-to-
   - CBTRN03C reads DATEPARM for report date range, looks up transaction type and category descriptions
   - Report includes page totals, account totals, and grand total
   - Uses CVTRA07Y copybook for report layout
+- **Transaction Type/Category Foreign Key Validation**:
+  - Every TRAN-TYPE-CD in the input transaction file must exist in trantype.txt (mapped to CVTRA03Y.cpy).
+  - Every (TRAN-TYPE-CD, TRAN-CAT-CD) pair must exist in trancatg.txt (mapped to CVTRA04Y.cpy).
+  - Source: `app/jcl/TRANREPT.jcl` lines 65–74 — CBTRN03C reads TRANTYPE and TRANCATG as reference lookups.
+  - Check: Missing type/category codes in the reference files would cause report output to show blanks or defaults for those transactions.
 
 ---
 
@@ -692,6 +730,17 @@ This document provides a reconciliation verification checklist for the COBOL-to-
   - Fees computation (1400-COMPUTE-FEES) is stubbed — "To be implemented"
   - Account cycle credits/debits reset to 0 after interest posting (end-of-cycle)
   - System transaction IDs generated as: PARM-DATE + sequential suffix
+- **SYSTRAN Output Count Check**:
+  ```
+  count(SYSTRAN output records) = count(TRAN-CAT-BAL records where corresponding DIS-INT-RATE ≠ 0)
+  ```
+  - One interest transaction is written per non-zero-rate category balance entry. Each output transaction has TRAN-TYPE-CD='01', TRAN-CAT-CD='05', TRAN-SOURCE='System'. Source: `app/cbl/CBACT04C.cbl` lines 473–498.
+- **Interest Rate DEFAULT Fallback Validation**:
+  - When an account's ACCT-GROUP-ID does not match any DIS-ACCT-GROUP-ID in discgrp.txt (VSAM status '23'), the program falls back to the DEFAULT group (source: `app/cbl/CBACT04C.cbl` lines 415–439).
+  - Check: For every distinct ACCT-GROUP-ID in acctdata.txt, either:
+    - The group ID exists as a DIS-ACCT-GROUP-ID in discgrp.txt, OR
+    - A DEFAULT entry exists in discgrp.txt for the required (TRAN-TYPE-CD, TRAN-CAT-CD) combination
+  - If neither condition is met, CBACT04C will ABEND — this check catches missing reference data before runtime.
 
 #### PRTCATBL.jcl
 - **Job Name**: PRTCATBL
@@ -904,7 +953,37 @@ For every record in tcatbal (CVTRA01Y):
 
 ---
 
-## 4. Numeric Reconciliation Equations
+## 4. Cross-Pipeline Referential Integrity Checks
+
+### Card→XREF→Account Chain
+```
+∀ record in cardxref.txt: XREF-ACCT-ID exists in acctdata.txt (ACCT-ID field)
+∀ record in dailytran.txt: DALYTRAN-CARD-NUM exists in cardxref.txt (XREF-CARD-NUM field)
+```
+- Cross-reference layout per CVACT03Y.cpy: `XREF-CARD-NUM` PIC X(16), `XREF-CUST-ID` PIC 9(09), `XREF-ACCT-ID` PIC 9(11), FILLER PIC X(14).
+
+### TCATBAL Referential Integrity
+```
+∀ record in tcatbal.txt:
+  TRANCAT-ACCT-ID must exist in acctdata.txt
+  TRANCAT-TYPE-CD must exist in trantype.txt
+  (TRANCAT-TYPE-CD, TRANCAT-CD) must exist in trancatg.txt
+```
+- Layout per CVTRA01Y.cpy: `TRANCAT-ACCT-ID` PIC 9(11), `TRANCAT-TYPE-CD` PIC X(02), `TRANCAT-CD` PIC 9(04), `TRAN-CAT-BAL` PIC S9(09)V99.
+
+### Disclosure Group Completeness
+```
+∀ distinct ACCT-GROUP-ID in acctdata.txt:
+  ∀ distinct (TRAN-TYPE-CD, TRAN-CAT-CD) in trancatg.txt:
+    (ACCT-GROUP-ID, TRAN-TYPE-CD, TRAN-CAT-CD) exists in discgrp.txt
+    OR ('DEFAULT', TRAN-TYPE-CD, TRAN-CAT-CD) exists in discgrp.txt
+```
+- Layout per CVTRA02Y.cpy: `DIS-ACCT-GROUP-ID` PIC X(10), `DIS-TRAN-TYPE-CD` PIC X(02), `DIS-TRAN-CAT-CD` PIC 9(04), `DIS-INT-RATE` PIC S9(04)V99.
+- This ensures CBACT04C (INTCALC) will not ABEND due to missing discount group entries.
+
+---
+
+## 5. Numeric Reconciliation Equations
 
 ### Account Balance Equation
 ```
@@ -986,7 +1065,7 @@ Full round-trip:
 
 ---
 
-## 5. Record Count Validations
+## 6. Record Count Validations
 
 ### Base Data Files (Initial Load)
 
@@ -1027,7 +1106,7 @@ Full round-trip:
 
 ---
 
-## 6. Data Flow Diagram
+## 7. Data Flow Diagram
 
 ```mermaid
 graph TD
@@ -1162,7 +1241,7 @@ graph TD
 
 ---
 
-## 7. Future Scope
+## 8. Future Scope
 
 The following sub-applications are out of scope for this initial reconciliation checklist but will require their own reconciliation analysis when brought into the migration:
 
