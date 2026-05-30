@@ -17,7 +17,7 @@
 
 ## 2. Functional Area: Account Management
 
-**Programs:** COACTUPC.cbl (4,236 LOC), COACTVWC.cbl (941 LOC), COACCT01.cbl (320 LOC)
+**Programs:** COACTUPC.cbl (4,236 LOC), COACTVWC.cbl (941 LOC), COACCT01.cbl (620 LOC)
 **Technology:** CICS + VSAM + MQ (COACCT01)
 **Data:** ACCTFILE (VSAM KSDS), CARDXREF, CUSTFILE — 3 shared VSAM datasets
 **Complexity:** Very High — COACTUPC has 359 branching statements, 58 copybook references
@@ -72,7 +72,7 @@
 
 ## 4. Functional Area: Transaction Processing
 
-**Programs:** COTRN00C.cbl (806 LOC), COTRN01C.cbl (530 LOC), COTRN02C.cbl (710 LOC — online add), CBTRN01C.cbl (494 LOC — batch daily), CBTRN02C.cbl (731 LOC — batch posting), CBTRN03C.cbl (649 LOC — batch report)
+**Programs:** COTRN00C.cbl (699 LOC), COTRN01C.cbl (330 LOC), COTRN02C.cbl (783 LOC — online add), CBTRN01C.cbl (494 LOC — batch daily), CBTRN02C.cbl (731 LOC — batch posting), CBTRN03C.cbl (649 LOC — batch report)
 **Technology:** CICS (online) + VSAM (batch) — no DB2/IMS/MQ dependency
 **Data:** TRANSACT (VSAM KSDS), DALYTRAN (sequential), TCATBALF, DALYREJS, CARDXREF, ACCTFILE
 **Complexity:** Medium — CBTRN02C has 96 IF blocks for validation; CBTRN03C has report formatting logic
@@ -129,7 +129,7 @@
 
 ## 6. Functional Area: User Administration
 
-**Programs:** COUSR00C.cbl (578 LOC), COUSR01C.cbl (498 LOC), COUSR02C.cbl (555 LOC), COUSR03C.cbl (490 LOC)
+**Programs:** COUSR00C.cbl (695 LOC), COUSR01C.cbl (299 LOC), COUSR02C.cbl (414 LOC), COUSR03C.cbl (359 LOC)
 **Technology:** CICS + VSAM (user security file)
 **Data:** USRSEC (VSAM KSDS, 80-byte records) — isolated, no shared data with other domains
 **Complexity:** Low — standard CRUD with simple field validation
@@ -145,7 +145,7 @@
 
 ### **Recommendation: Rewrite**
 
-**Justification:** The user security file stores passwords in plain text (`SEC-USR-PWD PIC X(08)`). This is a critical security vulnerability that cannot be fixed without a rewrite. The domain is fully isolated (no shared data files with other domains) and small (4 programs, ~2,100 total LOC), making it the lowest-risk rewrite target in the estate.
+**Justification:** The user security file stores passwords in plain text (`SEC-USR-PWD PIC X(08)`). This is a critical security vulnerability that cannot be fixed without a rewrite. The domain is fully isolated (no shared data files with other domains) and small (4 programs, ~1,767 total LOC), making it the lowest-risk rewrite target in the estate.
 
 **Target Architecture:**
 - `UserService` (Spring Boot + Spring Security) — auth and user management
@@ -183,7 +183,7 @@
 
 ## 8. Functional Area: Authorization Processing (IMS/MQ/CICS)
 
-**Programs:** COPAUA0C.cbl (1,026 LOC), COPAUS0C.cbl (1,032 LOC), COPAUS1C.cbl (512 LOC), COPAUS2C.cbl (285 LOC), CBPAUP0C.cbl (350 LOC — batch purge), PAUDBLOD.CBL, PAUDBUNL.CBL, DBUNLDGS.CBL
+**Programs:** COPAUA0C.cbl (1,026 LOC), COPAUS0C.cbl (1,032 LOC), COPAUS1C.cbl (604 LOC), COPAUS2C.cbl (244 LOC), CBPAUP0C.cbl (386 LOC — batch purge), PAUDBLOD.CBL (369 LOC), PAUDBUNL.CBL (317 LOC), DBUNLDGS.CBL (366 LOC)
 **Technology:** CICS + IMS (DL/I) + MQ + DB2 — most complex subsystem stack
 **Data:** IMS hierarchical database (authorization segments), MQ queues, DB2 fraud table, VSAM files
 **Complexity:** Very High — COPAUA0C spans 3 middleware subsystems simultaneously
@@ -237,7 +237,7 @@
 
 ## 10. Functional Area: Reporting
 
-**Programs:** CORPT00C.cbl (407 LOC — online report request), CBTRN03C.cbl (649 LOC — batch report generator)
+**Programs:** CORPT00C.cbl (649 LOC — online report request), CBTRN03C.cbl (649 LOC — batch report generator)
 **Technology:** CICS (online request) + batch (report generation) + JCL intrader (job submission)
 **Data:** TRANSACT, CARDXREF, TRANTYPE, TRANCATG, DATEPARM
 **Complexity:** Medium — control-break report formatting in CBTRN03C
@@ -286,14 +286,14 @@
 
 | Functional Area | Programs | Total LOC | Strategy | Priority | Effort (weeks) |
 |----------------|----------|-----------|----------|----------|----------------|
-| User Administration | 4 | 2,121 | **Rewrite** | P1 — Quick Win | 3–4 |
+| User Administration | 4 | 1,767 | **Rewrite** | P1 — Quick Win | 3–4 |
 | Statement Generation | 2 | 1,154 | **Rewrite** (Pilot) | P1 — Pilot | 3–4 |
-| Transaction Type (DB2) | 3 | 3,800 | **Rewrite** | P2 | 4–6 |
+| Transaction Type (DB2) | 3 | 4,037 | **Rewrite** | P2 | 4–6 |
 | Credit Card Management | 3 | 3,906 | **Rewrite** | P2 | 5–7 |
-| Account Management | 3 | 5,497 | **Rewrite** + Strangler | P3 | 8–12 |
-| Transaction Processing | 6 | 3,920 | **Hybrid** (Strangler + Rewrite) | P3 | 6–8 |
-| Reporting | 2 | 1,056 | **Rewrite** | P4 | 3–4 |
-| Authorization (IMS/MQ) | 8 | 3,640 | **Strangler** (phased) | P5 | 10–14 |
+| Account Management | 3 | 5,797 | **Rewrite** + Strangler | P3 | 8–12 |
+| Transaction Processing | 6 | 3,686 | **Hybrid** (Strangler + Rewrite) | P3 | 6–8 |
+| Reporting | 2 | 1,298 | **Rewrite** | P4 | 3–4 |
+| Authorization (IMS/MQ) | 8 | 4,344 | **Strangler** (phased) | P5 | 10–14 |
 | Data Migration | 2 | 1,069 | **Replatform** → Retire | P6 | 1–2 |
 | Batch Utilities | 6 | 1,162 | **Replatform** → Retire | P6 | 1 |
 | **TOTAL** | **39+** | **~27,350** | | | **44–62 weeks** |

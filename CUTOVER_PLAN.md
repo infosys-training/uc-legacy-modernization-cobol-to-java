@@ -80,15 +80,15 @@ Migrate the two most isolated functional areas to prove the migration approach a
 
 | Program | LOC | Target Service | Strategy |
 |---------|-----|----------------|----------|
-| COSGN00C.cbl | 529 | user-auth-service | Rewrite |
-| COUSR00C.cbl | 578 | user-auth-service | Rewrite |
-| COUSR01C.cbl | 498 | user-auth-service | Rewrite |
-| COUSR02C.cbl | 555 | user-auth-service | Rewrite |
-| COUSR03C.cbl | 490 | user-auth-service | Rewrite |
+| COSGN00C.cbl | 260 | user-auth-service | Rewrite |
+| COUSR00C.cbl | 695 | user-auth-service | Rewrite |
+| COUSR01C.cbl | 299 | user-auth-service | Rewrite |
+| COUSR02C.cbl | 414 | user-auth-service | Rewrite |
+| COUSR03C.cbl | 359 | user-auth-service | Rewrite |
 | CBSTM03A.CBL | 924 | reporting-service | Rewrite |
 | CBSTM03B.CBL | 230 | reporting-service | Rewrite |
 
-**Total: 3,804 LOC migrated (14% of estate)**
+**Total: 3,181 LOC migrated (12% of estate)**
 
 ### Data Stores Affected
 
@@ -132,12 +132,12 @@ Migrate programs already using DB2 (lowest friction database change) and the Car
 |---------|-----|----------------|----------|
 | COTRTLIC.cbl | 2,098 | transaction-type-service | Rewrite |
 | COTRTUPC.cbl | 1,702 | transaction-type-service | Rewrite |
-| COBTUPDT.cbl | ~200 | transaction-type-service | Rewrite |
+| COBTUPDT.cbl | 237 | transaction-type-service | Rewrite |
 | COCRDLIC.cbl | 1,459 | card-service | Rewrite |
 | COCRDSLC.cbl | 887 | card-service | Rewrite |
 | COCRDUPC.cbl | 1,560 | card-service | Rewrite |
 
-**Total: 7,906 LOC migrated (cumulative: 11,710 LOC, 43% of estate)**
+**Total: 7,943 LOC migrated (cumulative: 11,124 LOC, 41% of estate)**
 
 ### Data Stores Affected
 
@@ -186,15 +186,15 @@ Migrate the highest-complexity domain (Account Management) and the core Transact
 |---------|-----|----------------|----------|
 | COACTUPC.cbl | 4,236 | account-service | Rewrite + Strangler |
 | COACTVWC.cbl | 941 | account-service | Rewrite |
-| COACCT01.cbl | 320 | account-service | Rewrite |
-| COTRN00C.cbl | 806 | transaction-service | Strangler |
-| COTRN01C.cbl | 530 | transaction-service | Strangler |
-| COTRN02C.cbl | 710 | transaction-service | Strangler |
-| COBIL00C.cbl | 672 | transaction-service | Rewrite |
-| COMEN01C.cbl | 488 | Frontend (React/Angular) | Rewrite |
+| COACCT01.cbl | 620 | account-service | Rewrite |
+| COTRN00C.cbl | 699 | transaction-service | Strangler |
+| COTRN01C.cbl | 330 | transaction-service | Strangler |
+| COTRN02C.cbl | 783 | transaction-service | Strangler |
+| COBIL00C.cbl | 572 | transaction-service | Rewrite |
+| COMEN01C.cbl | 308 | Frontend (React/Angular) | Rewrite |
 | COADM01C.cbl | 288 | Frontend (React/Angular) | Rewrite |
 
-**Total: 8,991 LOC migrated (cumulative: 20,701 LOC, 76% of estate)**
+**Total: 8,777 LOC migrated (cumulative: 19,901 LOC, 73% of estate)**
 
 ### Data Stores Affected
 
@@ -246,14 +246,14 @@ Migrate the most architecturally complex subsystem: Authorization Processing (IM
 |---------|-----|----------------|----------|
 | COPAUA0C.cbl | 1,026 | authorization-service | Strangler |
 | COPAUS0C.cbl | 1,032 | authorization-service | Strangler |
-| COPAUS1C.cbl | 512 | authorization-service | Strangler |
-| COPAUS2C.cbl | 285 | authorization-service | Rewrite |
-| CBPAUP0C.cbl | 350 | authorization-service | Rewrite |
-| PAUDBLOD.CBL | ~210 | authorization-service (data tools) | Rewrite |
-| PAUDBUNL.CBL | ~180 | authorization-service (data tools) | Rewrite |
-| DBUNLDGS.CBL | ~195 | authorization-service (data tools) | Rewrite |
+| COPAUS1C.cbl | 604 | authorization-service | Strangler |
+| COPAUS2C.cbl | 244 | authorization-service | Rewrite |
+| CBPAUP0C.cbl | 386 | authorization-service | Rewrite |
+| PAUDBLOD.CBL | 369 | authorization-service (data tools) | Rewrite |
+| PAUDBUNL.CBL | 317 | authorization-service (data tools) | Rewrite |
+| DBUNLDGS.CBL | 366 | authorization-service (data tools) | Rewrite |
 
-**Total: 3,790 LOC migrated (cumulative: 24,491 LOC, 90% of estate)**
+**Total: 4,344 LOC migrated (cumulative: 24,245 LOC, 89% of estate)**
 
 ### Data Stores Affected
 
@@ -314,10 +314,10 @@ Migrate remaining batch programs and complete the daily batch pipeline in Spring
 | CBTRN02C.cbl | 731 | transaction-service (batch) | Rewrite |
 | CBTRN03C.cbl | 649 | reporting-service (batch) | Rewrite |
 | CBACT04C.cbl | 652 | transaction-service (batch) | Rewrite |
-| CORPT00C.cbl | 407 | reporting-service | Rewrite |
-| CODATE01.cbl | 280 | utility (date service) | Rewrite |
+| CORPT00C.cbl | 649 | reporting-service | Rewrite |
+| CODATE01.cbl | 524 | utility (date service) | Rewrite |
 
-**Total: 3,213 LOC migrated (cumulative: 27,704 LOC, ~100% of business logic)**
+**Total: 3,699 LOC migrated (cumulative: 27,944 LOC, ~100% of business logic)**
 
 ### Data Stores Affected
 

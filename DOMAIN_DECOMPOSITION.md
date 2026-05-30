@@ -179,7 +179,7 @@ Programs with high coupling across all three dimensions belong to the same bound
 
 | Attribute | Detail |
 |-----------|--------|
-| **Programs** | COTRN00C (806), COTRN01C (530), COTRN02C (710), CBTRN01C (494), CBTRN02C (731), COBIL00C (672) |
+| **Programs** | COTRN00C (699), COTRN01C (330), COTRN02C (783), CBTRN01C (494), CBTRN02C (731), COBIL00C (572) |
 | **Copybooks** | CVTRA05Y, CVTRA06Y, CVTRA01Y, CVACT01Y, CVACT03Y |
 | **Data Owned** | `transactions` table (from TRANSACT), `daily_transactions` (from DALYTRAN), `tran_category_balances` (from TCATBALF), `daily_rejects` (from DALYREJS) |
 | **Data Read** | accounts, card_xref (via API) |
@@ -205,7 +205,7 @@ Programs with high coupling across all three dimensions belong to the same bound
 
 | Attribute | Detail |
 |-----------|--------|
-| **Programs** | CBSTM03A (924), CBSTM03B (230), CBTRN03C (649), CORPT00C (407) |
+| **Programs** | CBSTM03A (924), CBSTM03B (230), CBTRN03C (649), CORPT00C (649) |
 | **Copybooks** | COSTM01, CUSTREC, CVACT01Y, CVACT03Y, CVTRA05Y, CVTRA03Y, CVTRA04Y, CVTRA07Y |
 | **Data Owned** | Statement output files, report output files |
 | **Data Read** | accounts, customers, transactions, card_xref, tran_types (all via API) |
@@ -218,7 +218,7 @@ Programs with high coupling across all three dimensions belong to the same bound
 
 | Attribute | Detail |
 |-----------|--------|
-| **Programs** | COSGN00C (529), COUSR00C (578), COUSR01C (498), COUSR02C (555), COUSR03C (490), COMEN01C (488), COADM01C (288) |
+| **Programs** | COSGN00C (260), COUSR00C (695), COUSR01C (299), COUSR02C (414), COUSR03C (359), COMEN01C (308), COADM01C (288) |
 | **Copybooks** | CSUSR01Y, COADM02Y, COMEN02Y |
 | **Data Owned** | `users` table (from USRSEC VSAM KSDS) |
 | **Data Read** | None — fully independent |
@@ -243,7 +243,7 @@ Programs with high coupling across all three dimensions belong to the same bound
 
 | Attribute | Detail |
 |-----------|--------|
-| **Programs** | COPAUA0C (1,026), COPAUS0C (1,032), COPAUS1C (512), COPAUS2C (285), CBPAUP0C (350), PAUDBLOD, PAUDBUNL, DBUNLDGS |
+| **Programs** | COPAUA0C (1,026), COPAUS0C (1,032), COPAUS1C (604), COPAUS2C (244), CBPAUP0C (386), PAUDBLOD (369), PAUDBUNL (317), DBUNLDGS (366) |
 | **Copybooks** | CIPAUSMY, CIPAUDTY, CCPAURQY, CCPAURLY, CCPAUERY, CMQODV, CMQMDV, CMQV, IMSFUNCS, PAUTBPCB, PADFLPCB, PASFLPCB |
 | **Data Owned** | `authorization_summary` table, `authorization_detail` table (from IMS DB), `fraud_flags` table (from DB2) |
 | **Data Read** | accounts, customers, cards (via API) |

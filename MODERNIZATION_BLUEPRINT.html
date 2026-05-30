@@ -120,7 +120,7 @@
 </table>
 <hr />
 <h2>2. Functional Area: Account Management</h2>
-<p><strong>Programs:</strong> COACTUPC.cbl (4,236 LOC), COACTVWC.cbl (941 LOC), COACCT01.cbl (320 LOC)
+<p><strong>Programs:</strong> COACTUPC.cbl (4,236 LOC), COACTVWC.cbl (941 LOC), COACCT01.cbl (620 LOC)
 <strong>Technology:</strong> CICS + VSAM + MQ (COACCT01)
 <strong>Data:</strong> ACCTFILE (VSAM KSDS), CARDXREF, CUSTFILE — 3 shared VSAM datasets
 <strong>Complexity:</strong> Very High — COACTUPC has 359 branching statements, 58 copybook references</p>
@@ -219,7 +219,7 @@
 - PostgreSQL <code>cards</code>, <code>card_xref</code> tables — replaces VSAM CARDFILE + CARDXREF</p>
 <hr />
 <h2>4. Functional Area: Transaction Processing</h2>
-<p><strong>Programs:</strong> COTRN00C.cbl (806 LOC), COTRN01C.cbl (530 LOC), COTRN02C.cbl (710 LOC — online add), CBTRN01C.cbl (494 LOC — batch daily), CBTRN02C.cbl (731 LOC — batch posting), CBTRN03C.cbl (649 LOC — batch report)
+<p><strong>Programs:</strong> COTRN00C.cbl (699 LOC), COTRN01C.cbl (330 LOC), COTRN02C.cbl (783 LOC — online add), CBTRN01C.cbl (494 LOC — batch daily), CBTRN02C.cbl (731 LOC — batch posting), CBTRN03C.cbl (649 LOC — batch report)
 <strong>Technology:</strong> CICS (online) + VSAM (batch) — no DB2/IMS/MQ dependency
 <strong>Data:</strong> TRANSACT (VSAM KSDS), DALYTRAN (sequential), TCATBALF, DALYREJS, CARDXREF, ACCTFILE
 <strong>Complexity:</strong> Medium — CBTRN02C has 96 IF blocks for validation; CBTRN03C has report formatting logic</p>
@@ -320,7 +320,7 @@
 - Email delivery integration — new capability</p>
 <hr />
 <h2>6. Functional Area: User Administration</h2>
-<p><strong>Programs:</strong> COUSR00C.cbl (578 LOC), COUSR01C.cbl (498 LOC), COUSR02C.cbl (555 LOC), COUSR03C.cbl (490 LOC)
+<p><strong>Programs:</strong> COUSR00C.cbl (695 LOC), COUSR01C.cbl (299 LOC), COUSR02C.cbl (414 LOC), COUSR03C.cbl (359 LOC)
 <strong>Technology:</strong> CICS + VSAM (user security file)
 <strong>Data:</strong> USRSEC (VSAM KSDS, 80-byte records) — isolated, no shared data with other domains
 <strong>Complexity:</strong> Low — standard CRUD with simple field validation</p>
@@ -362,7 +362,7 @@
 </tbody>
 </table>
 <h3><strong>Recommendation: Rewrite</strong></h3>
-<p><strong>Justification:</strong> The user security file stores passwords in plain text (<code>SEC-USR-PWD PIC X(08)</code>). This is a critical security vulnerability that cannot be fixed without a rewrite. The domain is fully isolated (no shared data files with other domains) and small (4 programs, ~2,100 total LOC), making it the lowest-risk rewrite target in the estate.</p>
+<p><strong>Justification:</strong> The user security file stores passwords in plain text (<code>SEC-USR-PWD PIC X(08)</code>). This is a critical security vulnerability that cannot be fixed without a rewrite. The domain is fully isolated (no shared data files with other domains) and small (4 programs, ~1,767 total LOC), making it the lowest-risk rewrite target in the estate.</p>
 <p><strong>Target Architecture:</strong>
 - <code>UserService</code> (Spring Boot + Spring Security) — auth and user management
 - PostgreSQL <code>users</code> table with bcrypt password hashing
@@ -418,7 +418,7 @@
 - Flyway migrations — DDL management</p>
 <hr />
 <h2>8. Functional Area: Authorization Processing (IMS/MQ/CICS)</h2>
-<p><strong>Programs:</strong> COPAUA0C.cbl (1,026 LOC), COPAUS0C.cbl (1,032 LOC), COPAUS1C.cbl (512 LOC), COPAUS2C.cbl (285 LOC), CBPAUP0C.cbl (350 LOC — batch purge), PAUDBLOD.CBL, PAUDBUNL.CBL, DBUNLDGS.CBL
+<p><strong>Programs:</strong> COPAUA0C.cbl (1,026 LOC), COPAUS0C.cbl (1,032 LOC), COPAUS1C.cbl (604 LOC), COPAUS2C.cbl (244 LOC), CBPAUP0C.cbl (386 LOC — batch purge), PAUDBLOD.CBL (369 LOC), PAUDBUNL.CBL (317 LOC), DBUNLDGS.CBL (366 LOC)
 <strong>Technology:</strong> CICS + IMS (DL/I) + MQ + DB2 — most complex subsystem stack
 <strong>Data:</strong> IMS hierarchical database (authorization segments), MQ queues, DB2 fraud table, VSAM files
 <strong>Complexity:</strong> Very High — COPAUA0C spans 3 middleware subsystems simultaneously</p>
@@ -518,7 +518,7 @@
 <p><strong>Justification:</strong> Export/Import jobs exist to move data between mainframe environments. Once all data is migrated to PostgreSQL, these jobs become obsolete. Replatform them to M2 during the transition period to support data migration activities, then retire them after cutover.</p>
 <hr />
 <h2>10. Functional Area: Reporting</h2>
-<p><strong>Programs:</strong> CORPT00C.cbl (407 LOC — online report request), CBTRN03C.cbl (649 LOC — batch report generator)
+<p><strong>Programs:</strong> CORPT00C.cbl (649 LOC — online report request), CBTRN03C.cbl (649 LOC — batch report generator)
 <strong>Technology:</strong> CICS (online request) + batch (report generation) + JCL intrader (job submission)
 <strong>Data:</strong> TRANSACT, CARDXREF, TRANTYPE, TRANCATG, DATEPARM
 <strong>Complexity:</strong> Medium — control-break report formatting in CBTRN03C</p>
@@ -615,7 +615,7 @@
 <tr>
 <td>User Administration</td>
 <td>4</td>
-<td>2,121</td>
+<td>1,767</td>
 <td><strong>Rewrite</strong></td>
 <td>P1 — Quick Win</td>
 <td>3–4</td>
@@ -631,7 +631,7 @@
 <tr>
 <td>Transaction Type (DB2)</td>
 <td>3</td>
-<td>3,800</td>
+<td>4,037</td>
 <td><strong>Rewrite</strong></td>
 <td>P2</td>
 <td>4–6</td>
@@ -647,7 +647,7 @@
 <tr>
 <td>Account Management</td>
 <td>3</td>
-<td>5,497</td>
+<td>5,797</td>
 <td><strong>Rewrite</strong> + Strangler</td>
 <td>P3</td>
 <td>8–12</td>
@@ -655,7 +655,7 @@
 <tr>
 <td>Transaction Processing</td>
 <td>6</td>
-<td>3,920</td>
+<td>3,686</td>
 <td><strong>Hybrid</strong> (Strangler + Rewrite)</td>
 <td>P3</td>
 <td>6–8</td>
@@ -663,7 +663,7 @@
 <tr>
 <td>Reporting</td>
 <td>2</td>
-<td>1,056</td>
+<td>1,298</td>
 <td><strong>Rewrite</strong></td>
 <td>P4</td>
 <td>3–4</td>
@@ -671,7 +671,7 @@
 <tr>
 <td>Authorization (IMS/MQ)</td>
 <td>8</td>
-<td>3,640</td>
+<td>4,344</td>
 <td><strong>Strangler</strong> (phased)</td>
 <td>P5</td>
 <td>10–14</td>
