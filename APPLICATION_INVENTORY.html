@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Inventory — CardDemo COBOL Estate</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            color: #24292e;
+            background: #fff;
+        }
+        h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; color: #0366d6; }
+        h2 { border-bottom: 1px solid #e1e4e8; padding-bottom: 8px; margin-top: 32px; }
+        h3 { color: #24292e; margin-top: 24px; }
+        h4 { color: #586069; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #d1d5da;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f8ff;
+            font-weight: 600;
+            color: #0366d6;
+        }
+        tr:nth-child(even) { background-color: #f6f8fa; }
+        tr:hover { background-color: #e1f0ff; }
+        code {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 85%;
+        }
+        pre {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            line-height: 1.45;
+        }
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 13px;
+        }
+        blockquote {
+            border-left: 4px solid #0366d6;
+            margin: 16px 0;
+            padding: 8px 16px;
+            color: #586069;
+            background-color: #f1f8ff;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #e1e4e8;
+            margin: 32px 0;
+        }
+        strong { color: #24292e; }
+        a { color: #0366d6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { margin-bottom: 40px; }
+    </style>
+</head>
+<body>
+<div class="container">
+<h1 id="application-inventory-carddemo-cobol-estate">Application Inventory — CardDemo COBOL Estate</h1>
+<blockquote>
+<p>Auto-generated analysis of the COBOL programs and JCL jobs in <code>uc-legacy-modernization-cobol-to-java</code>.</p>
+</blockquote>
+<hr />
+<h2 id="1-cobol-programs-main-application-appcbl">1. COBOL Programs — Main Application (<code>app/cbl/</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Filename</th>
+<th>Lines</th>
+<th>Classification</th>
+<th>Purpose</th>
+<th>Key I/O Operations</th>
+<th>Copybooks Referenced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>CBACT01C.cbl</td>
+<td>430</td>
+<td>Batch</td>
+<td>Read account VSAM file and write to fixed-length, array, and variable-length output files</td>
+<td>READ ACCTFILE (indexed); WRITE OUT-ACCT-REC, ARR-ARRAY-REC, VB records; CALL COBDATFT (date format)</td>
+<td>CVACT01Y, CODATECN</td>
+</tr>
+<tr>
+<td>2</td>
+<td>CBACT02C.cbl</td>
+<td>178</td>
+<td>Batch</td>
+<td>Read and print card data file</td>
+<td>READ CARDFILE (indexed); CALL CEE3ABD (abend)</td>
+<td>CVACT02Y</td>
+</tr>
+<tr>
+<td>3</td>
+<td>CBACT03C.cbl</td>
+<td>178</td>
+<td>Batch</td>
+<td>Read and print account cross-reference data file</td>
+<td>READ XREFFILE (indexed); CALL CEE3ABD</td>
+<td>CVACT03Y</td>
+</tr>
+<tr>
+<td>4</td>
+<td>CBACT04C.cbl</td>
+<td>652</td>
+<td>Batch</td>
+<td>Interest calculator — reads transaction category balances, cross-references, disclosure groups, and accounts; computes interest and fees; updates account file</td>
+<td>READ TCATBAL, XREF, DISCGRP, ACCOUNT, TRANFILE; WRITE TRANFILE; REWRITE ACCOUNT</td>
+<td>CVTRA01Y, CVACT03Y, CVTRA02Y, CVACT01Y, CVTRA05Y</td>
+</tr>
+<tr>
+<td>5</td>
+<td>CBCUS01C.cbl</td>
+<td>178</td>
+<td>Batch</td>
+<td>Read and print customer data file</td>
+<td>READ CUSTFILE (indexed); CALL CEE3ABD</td>
+<td>CVCUS01Y</td>
+</tr>
+<tr>
+<td>6</td>
+<td>CBEXPORT.cbl</td>
+<td>582</td>
+<td>Batch</td>
+<td>Export complete customer profiles from CardDemo files into a single sequential export file for branch migration</td>
+<td>READ CUSTOMER-INPUT, ACCOUNT-INPUT, XREF-INPUT, TRANSACTION-INPUT, CARD-INPUT; WRITE EXPORT-OUTPUT</td>
+<td>CVCUS01Y, CVACT01Y, CVACT03Y, CVTRA05Y, CVACT02Y, CVEXPORT</td>
+</tr>
+<tr>
+<td>7</td>
+<td>CBIMPORT.cbl</td>
+<td>487</td>
+<td>Batch</td>
+<td>Import records from export file back into individual VSAM files with validation</td>
+<td>READ EXPORT-INPUT; WRITE CUSTOMER-OUTPUT, ACCOUNT-OUTPUT, XREF-OUTPUT, TRANSACTION-OUTPUT, CARD-OUTPUT, ERROR-OUTPUT</td>
+<td>CVCUS01Y, CVACT01Y, CVACT03Y, CVTRA05Y, CVACT02Y, CVEXPORT</td>
+</tr>
+<tr>
+<td>8</td>
+<td>CBSTM03A.CBL</td>
+<td>924</td>
+<td>Batch</td>
+<td>Create customer account statements — reads cross-refs, customers, accounts, transactions; generates text and HTML statement files</td>
+<td>READ XREF, CUST, ACCT, TRNX files; WRITE STMT-FILE, HTML-FILE; CALL CBSTM03B (I/O submodule)</td>
+<td>COSTM01, CVACT03Y, CUSTREC, CVACT01Y</td>
+</tr>
+<tr>
+<td>9</td>
+<td>CBSTM03B.CBL</td>
+<td>230</td>
+<td>Batch (Module)</td>
+<td>I/O submodule called by CBSTM03A — handles file open/read/close for transaction, xref, customer, and account files</td>
+<td>READ/OPEN/CLOSE TRNX-FILE, XREF-FILE, CUST-FILE, ACCT-FILE</td>
+<td><em>(none — uses LINKAGE SECTION)</em></td>
+</tr>
+<tr>
+<td>10</td>
+<td>CBTRN01C.cbl</td>
+<td>494</td>
+<td>Batch</td>
+<td>Process daily transactions — reads daily transaction file, looks up cross-references, reads card and account data for validation</td>
+<td>READ DALYTRAN, XREF, CARD, ACCOUNT, CUSTOMER files; WRITE TRANFILE</td>
+<td>CVTRA06Y, CVCUS01Y, CVACT03Y, CVACT02Y, CVACT01Y, CVTRA05Y</td>
+</tr>
+<tr>
+<td>11</td>
+<td>CBTRN02C.cbl</td>
+<td>731</td>
+<td>Batch</td>
+<td>Post daily transactions — validates and posts transactions to master file; writes rejected records; updates transaction category balances and account balances</td>
+<td>READ DALYTRAN, XREF, ACCOUNT; WRITE TRANSACT, DALYREJS, TCATBAL; REWRITE ACCOUNT</td>
+<td>CVTRA06Y, CVTRA05Y, CVACT03Y, CVACT01Y, CVTRA01Y</td>
+</tr>
+<tr>
+<td>12</td>
+<td>CBTRN03C.cbl</td>
+<td>649</td>
+<td>Batch</td>
+<td>Transaction report generator — reads transaction master, looks up cross-refs/types/categories, generates formatted daily transaction report</td>
+<td>READ TRANSACT, CARDXREF, TRANTYPE, TRANCATG, DATE-PARMS; WRITE REPTFILE</td>
+<td>CVTRA05Y, CVACT03Y, CVTRA03Y, CVTRA04Y, CVTRA07Y</td>
+</tr>
+<tr>
+<td>13</td>
+<td>COBSWAIT.cbl</td>
+<td>41</td>
+<td>Batch (Utility)</td>
+<td>Wait/delay utility — calls assembler program MVSWAIT</td>
+<td>CALL MVSWAIT</td>
+<td><em>(none)</em></td>
+</tr>
+<tr>
+<td>14</td>
+<td>CSUTLDTC.cbl</td>
+<td>157</td>
+<td>Batch (Utility)</td>
+<td>Date utility — validates and converts dates using LE callable service CEEDAYS</td>
+<td>CALL CEEDAYS</td>
+<td><em>(none)</em></td>
+</tr>
+<tr>
+<td>15</td>
+<td>COACTUPC.cbl</td>
+<td>4,236</td>
+<td>Online (CICS)</td>
+<td>Account update screen — displays/edits account information with full field validation (date, SSN, phone, state, zip)</td>
+<td>EXEC CICS READ/WRITE/REWRITE ACCTDAT, CARDXREF, CUSTDAT; EXEC CICS SEND/RECEIVE MAP</td>
+<td>CSUTLDWY, CVCRD01Y, CSLKPCDY, DFHBMSCA, DFHAID, COTTL01Y, COACTUP, CSDAT01Y, CSMSG01Y, CSMSG02Y, CSUSR01Y, CVACT01Y, CVACT03Y, CVCUS01Y, COCOM01Y, CSSETATY (×3)</td>
+</tr>
+<tr>
+<td>16</td>
+<td>COACTVWC.cbl</td>
+<td>941</td>
+<td>Online (CICS)</td>
+<td>Account view screen — read-only display of account, card cross-ref, and customer data</td>
+<td>EXEC CICS READ CARDXREF, ACCTDAT, CUSTDAT; EXEC CICS SEND/RECEIVE MAP</td>
+<td>CVCRD01Y, COCOM01Y, DFHBMSCA, DFHAID, COTTL01Y, COACTVW, CSDAT01Y, CSMSG01Y, CSMSG02Y, CSUSR01Y, CVACT01Y, CVACT02Y, CVACT03Y, CVCUS01Y, CSSTRPFY</td>
+</tr>
+<tr>
+<td>17</td>
+<td>COADM01C.cbl</td>
+<td>288</td>
+<td>Online (CICS)</td>
+<td>Admin menu screen — presents administrative options (user CRUD, DB2 transaction type maintenance)</td>
+<td>EXEC CICS SEND/RECEIVE MAP; EXEC CICS XCTL to selected program</td>
+<td>COCOM01Y, COADM02Y, COADM01, COTTL01Y, CSDAT01Y, CSMSG01Y, CSUSR01Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>18</td>
+<td>COBIL00C.cbl</td>
+<td>572</td>
+<td>Online (CICS)</td>
+<td>Bill payment screen — processes bill payments against accounts with confirmation flow</td>
+<td>EXEC CICS READ/WRITE ACCTDAT, CXACAIX (card xref AIX), TRANSACT; EXEC CICS STARTBR/READPREV/ENDBR TRANSACT; EXEC CICS ASKTIME</td>
+<td>COCOM01Y, COBIL00, COTTL01Y, CSDAT01Y, CSMSG01Y, CVACT01Y, CVACT03Y, CVTRA05Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>19</td>
+<td>COCRDLIC.cbl</td>
+<td>1,459</td>
+<td>Online (CICS)</td>
+<td>Credit card list screen — paginated browse of credit cards with forward/backward navigation</td>
+<td>EXEC CICS READ/STARTBR/READNEXT/READPREV/ENDBR CARDDAT; EXEC CICS XCTL to detail/update programs</td>
+<td>CVCRD01Y, COCOM01Y, DFHBMSCA, DFHAID, COTTL01Y, COCRDLI, CSDAT01Y, CSMSG01Y, CSUSR01Y, CVACT02Y, CSSTRPFY</td>
+</tr>
+<tr>
+<td>20</td>
+<td>COCRDSLC.cbl</td>
+<td>887</td>
+<td>Online (CICS)</td>
+<td>Credit card view/search screen — display card details with account and customer lookup</td>
+<td>EXEC CICS READ CARDDAT, CARDXREF, ACCTDAT, CUSTDAT; EXEC CICS SEND/RECEIVE MAP</td>
+<td>CVCRD01Y, COCOM01Y, DFHBMSCA, DFHAID, COTTL01Y, COCRDSL, CSDAT01Y, CSMSG01Y, CSMSG02Y, CSUSR01Y, CVACT02Y, CVCUS01Y, CSSTRPFY</td>
+</tr>
+<tr>
+<td>21</td>
+<td>COCRDUPC.cbl</td>
+<td>1,560</td>
+<td>Online (CICS)</td>
+<td>Credit card update screen — edit card details (name, status, expiry) with validation and write-back</td>
+<td>EXEC CICS READ/REWRITE/WRITE CARDDAT; EXEC CICS SEND/RECEIVE MAP</td>
+<td>CVCRD01Y, COCOM01Y, DFHBMSCA, DFHAID, COTTL01Y, COCRDUP, CSDAT01Y, CSMSG01Y, CSMSG02Y, CSUSR01Y, CVACT02Y, CVCUS01Y, CSSTRPFY</td>
+</tr>
+<tr>
+<td>22</td>
+<td>COMEN01C.cbl</td>
+<td>308</td>
+<td>Online (CICS)</td>
+<td>Main menu screen — presents user-level navigation options (account, card, transaction, reports, bill pay)</td>
+<td>EXEC CICS SEND/RECEIVE MAP; EXEC CICS XCTL/INQUIRE to selected program</td>
+<td>COCOM01Y, COMEN02Y, COMEN01, COTTL01Y, CSDAT01Y, CSMSG01Y, CSUSR01Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>23</td>
+<td>CORPT00C.cbl</td>
+<td>649</td>
+<td>Online (CICS)</td>
+<td>Transaction report request screen — accepts date range parameters and submits batch report job via internal reader</td>
+<td>EXEC CICS WRITE to internal reader; EXEC CICS SEND/RECEIVE MAP</td>
+<td>COCOM01Y, CORPT00, COTTL01Y, CSDAT01Y, CSMSG01Y, CVTRA05Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>24</td>
+<td>COSGN00C.cbl</td>
+<td>260</td>
+<td>Online (CICS)</td>
+<td>Sign-on screen — authenticates users against USRSEC file; routes to admin or main menu based on user type</td>
+<td>EXEC CICS READ USRSEC; EXEC CICS XCTL to COADM01C or COMEN01C; EXEC CICS ASSIGN</td>
+<td>COCOM01Y, COSGN00, COTTL01Y, CSDAT01Y, CSMSG01Y, CSUSR01Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>25</td>
+<td>COTRN00C.cbl</td>
+<td>699</td>
+<td>Online (CICS)</td>
+<td>Transaction list screen — paginated browse of transaction master file</td>
+<td>EXEC CICS STARTBR/READNEXT/ENDBR TRANSACT; EXEC CICS XCTL; EXEC CICS SEND/RECEIVE MAP</td>
+<td>COCOM01Y, COTRN00, COTTL01Y, CSDAT01Y, CSMSG01Y, CVTRA05Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>26</td>
+<td>COTRN01C.cbl</td>
+<td>330</td>
+<td>Online (CICS)</td>
+<td>Transaction view screen — read-only display of a single transaction record</td>
+<td>EXEC CICS READ TRANSACT; EXEC CICS SEND/RECEIVE MAP</td>
+<td>COCOM01Y, COTRN01, COTTL01Y, CSDAT01Y, CSMSG01Y, CVTRA05Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>27</td>
+<td>COTRN02C.cbl</td>
+<td>783</td>
+<td>Online (CICS)</td>
+<td>Transaction add screen — add new transactions with account/card validation, confirmation flow</td>
+<td>EXEC CICS READ CXACAIX, CARDXREF, ACCTDAT; EXEC CICS WRITE TRANSACT; EXEC CICS SEND/RECEIVE MAP</td>
+<td>COCOM01Y, COTRN02, COTTL01Y, CSDAT01Y, CSMSG01Y, CVTRA05Y, CVACT01Y, CVACT03Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>28</td>
+<td>COUSR00C.cbl</td>
+<td>695</td>
+<td>Online (CICS)</td>
+<td>User list screen — paginated browse of USRSEC file for admin user management</td>
+<td>EXEC CICS STARTBR/READNEXT/ENDBR USRSEC; EXEC CICS XCTL; EXEC CICS SEND/RECEIVE MAP</td>
+<td>COCOM01Y, COUSR00, COTTL01Y, CSDAT01Y, CSMSG01Y, CSUSR01Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>29</td>
+<td>COUSR01C.cbl</td>
+<td>299</td>
+<td>Online (CICS)</td>
+<td>User add screen — creates new user security records in USRSEC file</td>
+<td>EXEC CICS WRITE USRSEC; EXEC CICS SEND/RECEIVE MAP</td>
+<td>COCOM01Y, COUSR01, COTTL01Y, CSDAT01Y, CSMSG01Y, CSUSR01Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>30</td>
+<td>COUSR02C.cbl</td>
+<td>414</td>
+<td>Online (CICS)</td>
+<td>User update screen — modifies existing user security records</td>
+<td>EXEC CICS READ/REWRITE USRSEC; EXEC CICS SEND/RECEIVE MAP</td>
+<td>COCOM01Y, COUSR02, COTTL01Y, CSDAT01Y, CSMSG01Y, CSUSR01Y, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>31</td>
+<td>COUSR03C.cbl</td>
+<td>359</td>
+<td>Online (CICS)</td>
+<td>User delete screen — deletes user security records with confirmation</td>
+<td>EXEC CICS READ/DELETE USRSEC; EXEC CICS SEND/RECEIVE MAP</td>
+<td>COCOM01Y, COUSR03, COTTL01Y, CSDAT01Y, CSMSG01Y, CSUSR01Y, DFHAID, DFHBMSCA</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-cobol-programs-authorization-sub-application-appapp-authorization-ims-db2-mqcbl">2. COBOL Programs — Authorization Sub-Application (<code>app/app-authorization-ims-db2-mq/cbl/</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Filename</th>
+<th>Lines</th>
+<th>Classification</th>
+<th>Purpose</th>
+<th>Key I/O Operations</th>
+<th>Copybooks Referenced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>CBPAUP0C.cbl</td>
+<td>386</td>
+<td>Batch (IMS)</td>
+<td>Delete expired pending authorization messages from IMS database</td>
+<td>EXEC DLI GN/GNP/DLET (IMS reads and deletes)</td>
+<td>CIPAUSMY, CIPAUDTY</td>
+</tr>
+<tr>
+<td>33</td>
+<td>COPAUA0C.cbl</td>
+<td>1,026</td>
+<td>Online (CICS/IMS/MQ)</td>
+<td>Card authorization decision program — receives auth request via MQ, validates card/account/customer via CICS files &amp; IMS, sends response via MQ</td>
+<td>CALL MQOPEN/MQGET/MQPUT1 (MQ); EXEC CICS READ CARDXREF, ACCTDAT, CUSTDAT; EXEC DLI GU/SCHD/TERM (IMS)</td>
+<td>CMQODV, CMQMDV, CMQV, CMQTML, CMQPMOV, CMQGMOV, CCPAURQY, CCPAURLY, CCPAUERY, CIPAUSMY, CIPAUDTY, CVACT03Y, CVACT01Y, CVCUS01Y</td>
+</tr>
+<tr>
+<td>34</td>
+<td>COPAUS0C.cbl</td>
+<td>1,032</td>
+<td>Online (CICS/IMS)</td>
+<td>Authorization summary view — paginated BMS display of pending authorization summaries from IMS database</td>
+<td>EXEC DLI GU/GNP/SCHD/TERM (IMS); EXEC CICS READ CARDXREF, ACCTDAT, CUSTDAT; EXEC CICS SEND/RECEIVE MAP; EXEC CICS SYNCPOINT</td>
+<td>COCOM01Y, COPAU00, COTTL01Y, CSDAT01Y, CSMSG01Y, CSMSG02Y, CVACT01Y, CVACT02Y, CVACT03Y, CVCUS01Y, CIPAUSMY, CIPAUDTY, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>35</td>
+<td>COPAUS1C.cbl</td>
+<td>604</td>
+<td>Online (CICS/IMS)</td>
+<td>Authorization detail view — single auth message detail display from IMS with ability to mark as reviewed</td>
+<td>EXEC DLI GU/GNP/REPL (IMS); EXEC CICS SEND/RECEIVE MAP; EXEC CICS LINK/SYNCPOINT</td>
+<td>COCOM01Y, COPAU01, COTTL01Y, CSDAT01Y, CSMSG01Y, CSMSG02Y, CIPAUSMY, CIPAUDTY, DFHAID, DFHBMSCA</td>
+</tr>
+<tr>
+<td>36</td>
+<td>COPAUS2C.cbl</td>
+<td>244</td>
+<td>Online (CICS/DB2)</td>
+<td>Mark authorization message as fraud — updates IMS auth detail via DB2 with fraud reporting date</td>
+<td>EXEC SQL (4 operations); EXEC CICS ASKTIME/FORMATTIME/RETURN</td>
+<td>CIPAUDTY</td>
+</tr>
+<tr>
+<td>37</td>
+<td>PAUDBLOD.CBL</td>
+<td>369</td>
+<td>Batch (IMS)</td>
+<td>IMS database loader — reads flat files and inserts root/child segments into IMS PAUT database</td>
+<td>READ INFILE1/INFILE2; CALL CBLTDLI (ISRT, GU)</td>
+<td>IMSFUNCS, CIPAUSMY, CIPAUDTY, PAUTBPCB</td>
+</tr>
+<tr>
+<td>38</td>
+<td>PAUDBUNL.CBL</td>
+<td>317</td>
+<td>Batch (IMS)</td>
+<td>IMS database unloader — reads IMS segments via GN/GNP and writes to flat output files</td>
+<td>CALL CBLTDLI (GN, GNP); WRITE OPFIL1-REC, OPFIL2-REC</td>
+<td>IMSFUNCS, CIPAUSMY, CIPAUDTY, PAUTBPCB</td>
+</tr>
+<tr>
+<td>39</td>
+<td>DBUNLDGS.CBL</td>
+<td>366</td>
+<td>Batch (IMS)</td>
+<td>GSAM-based IMS database unloader — similar to PAUDBUNL but uses GSAM for output</td>
+<td>CALL CBLTDLI (GN, GNP, ISRT); GSAM output</td>
+<td>IMSFUNCS, CIPAUSMY, CIPAUDTY, PAUTBPCB, PASFLPCB, PADFLPCB</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-cobol-programs-transaction-type-db2-sub-application-appapp-transaction-type-db2cbl">3. COBOL Programs — Transaction Type DB2 Sub-Application (<code>app/app-transaction-type-db2/cbl/</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Filename</th>
+<th>Lines</th>
+<th>Classification</th>
+<th>Purpose</th>
+<th>Key I/O Operations</th>
+<th>Copybooks Referenced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>40</td>
+<td>COBTUPDT.cbl</td>
+<td>237</td>
+<td>Batch (DB2)</td>
+<td>Batch update of transaction types from sequential input file to DB2 TRANSACTION_TYPE table</td>
+<td>READ TR-RECORD; EXEC SQL INSERT/UPDATE/DELETE on CARDDEMO.TRANSACTION_TYPE</td>
+<td>DCLTRTYP (SQL INCLUDE)</td>
+</tr>
+<tr>
+<td>41</td>
+<td>COTRTLIC.cbl</td>
+<td>2,098</td>
+<td>Online (CICS/DB2)</td>
+<td>Transaction type list screen — paginated DB2 cursor-based browse with inline update/delete capability</td>
+<td>EXEC SQL DECLARE/OPEN/FETCH/CLOSE cursors on TRANSACTION_TYPE; EXEC SQL DELETE; EXEC CICS SEND/RECEIVE MAP</td>
+<td>CVCRD01Y, COCOM01Y, DFHBMSCA, DFHAID, COTTL01Y, COTRTLI, CSDAT01Y, CSMSG01Y, CSUSR01Y, CVACT02Y, CSSTRPFY, CSDB2RWY, DCLTRTYP (SQL INCLUDE)</td>
+</tr>
+<tr>
+<td>42</td>
+<td>COTRTUPC.cbl</td>
+<td>1,702</td>
+<td>Online (CICS/DB2)</td>
+<td>Transaction type update screen — DB2-based CRUD for transaction type and category records with delete confirmation</td>
+<td>EXEC SQL SELECT/UPDATE/DELETE on TRANSACTION_TYPE, TRANSACTION_CATEGORY; EXEC CICS SEND/RECEIVE MAP</td>
+<td>CSUTLDWY, CVCRD01Y, DFHBMSCA, DFHAID, COTTL01Y, COTRTUP, CSDAT01Y, CSMSG01Y, CSMSG02Y, CSUSR01Y, COCOM01Y, CSSETATY, CSSTRPFY, DCLTRTYP, DCLTRCAT (SQL INCLUDE)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-cobol-programs-vsam-mq-sub-application-appapp-vsam-mqcbl">4. COBOL Programs — VSAM-MQ Sub-Application (<code>app/app-vsam-mq/cbl/</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Filename</th>
+<th>Lines</th>
+<th>Classification</th>
+<th>Purpose</th>
+<th>Key I/O Operations</th>
+<th>Copybooks Referenced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>43</td>
+<td>COACCT01.cbl</td>
+<td>620</td>
+<td>Online (CICS/MQ)</td>
+<td>Account inquiry via MQ — receives account inquiry request from MQ queue, reads account VSAM file, returns response via MQ</td>
+<td>EXEC CICS RETRIEVE; CALL MQOPEN/MQGET/MQPUT/MQCLOSE (MQ); EXEC CICS READ ACCTDAT</td>
+<td>CMQGMOV, CMQPMOV, CMQMDV, CMQODV, CMQV, CMQTML, CVACT01Y</td>
+</tr>
+<tr>
+<td>44</td>
+<td>CODATE01.cbl</td>
+<td>524</td>
+<td>Online (CICS/MQ)</td>
+<td>Date inquiry via MQ — receives date inquiry request from MQ, formats date/time using CICS ASKTIME/FORMATTIME, returns response via MQ</td>
+<td>EXEC CICS RETRIEVE/ASKTIME/FORMATTIME; CALL MQOPEN/MQGET/MQPUT/MQCLOSE (MQ)</td>
+<td>CMQGMOV, CMQPMOV, CMQMDV, CMQODV, CMQV, CMQTML</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-jcl-job-catalog-appjcl">5. JCL Job Catalog (<code>app/jcl/</code>)</h2>
+<h3 id="51-data-setup-vsam-definition-jobs">5.1 Data Setup / VSAM Definition Jobs</h3>
+<table>
+<thead>
+<tr>
+<th>Job Name</th>
+<th>Purpose</th>
+<th>Step Sequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACCTFILE.jcl</td>
+<td>Delete, define, and load Account VSAM KSDS</td>
+<td>STEP05: IDCAMS (DELETE) → STEP10: IDCAMS (DEFINE CLUSTER) → STEP15: IDCAMS (REPRO from PS)</td>
+</tr>
+<tr>
+<td>CARDFILE.jcl</td>
+<td>Delete, define, and load Card data VSAM KSDS + Alternate Indexes</td>
+<td>CLCIFIL: SDSF (close CICS file) → STEP05–STEP15: IDCAMS (DELETE/DEFINE/REPRO card data) → STEP40–STEP60: IDCAMS (define/build card AIX by account) → OPCIFIL: SDSF (open CICS file)</td>
+</tr>
+<tr>
+<td>CUSTFILE.jcl</td>
+<td>Delete, define, and load Customer VSAM KSDS</td>
+<td>CLCIFIL: SDSF → STEP05: IDCAMS (DELETE) → STEP10: IDCAMS (DEFINE) → STEP15: IDCAMS (REPRO) → OPCIFIL: SDSF</td>
+</tr>
+<tr>
+<td>XREFFILE.jcl</td>
+<td>Delete, define, and load Card Cross-Reference VSAM KSDS + AIX</td>
+<td>STEP05–STEP15: IDCAMS (DELETE/DEFINE/REPRO KSDS) → STEP20–STEP30: IDCAMS (define/build AIX by account)</td>
+</tr>
+<tr>
+<td>TRANFILE.jcl</td>
+<td>Delete, define, and load Transaction Master VSAM KSDS + AIX</td>
+<td>CLCIFIL: SDSF → STEP05–STEP15: IDCAMS (DELETE/DEFINE/REPRO) → STEP20–STEP30: IDCAMS (define/build AIX) → OPCIFIL: SDSF</td>
+</tr>
+<tr>
+<td>TRANIDX.jcl</td>
+<td>Define Alternate Indexes on Transaction Master</td>
+<td>STEP20–STEP30: IDCAMS (DEFINE AIX/PATH, BLDINDEX)</td>
+</tr>
+<tr>
+<td>TCATBALF.jcl</td>
+<td>Define Transaction Category Balance VSAM KSDS</td>
+<td>STEP05: IDCAMS (DELETE) → STEP10: IDCAMS (DEFINE) → STEP15: IDCAMS (REPRO)</td>
+</tr>
+<tr>
+<td>DISCGRP.jcl</td>
+<td>Define Disclosure Group VSAM KSDS</td>
+<td>STEP05: IDCAMS (DELETE) → STEP10: IDCAMS (DEFINE) → STEP15: IDCAMS (REPRO)</td>
+</tr>
+<tr>
+<td>TRANTYPE.jcl</td>
+<td>Define Transaction Type VSAM KSDS</td>
+<td>STEP05: IDCAMS (DELETE) → STEP10: IDCAMS (DEFINE) → STEP15: IDCAMS (REPRO)</td>
+</tr>
+<tr>
+<td>TRANCATG.jcl</td>
+<td>Define Transaction Category VSAM KSDS</td>
+<td>STEP05: IDCAMS (DELETE) → STEP10: IDCAMS (DEFINE) → STEP15: IDCAMS (REPRO)</td>
+</tr>
+<tr>
+<td>DEFCUST.jcl</td>
+<td>Define Customer Data flat file</td>
+<td>STEP05: IDCAMS (DELETE) → STEP05: IDCAMS (DEFINE)</td>
+</tr>
+<tr>
+<td>DALYREJS.jcl</td>
+<td>Define GDG base for daily rejects</td>
+<td>STEP05: IDCAMS (DEFINE GDG)</td>
+</tr>
+<tr>
+<td>DEFGDGB.jcl</td>
+<td>Define GDG bases for batch output files</td>
+<td>STEP05: IDCAMS (DEFINE GDG bases)</td>
+</tr>
+<tr>
+<td>DEFGDGD.jcl</td>
+<td>Define GDG bases for DB2-related datasets</td>
+<td>STEP10–STEP60: IDCAMS/IEBGENER (DEFINE GDG, MODEL DSCB, REPRO)</td>
+</tr>
+<tr>
+<td>REPTFILE.jcl</td>
+<td>Define GDG base for report files</td>
+<td>STEP05: IDCAMS (DEFINE GDG)</td>
+</tr>
+<tr>
+<td>DUSRSECJ.jcl</td>
+<td>Define User Security VSAM KSDS</td>
+<td>PREDEL: IEFBR14 → STEP01: IEBGENER (create flat) → STEP02: IDCAMS (DEFINE) → STEP03: IDCAMS (REPRO)</td>
+</tr>
+<tr>
+<td>ESDSRRDS.jcl</td>
+<td>Define ESDS and RRDS VSAM datasets</td>
+<td>PREDEL: IEFBR14 → STEP01: IEBGENER → STEP02–STEP05: IDCAMS (DEFINE/REPRO ESDS, RRDS)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-batch-processing-jobs">5.2 Batch Processing Jobs</h3>
+<table>
+<thead>
+<tr>
+<th>Job Name</th>
+<th>Purpose</th>
+<th>Step Sequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>READACCT.jcl</td>
+<td>Read and report on Account data</td>
+<td>PREDEL: IEFBR14 → STEP05: <strong>CBACT01C</strong></td>
+</tr>
+<tr>
+<td>READCARD.jcl</td>
+<td>Read and report on Card data</td>
+<td>STEP05: <strong>CBACT02C</strong></td>
+</tr>
+<tr>
+<td>READCUST.jcl</td>
+<td>Read and report on Customer data</td>
+<td>STEP05: <strong>CBCUS01C</strong></td>
+</tr>
+<tr>
+<td>READXREF.jcl</td>
+<td>Read and report on Cross-Reference data</td>
+<td>STEP05: <strong>CBACT03C</strong></td>
+</tr>
+<tr>
+<td>INTCALC.jcl</td>
+<td>Interest and fee calculation</td>
+<td>STEP15: <strong>CBACT04C</strong> (PARM='2022071800')</td>
+</tr>
+<tr>
+<td>POSTTRAN.jcl</td>
+<td>Post daily transactions to master</td>
+<td>STEP15: <strong>CBTRN02C</strong></td>
+</tr>
+<tr>
+<td>TRANREPT.jcl</td>
+<td>Generate daily transaction report</td>
+<td>STEP05R: REPROC (proc) → STEP05R: SORT → STEP10R: <strong>CBTRN03C</strong></td>
+</tr>
+<tr>
+<td>CREASTMT.JCL</td>
+<td>Create customer account statements</td>
+<td>DELDEF01: IDCAMS → STEP010: SORT → STEP020: IDCAMS → STEP030: IEFBR14 → STEP040: <strong>CBSTM03A</strong></td>
+</tr>
+<tr>
+<td>CBEXPORT.jcl</td>
+<td>Export CardDemo data for migration</td>
+<td>STEP01: IDCAMS (verify) → STEP02: <strong>CBEXPORT</strong></td>
+</tr>
+<tr>
+<td>CBIMPORT.jcl</td>
+<td>Import CardDemo data from export file</td>
+<td>STEP01: <strong>CBIMPORT</strong></td>
+</tr>
+<tr>
+<td>COMBTRAN.jcl</td>
+<td>Combine/merge transaction files</td>
+<td>STEP05R: SORT → STEP10: IDCAMS (REPRO)</td>
+</tr>
+<tr>
+<td>TRANBKP.jcl</td>
+<td>Backup and reset Transaction Master</td>
+<td>STEP05R: REPROC → STEP05: IDCAMS (REPRO backup) → STEP10: IDCAMS (DELETE master, cond)</td>
+</tr>
+<tr>
+<td>PRTCATBL.jcl</td>
+<td>Print Transaction Category Balance file</td>
+<td>DELDEF: IEFBR14 → STEP05R: REPROC → STEP10R: SORT</td>
+</tr>
+<tr>
+<td>WAITSTEP.jcl</td>
+<td>Wait/delay utility job</td>
+<td>WAIT: <strong>COBSWAIT</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="53-cics-utility-jobs">5.3 CICS / Utility Jobs</h3>
+<table>
+<thead>
+<tr>
+<th>Job Name</th>
+<th>Purpose</th>
+<th>Step Sequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OPENFIL.jcl</td>
+<td>Open CICS files via SDSF</td>
+<td>OPCIFIL: SDSF</td>
+</tr>
+<tr>
+<td>CLOSEFIL.jcl</td>
+<td>Close CICS files via SDSF</td>
+<td>CLCIFIL: SDSF</td>
+</tr>
+<tr>
+<td>CBADMCDJ.jcl</td>
+<td>Load CICS CSD definitions</td>
+<td>STEP1: DFHCSDUP</td>
+</tr>
+<tr>
+<td>INTRDRJ1.JCL</td>
+<td>Internal reader job — submit JCL for transaction report pipeline</td>
+<td>IDCAMS → STEP01: IEBGENER</td>
+</tr>
+<tr>
+<td>INTRDRJ2.JCL</td>
+<td>Internal reader job — submit JCL for transaction report pipeline</td>
+<td>IDCAMS</td>
+</tr>
+<tr>
+<td>FTPJCL.JCL</td>
+<td>FTP utility — transfer files</td>
+<td>STEP1: FTP</td>
+</tr>
+<tr>
+<td>TXT2PDF1.JCL</td>
+<td>Convert text report to PDF</td>
+<td><em>(PDF conversion utility)</em></td>
+</tr>
+</tbody>
+</table>
+<h3 id="54-sub-application-jcl">5.4 Sub-Application JCL</h3>
+<table>
+<thead>
+<tr>
+<th>Sub-App</th>
+<th>Job Name</th>
+<th>Purpose</th>
+<th>Step Sequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>auth-ims-db2-mq</td>
+<td>CBPAUP0J.jcl</td>
+<td>Run expired auth purge batch</td>
+<td><strong>CBPAUP0C</strong></td>
+</tr>
+<tr>
+<td>auth-ims-db2-mq</td>
+<td>DBPAUTP0.jcl</td>
+<td>IMS DB operations for auth data</td>
+<td>IMS utility</td>
+</tr>
+<tr>
+<td>auth-ims-db2-mq</td>
+<td>LOADPADB.JCL</td>
+<td>Load IMS pending auth database</td>
+<td><strong>PAUDBLOD</strong></td>
+</tr>
+<tr>
+<td>auth-ims-db2-mq</td>
+<td>UNLDPADB.JCL</td>
+<td>Unload IMS pending auth database</td>
+<td><strong>PAUDBUNL</strong></td>
+</tr>
+<tr>
+<td>auth-ims-db2-mq</td>
+<td>UNLDGSAM.JCL</td>
+<td>Unload IMS database via GSAM</td>
+<td><strong>DBUNLDGS</strong></td>
+</tr>
+<tr>
+<td>txn-type-db2</td>
+<td>CREADB21.jcl</td>
+<td>Create DB2 tables for transaction types</td>
+<td>DB2 DDL</td>
+</tr>
+<tr>
+<td>txn-type-db2</td>
+<td>TRANEXTR.jcl</td>
+<td>Extract transaction type data</td>
+<td>DB2 UNLOAD</td>
+</tr>
+<tr>
+<td>txn-type-db2</td>
+<td>MNTTRDB2.jcl</td>
+<td>Maintain transaction type DB2 data</td>
+<td><strong>COBTUPDT</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-summary-statistics">6. Summary Statistics</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total COBOL programs</td>
+<td>44</td>
+</tr>
+<tr>
+<td>Batch programs</td>
+<td>16</td>
+</tr>
+<tr>
+<td>Online (CICS) programs</td>
+<td>21</td>
+</tr>
+<tr>
+<td>IMS programs</td>
+<td>5</td>
+</tr>
+<tr>
+<td>MQ-integrated programs</td>
+<td>4</td>
+</tr>
+<tr>
+<td>DB2-integrated programs</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Utility programs</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Total lines of COBOL</td>
+<td>27,350</td>
+</tr>
+<tr>
+<td>Total JCL jobs (main)</td>
+<td>38</td>
+</tr>
+<tr>
+<td>Total JCL jobs (sub-apps)</td>
+<td>8</td>
+</tr>
+<tr>
+<td>BMS map sets</td>
+<td>20</td>
+</tr>
+<tr>
+<td>Copybooks (main)</td>
+<td>30</td>
+</tr>
+<tr>
+<td>Copybooks (sub-apps)</td>
+<td>17</td>
+</tr>
+</tbody>
+</table>
+</div>
+</body>
+</html>
