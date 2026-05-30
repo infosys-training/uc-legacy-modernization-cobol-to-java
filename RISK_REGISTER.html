@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Register — CardDemo Migration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            color: #24292e;
+            background: #fff;
+        }
+        h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; color: #0366d6; }
+        h2 { border-bottom: 1px solid #e1e4e8; padding-bottom: 8px; margin-top: 32px; color: #0366d6; }
+        h3 { margin-top: 24px; color: #24292e; }
+        h4 { margin-top: 16px; color: #586069; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #d1d5da;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f8ff;
+            font-weight: 600;
+            color: #0366d6;
+        }
+        tr:nth-child(even) { background-color: #f6f8fa; }
+        tr:hover { background-color: #e1f0ff; }
+        code {
+            background-color: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid #e1e4e8;
+            line-height: 1.45;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #0366d6;
+            margin: 16px 0;
+            padding: 8px 16px;
+            color: #586069;
+            background: #f1f8ff;
+        }
+        a { color: #0366d6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        hr { border: none; border-top: 1px solid #e1e4e8; margin: 24px 0; }
+        strong { color: #24292e; }
+        ul, ol { padding-left: 24px; }
+        li { margin: 4px 0; }
+    </style>
+</head>
+<body>
+<h1>Risk Register — CardDemo COBOL-to-Java Migration</h1>
+<blockquote>
+<p>Top 10 migration risks ranked by likelihood × impact, with mitigation strategies and early warning indicators.</p>
+</blockquote>
+<hr />
+<h2>1. Risk Scoring Framework</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Scale</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>1 (Rare) — 5 (Almost Certain)</td>
+<td>Probability of the risk materializing</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>1 (Negligible) — 5 (Critical)</td>
+<td>Consequence on timeline, quality, or operations if it occurs</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td>Likelihood × Impact</td>
+<td>1–25 scale; ≥15 = Critical, 10–14 = High, 5–9 = Medium, 1–4 = Low</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>2. Risk Register</h2>
+<h3>Risk 1: COACTUPC Validation Logic Parity Failure</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-001</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Functional Parity</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>4 (Likely)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>5 (Critical)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>20 — Critical</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>COACTUPC.cbl (4,236 LOC) contains 359 branching statements performing field-by-field validation (date formats, SSN patterns, phone area codes, US state codes, ZIP+4 formats). Subtle differences in validation logic between Java and COBOL could cause incorrect account updates, data corruption, or rejected valid inputs.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>COBOL's fixed-point arithmetic, implicit decimal handling (PIC S9(10)V99), and COPY REPLACING macro pattern (CSSETATY ×3) have no direct Java equivalents. Edge cases in date validation (leap years, century boundaries) may behave differently.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. Generate 10,000+ test cases from production data before rewriting. 2. Run COBOL and Java in parallel (shadow mode) for 2 weeks comparing outputs field-by-field. 3. Extract all 5 validators (date, SSN, phone, state, ZIP) as independent, heavily unit-tested Java classes before integrating. 4. Use BigDecimal (not double/float) for all monetary calculations.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Unit test coverage for validation classes drops below 95%. — Shadow mode comparison reveals &gt; 0 mismatches in first 1,000 records. — Team underestimates time for COACTUPC by &gt; 50%.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Lead Developer</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>Phase 3 (Core Business)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 2: VSAM-to-PostgreSQL Data Migration Data Loss</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-002</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Data Integrity</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>3 (Possible)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>5 (Critical)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>15 — Critical</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>5 core VSAM KSDS files (Account 300B, Customer 500B, Card 150B, XREF 50B, Transaction 350B) must be migrated to PostgreSQL. EBCDIC-to-UTF-8 encoding conversion, packed decimal (COMP-3) to numeric conversion, and FILLER field handling could introduce data loss or corruption.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>COBOL uses EBCDIC encoding, packed decimal (COMP-3), zoned decimal (PIC 9), and fixed-length records with FILLER padding. Misaligned byte boundaries or incorrect COMP-3 unpacking would corrupt numeric data silently.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. Build ETL pipeline with field-by-field validation (count, checksum, min/max/avg for numeric fields). 2. Run migration against <code>app/data/</code> test files first. 3. Implement record-count reconciliation (VSAM record count must equal PostgreSQL row count). 4. Maintain VSAM files as read-only backup for 30 days post-migration. 5. Use established EBCDIC libraries (jt400, mainframe-tools) rather than custom conversion.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Record count mismatch &gt; 0 after test migration. — Numeric field checksums differ between VSAM and PostgreSQL. — Special characters (accented names, ampersands) corrupted in UTF-8 conversion.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Data Migration Engineer</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>Phase 0 (Foundation) through Phase 5</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 3: Dual-Write Consistency During Transition</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-003</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Data Integrity</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>4 (Likely)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>4 (Major)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>16 — Critical</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>During Phases 2–4, some programs write to VSAM while others write to PostgreSQL. The VSAM-DB sync bridges must replicate changes in near-real-time. Sync failures, race conditions, or ordering issues could cause data divergence between the two stores.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>VSAM doesn't support native Change Data Capture (CDC). Sync must be implemented via file monitoring, log scraping, or periodic polling — all of which have latency and ordering limitations.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. Implement sync with guaranteed-delivery queue (SQS FIFO) between VSAM and PostgreSQL. 2. Add reconciliation job that runs hourly, comparing record counts and checksums. 3. Define a single source of truth for each entity (VSAM until cutover, then PostgreSQL). 4. If sync lag &gt; 10 seconds, alert and pause new writes until caught up. 5. Minimize dual-write duration — each phase should complete within planned weeks.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Sync lag exceeds 5 seconds for &gt; 1 minute. — Hourly reconciliation reports any count or checksum mismatch. — Batch jobs produce different results when reading VSAM vs. PostgreSQL.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Data Migration Engineer + Platform Lead</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>Phases 2–5</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 4: IMS Hierarchical-to-Relational Mapping Errors</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-004</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Data Architecture</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>3 (Possible)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>4 (Major)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>12 — High</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>The IMS database stores authorization data in a hierarchical structure (AUTH_SUMMARY parent → AUTH_DETAIL children) accessed via DL/I calls (GU, GN, GNP, DLET, REPL, ISRT). Mapping this to relational tables may lose navigational semantics (e.g., GNP "get next within parent" cursor behavior) or introduce performance regressions.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>IMS DL/I's segment-level locking, parent-child pointer chains, and position-dependent retrieval (GNP) don't have direct relational equivalents. JOIN-based queries may not replicate the exact traversal order.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. Map IMS hierarchy to 2 PostgreSQL tables with foreign key: <code>authorization_summary</code> (parent) and <code>authorization_detail</code> (child). 2. Implement GNP-equivalent as <code>SELECT ... WHERE summary_id = ? ORDER BY detail_seq ASC</code> with cursor. 3. Test with full IMS database unload (PAUDBUNL) → load into PostgreSQL → compare COPAUS0C browse output. 4. Keep IMS running in read-only mode for 2 weeks after migration for comparison.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Browse query returns records in different order than IMS GNP. — Parent-child integrity violations (orphaned detail records). — Query performance &gt; 2× IMS response time for same dataset.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Lead Developer</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>Phase 4 (Integration)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 5: MQ Message Format Incompatibility</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-005</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Integration</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>3 (Possible)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>4 (Major)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>12 — High</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>COPAUA0C uses IBM MQ with specific message descriptor formats (MQMD), object descriptors (MQOD), and get/put message options (MQGMO/MQPMO) defined in copybooks CMQMDV, CMQODV, CMQV, CMQGMOV, CMQPMOV. Replacing MQ with Amazon SQS requires message format translation that may lose metadata or change semantics.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>IBM MQ messages carry EBCDIC-encoded payloads with fixed-length COBOL record structures. SQS uses UTF-8 JSON/XML. Translation between formats must preserve every field. MQ features like message grouping, correlation IDs, and priority queues need SQS equivalents.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. Build a message translation layer that converts COBOL record format to JSON and back. 2. Map MQ correlation IDs to SQS message attributes. 3. Use SQS FIFO queues to preserve message ordering. 4. Run MQ and SQS in parallel with message comparison for 1 week before cutover. 5. Retain MQ connection for rollback during Phase 4.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Message translation produces different field values for test messages. — SQS message size exceeds 256KB limit (unlikely for auth messages but check). — Correlation ID mapping loses request-response pairing.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Integration Engineer</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>Phase 4 (Integration)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 6: Batch Processing Performance Regression</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-006</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Performance</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>3 (Possible)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>3 (Moderate)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>9 — Medium</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>The daily batch pipeline (POSTTRAN → INTCALC → CREASTMT → TRANREPT) has an established runtime SLA on the mainframe. Spring Batch jobs reading from PostgreSQL instead of VSAM may have different I/O characteristics. CBSTM03A's 115 WRITE operations (one per statement line) could bottleneck if not converted to batch writes.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>VSAM KSDS provides direct key-based access with minimal overhead. PostgreSQL queries involve network round-trips, connection pooling, and query planning overhead. Line-by-line writes in COBOL must be converted to buffered/batch writes in Java.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. Benchmark each Spring Batch job against COBOL baseline with production-sized dataset. 2. Use <code>JdbcBatchItemWriter</code> with batch size ≥ 1,000 (not single-row inserts). 3. Tune PostgreSQL: connection pool (HikariCP), indexes matching VSAM key structures, <code>work_mem</code> for sorts. 4. Convert CBSTM03A's 97 individual WRITEs to template-based bulk generation. 5. Set performance SLA: Java batch ≤ 110% of COBOL runtime.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Any single Spring Batch step takes &gt; 120% of COBOL equivalent for same data volume. — Database connection pool exhaustion during batch window. — Statement generation throughput &lt; 100 statements/second.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Performance Engineer</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>Phases 1 and 5</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 7: COBOL-Specific Numeric Precision Loss</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-007</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Functional Parity</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>4 (Likely)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>3 (Moderate)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>12 — High</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>COBOL uses fixed-point decimal arithmetic (PIC S9(10)V99) with exact precision for monetary calculations. Java's <code>double</code> and <code>float</code> types introduce floating-point rounding errors. Interest calculations (CBACT04C), balance updates, and transaction posting must match COBOL output to the cent.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>COBOL's COMPUTE with ON SIZE ERROR and ROUNDED clause provides deterministic decimal arithmetic. Java's IEEE 754 floating-point is non-deterministic for decimal fractions (e.g., 0.1 + 0.2 ≠ 0.3).</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. <strong>Mandatory: Use <code>java.math.BigDecimal</code> for ALL monetary fields.</strong> Never use <code>double</code> or <code>float</code>. 2. Set scale and rounding mode to match COBOL: <code>BigDecimal.setScale(2, RoundingMode.HALF_UP)</code>. 3. Map PIC S9(10)V99 to <code>BigDecimal</code> with precision 12, scale 2. 4. Create a <code>MoneyUtils</code> class that enforces rounding rules consistently. 5. Run 10,000 interest calculations comparing Java vs. COBOL output.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Any code review reveals <code>double</code> or <code>float</code> used for monetary values. — Interest calculation output differs by even $0.01 from COBOL baseline. — Accumulated rounding errors across batch of &gt; 10,000 transactions.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Lead Developer</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>All phases (especially Phase 3 and 5)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 8: BMS Screen Logic Extraction Failure</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-008</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Architecture</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>3 (Possible)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>3 (Moderate)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>9 — Medium</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>20 CICS programs embed BMS screen interaction (SEND MAP, RECEIVE MAP) directly in business logic. The CSSETATY copybook uses COPY REPLACING to generate screen attribute-setting code 3 times in COACTUPC alone. Extracting business logic from screen logic is a prerequisite for API-based architecture but is error-prone.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>COBOL's procedural structure doesn't separate UI from business logic. BMS attribute flags (DFHBMSCA) control field highlighting, protection, and cursor position — all embedded in EVALUATE/IF blocks alongside validation.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. For each CICS program, identify all paragraphs/sections that contain EXEC CICS SEND/RECEIVE and isolate them. 2. Create a "business logic core" that accepts/returns POJOs — no CICS references. 3. Map DFHBMSCA attributes to frontend CSS classes. 4. Use the existing BMS map definitions (<code>app/bms/</code>) as the source of truth for field layout. 5. Start with simpler screens (COUSR00C, 11 CICS stmts) before tackling COACTUPC (17 CICS stmts).</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Business logic extraction produces code with residual CICS references. — Extracted logic has different control flow than original (missing error paths). — Screen field count in React/Angular doesn't match BMS map field count.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Frontend + Backend Lead</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>Phases 1–4</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 9: COBOL Talent Availability During Transition</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-009</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>People &amp; Skills</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>3 (Possible)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>4 (Major)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>12 — High</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>During the 8–10 month migration, the COBOL system must remain operational. Bug fixes, production incidents, and data corrections require COBOL expertise. If the COBOL-skilled team members are fully allocated to the Java migration, production support suffers. Conversely, if too many stay on COBOL support, migration velocity drops.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>COBOL developer pool is shrinking globally. The team must maintain expertise in both COBOL and Java simultaneously during transition. Knowledge of CardDemo-specific business rules (validation logic, batch pipeline sequencing) is concentrated in a few people.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. Designate 1 COBOL SME for production support (not allocated to migration). 2. Document all business rules extracted from COBOL in the knowledge base before the SME's knowledge is needed. 3. Use the analysis artifacts (APPLICATION_INVENTORY, DATA_DICTIONARY, DEPENDENCY_MAP) as onboarding material. 4. Cross-train at least 2 Java developers on COBOL reading comprehension (not writing). 5. Establish runbooks for common production issues.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— Production incidents take &gt; 4 hours to diagnose. — COBOL SME is pulled into migration tasks &gt; 20% of their time. — Knowledge gaps found during Java development that require COBOL analysis.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Project Manager</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>All phases</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Risk 10: Rollback Failure During Phase 3 (Core Business)</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ID</strong></td>
+<td>R-010</td>
+</tr>
+<tr>
+<td><strong>Category</strong></td>
+<td>Operational</td>
+</tr>
+<tr>
+<td><strong>Likelihood</strong></td>
+<td>2 (Unlikely)</td>
+</tr>
+<tr>
+<td><strong>Impact</strong></td>
+<td>5 (Critical)</td>
+</tr>
+<tr>
+<td><strong>Risk Score</strong></td>
+<td><strong>10 — High</strong></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>Phase 3 migrates the ACCTFILE (most shared dataset, written by 5 programs across 4 contexts). If the Java account-service fails in production and rollback is needed, VSAM files may be out of sync with PostgreSQL due to the dual-write period. Restoring VSAM from backup could lose transactions written since the backup.</td>
+</tr>
+<tr>
+<td><strong>Root Cause</strong></td>
+<td>ACCTFILE is the most heavily coupled dataset in the estate. During dual-write, both VSAM and PostgreSQL receive writes. A rollback to VSAM-only operation must ensure no transactions are lost that were written only to PostgreSQL.</td>
+</tr>
+<tr>
+<td><strong>Mitigation Strategy</strong></td>
+<td>1. Take VSAM snapshots every 4 hours during Phase 3 (not just at phase start). 2. Implement reverse sync: PostgreSQL → VSAM for the rollback scenario. 3. Run a Phase 3 dress rehearsal in staging with simulated failure and rollback. 4. Define "point of no return" clearly: once 100% of traffic is on Java for &gt; 7 days, rollback path changes to "fix forward." 5. Keep VSAM files allocated (not deleted) for 30 days post-Phase 3 cutover.</td>
+</tr>
+<tr>
+<td><strong>Early Warning Indicators</strong></td>
+<td>— VSAM snapshot job fails or takes &gt; 30 minutes. — Reverse sync test shows data loss &gt; 0 records. — Phase 3 dress rehearsal rollback takes &gt; 30 minutes.</td>
+</tr>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Operations Lead</td>
+</tr>
+<tr>
+<td><strong>Phase</strong></td>
+<td>Phase 3 (Core Business)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>3. Risk Heat Map</h2>
+<pre><code>Impact
+  5 │ R-002(15)    R-001(20)     R-010(10)
+    │              
+  4 │ R-004(12)    R-003(16)     R-009(12)
+    │ R-005(12)
+  3 │ R-006(9)     R-007(12)     R-008(9)
+    │
+  2 │
+    │
+  1 │
+    └──────────────────────────────────────
+      1          2          3          4          5
+                      Likelihood
+</code></pre>
+<hr />
+<h2>4. Risk Summary Table</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>ID</th>
+<th>Risk</th>
+<th>Score</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Mitigation Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>R-001</td>
+<td>COACTUPC validation parity failure</td>
+<td><strong>20</strong></td>
+<td>Functional Parity</td>
+<td>P3</td>
+<td>Immediate — start test case generation in P0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>R-003</td>
+<td>Dual-write consistency</td>
+<td><strong>16</strong></td>
+<td>Data Integrity</td>
+<td>P2–5</td>
+<td>Immediate — design sync architecture in P0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>R-002</td>
+<td>VSAM-to-PostgreSQL data loss</td>
+<td><strong>15</strong></td>
+<td>Data Integrity</td>
+<td>P0–5</td>
+<td>Immediate — build ETL pipeline in P0</td>
+</tr>
+<tr>
+<td>4</td>
+<td>R-004</td>
+<td>IMS hierarchical mapping errors</td>
+<td><strong>12</strong></td>
+<td>Data Architecture</td>
+<td>P4</td>
+<td>High — prototype mapping in P0</td>
+</tr>
+<tr>
+<td>5</td>
+<td>R-005</td>
+<td>MQ message format incompatibility</td>
+<td><strong>12</strong></td>
+<td>Integration</td>
+<td>P4</td>
+<td>High — define message schema in P0</td>
+</tr>
+<tr>
+<td>6</td>
+<td>R-007</td>
+<td>Numeric precision loss (float vs BigDecimal)</td>
+<td><strong>12</strong></td>
+<td>Functional Parity</td>
+<td>All</td>
+<td>High — enforce BigDecimal standard in P0</td>
+</tr>
+<tr>
+<td>7</td>
+<td>R-009</td>
+<td>COBOL talent availability</td>
+<td><strong>12</strong></td>
+<td>People &amp; Skills</td>
+<td>All</td>
+<td>Medium — designate SME and cross-train in P0</td>
+</tr>
+<tr>
+<td>8</td>
+<td>R-010</td>
+<td>Rollback failure during Phase 3</td>
+<td><strong>10</strong></td>
+<td>Operational</td>
+<td>P3</td>
+<td>Medium — dress rehearsal in P2</td>
+</tr>
+<tr>
+<td>9</td>
+<td>R-006</td>
+<td>Batch performance regression</td>
+<td><strong>9</strong></td>
+<td>Performance</td>
+<td>P1, P5</td>
+<td>Medium — benchmark in P1 pilot</td>
+</tr>
+<tr>
+<td>10</td>
+<td>R-008</td>
+<td>BMS screen logic extraction</td>
+<td><strong>9</strong></td>
+<td>Architecture</td>
+<td>P1–4</td>
+<td>Medium — start with simple screens in P1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5. Risk Response Actions by Phase</h2>
+<h3>Phase 0 (Foundation)</h3>
+<ul>
+<li>[ ] Generate 10,000+ validation test cases for R-001</li>
+<li>[ ] Build VSAM → PostgreSQL ETL pipeline for R-002</li>
+<li>[ ] Design dual-write sync architecture for R-003</li>
+<li>[ ] Prototype IMS → relational mapping for R-004</li>
+<li>[ ] Define MQ → SQS message schema mapping for R-005</li>
+<li>[ ] Establish BigDecimal coding standard for R-007</li>
+<li>[ ] Designate COBOL SME and begin cross-training for R-009</li>
+</ul>
+<h3>Phase 1 (Quick Wins)</h3>
+<ul>
+<li>[ ] Validate BigDecimal usage in statement generation for R-007</li>
+<li>[ ] Benchmark CBSTM03A Spring Batch vs COBOL for R-006</li>
+<li>[ ] Extract COUSR00C screen logic as pilot for R-008</li>
+</ul>
+<h3>Phase 2 (Database Bridge)</h3>
+<ul>
+<li>[ ] Activate and test VSAM-DB sync bridges for R-003</li>
+<li>[ ] Run Phase 3 dress rehearsal (rollback test) for R-010</li>
+<li>[ ] Validate DB2 → PostgreSQL SQL translation for R-004</li>
+</ul>
+<h3>Phase 3 (Core Business) — <strong>Highest Risk Phase</strong></h3>
+<ul>
+<li>[ ] Shadow mode for COACTUPC: compare Java vs COBOL output for R-001</li>
+<li>[ ] 4-hourly VSAM snapshots for R-010</li>
+<li>[ ] Continuous reconciliation for R-003</li>
+<li>[ ] Production COBOL SME on standby for R-009</li>
+</ul>
+<h3>Phase 4 (Integration)</h3>
+<ul>
+<li>[ ] IMS data migration with full validation for R-004</li>
+<li>[ ] MQ-SQS parallel testing for R-005</li>
+<li>[ ] Monitor SQS throughput vs MQ baseline for R-006</li>
+</ul>
+<h3>Phase 5 (Batch Pipeline)</h3>
+<ul>
+<li>[ ] Full pipeline benchmark for R-006</li>
+<li>[ ] Final VSAM-DB sync bridge decommission for R-003</li>
+<li>[ ] Batch numeric output comparison for R-007</li>
+</ul>
+</body>
+</html>

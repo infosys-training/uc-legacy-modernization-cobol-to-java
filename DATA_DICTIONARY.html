@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Dictionary — CardDemo COBOL Estate</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            color: #24292e;
+            background: #fff;
+        }
+        h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; color: #0366d6; }
+        h2 { border-bottom: 1px solid #e1e4e8; padding-bottom: 8px; margin-top: 32px; }
+        h3 { color: #24292e; margin-top: 24px; }
+        h4 { color: #586069; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #d1d5da;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f8ff;
+            font-weight: 600;
+            color: #0366d6;
+        }
+        tr:nth-child(even) { background-color: #f6f8fa; }
+        tr:hover { background-color: #e1f0ff; }
+        code {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 85%;
+        }
+        pre {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            line-height: 1.45;
+        }
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 13px;
+        }
+        blockquote {
+            border-left: 4px solid #0366d6;
+            margin: 16px 0;
+            padding: 8px 16px;
+            color: #586069;
+            background-color: #f1f8ff;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #e1e4e8;
+            margin: 32px 0;
+        }
+        strong { color: #24292e; }
+        a { color: #0366d6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { margin-bottom: 40px; }
+    </style>
+</head>
+<body>
+<div class="container">
+<h1 id="data-dictionary-carddemo-cobol-estate">Data Dictionary — CardDemo COBOL Estate</h1>
+<blockquote>
+<p>Field-level catalog of every copybook in the CardDemo application, grouped by business entity.</p>
+</blockquote>
+<hr />
+<h2 id="1-account-entity">1. Account Entity</h2>
+<h3 id="cvact01ycpy-account-record-recln-300">CVACT01Y.cpy — Account Record (RECLN 300)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACCT-ID</td>
+<td>PIC 9(11)</td>
+<td>Numeric</td>
+<td>Unique account identifier (11-digit)</td>
+<td>Primary key; must be numeric</td>
+</tr>
+<tr>
+<td>ACCT-ACTIVE-STATUS</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Account active/inactive flag</td>
+<td>'Y' = active, 'N' = inactive</td>
+</tr>
+<tr>
+<td>ACCT-CURR-BAL</td>
+<td>PIC S9(10)V99</td>
+<td>Signed decimal</td>
+<td>Current account balance</td>
+<td>Signed; allows negative (overlimit)</td>
+</tr>
+<tr>
+<td>ACCT-CREDIT-LIMIT</td>
+<td>PIC S9(10)V99</td>
+<td>Signed decimal</td>
+<td>Maximum credit limit</td>
+<td>Must be positive; validated against balance</td>
+</tr>
+<tr>
+<td>ACCT-CASH-CREDIT-LIMIT</td>
+<td>PIC S9(10)V99</td>
+<td>Signed decimal</td>
+<td>Cash advance credit limit</td>
+<td>Subset of total credit limit</td>
+</tr>
+<tr>
+<td>ACCT-OPEN-DATE</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Account opening date</td>
+<td>CCYYMMDD or CCYY-MM-DD format; validated via CSUTLDPY</td>
+</tr>
+<tr>
+<td>ACCT-EXPIRAION-DATE</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Account expiration date</td>
+<td>CCYYMMDD format; must be &gt;= open date</td>
+</tr>
+<tr>
+<td>ACCT-REISSUE-DATE</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Date account was last reissued</td>
+<td>CCYYMMDD format</td>
+</tr>
+<tr>
+<td>ACCT-CURR-CYC-CREDIT</td>
+<td>PIC S9(10)V99</td>
+<td>Signed decimal</td>
+<td>Current cycle credit total</td>
+<td>Running total of credits in current billing cycle</td>
+</tr>
+<tr>
+<td>ACCT-CURR-CYC-DEBIT</td>
+<td>PIC S9(10)V99</td>
+<td>Signed decimal</td>
+<td>Current cycle debit total</td>
+<td>Running total of debits in current billing cycle</td>
+</tr>
+<tr>
+<td>ACCT-ADDR-ZIP</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Account holder ZIP code</td>
+<td>Validated against US ZIP+4 format</td>
+</tr>
+<tr>
+<td>ACCT-GROUP-ID</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Disclosure/interest rate group identifier</td>
+<td>Links to DIS-GROUP-RECORD</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(178)</td>
+<td>Filler</td>
+<td>Reserved space</td>
+<td>Pads record to 300 bytes</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-customer-entity">2. Customer Entity</h2>
+<h3 id="cvcus01ycpy-customer-record-recln-500">CVCUS01Y.cpy — Customer Record (RECLN 500)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CUST-ID</td>
+<td>PIC 9(09)</td>
+<td>Numeric</td>
+<td>Unique customer identifier (9-digit)</td>
+<td>Primary key; must be numeric</td>
+</tr>
+<tr>
+<td>CUST-FIRST-NAME</td>
+<td>PIC X(25)</td>
+<td>Alpha</td>
+<td>Customer first name</td>
+<td>Required; non-blank</td>
+</tr>
+<tr>
+<td>CUST-MIDDLE-NAME</td>
+<td>PIC X(25)</td>
+<td>Alpha</td>
+<td>Customer middle name</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td>CUST-LAST-NAME</td>
+<td>PIC X(25)</td>
+<td>Alpha</td>
+<td>Customer last name</td>
+<td>Required; non-blank</td>
+</tr>
+<tr>
+<td>CUST-ADDR-LINE-1</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Address line 1</td>
+<td>Required</td>
+</tr>
+<tr>
+<td>CUST-ADDR-LINE-2</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Address line 2</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td>CUST-ADDR-LINE-3</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Address line 3</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td>CUST-ADDR-STATE-CD</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>US state code</td>
+<td>Validated against 50 US state codes in CSLKPCDY</td>
+</tr>
+<tr>
+<td>CUST-ADDR-COUNTRY-CD</td>
+<td>PIC X(03)</td>
+<td>Alpha</td>
+<td>Country code</td>
+<td>3-char country identifier</td>
+</tr>
+<tr>
+<td>CUST-ADDR-ZIP</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>ZIP/postal code</td>
+<td>Validated against state-ZIP prefix table in CSLKPCDY</td>
+</tr>
+<tr>
+<td>CUST-PHONE-NUM-1</td>
+<td>PIC X(15)</td>
+<td>Alphanumeric</td>
+<td>Primary phone number</td>
+<td>Area code validated against NANPA list in CSLKPCDY</td>
+</tr>
+<tr>
+<td>CUST-PHONE-NUM-2</td>
+<td>PIC X(15)</td>
+<td>Alphanumeric</td>
+<td>Secondary phone number</td>
+<td>Same validation as primary</td>
+</tr>
+<tr>
+<td>CUST-SSN</td>
+<td>PIC 9(09)</td>
+<td>Numeric</td>
+<td>Social Security Number</td>
+<td>9-digit; validated format (XXX-XX-XXXX pattern)</td>
+</tr>
+<tr>
+<td>CUST-GOVT-ISSUED-ID</td>
+<td>PIC X(20)</td>
+<td>Alphanumeric</td>
+<td>Government-issued ID (driver license, etc.)</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td>CUST-DOB-YYYY-MM-DD</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Date of birth</td>
+<td>CCYY-MM-DD format; validated via CSUTLDPY date routines</td>
+</tr>
+<tr>
+<td>CUST-EFT-ACCOUNT-ID</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>EFT/bank account for payments</td>
+<td>Optional; used for bill pay</td>
+</tr>
+<tr>
+<td>CUST-PRI-CARD-HOLDER-IND</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Primary cardholder indicator</td>
+<td>'Y'/'N' flag</td>
+</tr>
+<tr>
+<td>CUST-FICO-CREDIT-SCORE</td>
+<td>PIC 9(03)</td>
+<td>Numeric</td>
+<td>FICO credit score</td>
+<td>Range 300–850</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(168)</td>
+<td>Filler</td>
+<td>Reserved space</td>
+<td>Pads record to 500 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="custreccpy-customer-record-alternate-layout-recln-500">CUSTREC.cpy — Customer Record (Alternate Layout, RECLN 500)</h3>
+<p>Identical field layout to CVCUS01Y.cpy but with different indentation. Used by CBSTM03A (statement generation). Field <code>CUST-DOB-YYYYMMDD</code> uses compact format (no hyphens).</p>
+<h3 id="csusr01ycpy-user-security-record-recln-80">CSUSR01Y.cpy — User Security Record (RECLN 80)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEC-USR-ID</td>
+<td>PIC X(08)</td>
+<td>Alpha</td>
+<td>User login ID</td>
+<td>Primary key; 8-char max</td>
+</tr>
+<tr>
+<td>SEC-USR-FNAME</td>
+<td>PIC X(20)</td>
+<td>Alpha</td>
+<td>User first name</td>
+<td>Display only</td>
+</tr>
+<tr>
+<td>SEC-USR-LNAME</td>
+<td>PIC X(20)</td>
+<td>Alpha</td>
+<td>User last name</td>
+<td>Display only</td>
+</tr>
+<tr>
+<td>SEC-USR-PWD</td>
+<td>PIC X(08)</td>
+<td>Alpha</td>
+<td>User password</td>
+<td>8-char; stored in plain text</td>
+</tr>
+<tr>
+<td>SEC-USR-TYPE</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>User type (admin/regular)</td>
+<td>'A' = admin, 'U' = regular user</td>
+</tr>
+<tr>
+<td>SEC-USR-FILLER</td>
+<td>PIC X(23)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pads record to 80 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="unused1ycpy-unused-data-record-recln-80">UNUSED1Y.cpy — Unused Data Record (RECLN 80)</h3>
+<p>Identical layout to CSUSR01Y.cpy with field names prefixed <code>UNUSED-</code>. Placeholder copybook, not actively referenced by any program.</p>
+<hr />
+<h2 id="3-card-entity">3. Card Entity</h2>
+<h3 id="cvact02ycpy-card-record-recln-150">CVACT02Y.cpy — Card Record (RECLN 150)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CARD-NUM</td>
+<td>PIC X(16)</td>
+<td>Alphanumeric</td>
+<td>Credit card number (16-digit)</td>
+<td>Primary key; Luhn check implied</td>
+</tr>
+<tr>
+<td>CARD-ACCT-ID</td>
+<td>PIC 9(11)</td>
+<td>Numeric</td>
+<td>Associated account ID</td>
+<td>Foreign key → ACCT-ID</td>
+</tr>
+<tr>
+<td>CARD-CVV-CD</td>
+<td>PIC 9(03)</td>
+<td>Numeric</td>
+<td>Card verification value</td>
+<td>3-digit CVV code</td>
+</tr>
+<tr>
+<td>CARD-EMBOSSED-NAME</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Name embossed on card</td>
+<td>Required for card updates</td>
+</tr>
+<tr>
+<td>CARD-EXPIRAION-DATE</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Card expiration date</td>
+<td>Month/year validated via EDIT-EXPIRY-MON/YEAR</td>
+</tr>
+<tr>
+<td>CARD-ACTIVE-STATUS</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Card active/inactive flag</td>
+<td>'Y' = active, 'N' = inactive</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(59)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pads record to 150 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cvact03ycpy-card-cross-reference-record-recln-50">CVACT03Y.cpy — Card Cross-Reference Record (RECLN 50)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>XREF-CARD-NUM</td>
+<td>PIC X(16)</td>
+<td>Alphanumeric</td>
+<td>Card number</td>
+<td>Primary key; links card to customer and account</td>
+</tr>
+<tr>
+<td>XREF-CUST-ID</td>
+<td>PIC 9(09)</td>
+<td>Numeric</td>
+<td>Customer ID</td>
+<td>Foreign key → CUST-ID</td>
+</tr>
+<tr>
+<td>XREF-ACCT-ID</td>
+<td>PIC 9(11)</td>
+<td>Numeric</td>
+<td>Account ID</td>
+<td>Foreign key → ACCT-ID</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(14)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pads record to 50 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cvcrd01ycpy-card-work-areas-screen-processing">CVCRD01Y.cpy — Card Work Areas (Screen Processing)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CCARD-AID</td>
+<td>PIC X(5)</td>
+<td>Alpha</td>
+<td>Current AID key pressed</td>
+<td>88-level: ENTER, CLEAR, PA1, PA2, PFK01–PFK12</td>
+</tr>
+<tr>
+<td>CCARD-NEXT-PROG</td>
+<td>PIC X(8)</td>
+<td>Alpha</td>
+<td>Next program to transfer to</td>
+<td>Used for XCTL navigation</td>
+</tr>
+<tr>
+<td>CCARD-NEXT-MAPSET</td>
+<td>PIC X(7)</td>
+<td>Alpha</td>
+<td>Next BMS mapset name</td>
+<td>Screen navigation</td>
+</tr>
+<tr>
+<td>CCARD-NEXT-MAP</td>
+<td>PIC X(7)</td>
+<td>Alpha</td>
+<td>Next BMS map name</td>
+<td>Screen navigation</td>
+</tr>
+<tr>
+<td>CCARD-ERROR-MSG</td>
+<td>PIC X(75)</td>
+<td>Alpha</td>
+<td>Error message for screen display</td>
+<td>Populated on validation failure</td>
+</tr>
+<tr>
+<td>CCARD-RETURN-MSG</td>
+<td>PIC X(75)</td>
+<td>Alpha</td>
+<td>Return/info message</td>
+<td>88: CCARD-RETURN-MSG-OFF = LOW-VALUES</td>
+</tr>
+<tr>
+<td>CC-ACCT-ID</td>
+<td>PIC X(11) / 9(11)</td>
+<td>Alphanumeric</td>
+<td>Account ID work field</td>
+<td>REDEFINES for numeric access</td>
+</tr>
+<tr>
+<td>CC-CARD-NUM</td>
+<td>PIC X(16) / 9(16)</td>
+<td>Alphanumeric</td>
+<td>Card number work field</td>
+<td>REDEFINES for numeric access</td>
+</tr>
+<tr>
+<td>CC-CUST-ID</td>
+<td>PIC X(09) / 9(9)</td>
+<td>Alphanumeric</td>
+<td>Customer ID work field</td>
+<td>REDEFINES for numeric access</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-transaction-entity">4. Transaction Entity</h2>
+<h3 id="cvtra05ycpy-transaction-record-recln-350">CVTRA05Y.cpy — Transaction Record (RECLN 350)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TRAN-ID</td>
+<td>PIC X(16)</td>
+<td>Alphanumeric</td>
+<td>Unique transaction identifier</td>
+<td>System-generated; primary key</td>
+</tr>
+<tr>
+<td>TRAN-TYPE-CD</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Transaction type code</td>
+<td>Foreign key → TRAN-TYPE; e.g. 'SA' (sale), 'CR' (credit)</td>
+</tr>
+<tr>
+<td>TRAN-CAT-CD</td>
+<td>PIC 9(04)</td>
+<td>Numeric</td>
+<td>Transaction category code</td>
+<td>Foreign key → TRAN-CAT-CD</td>
+</tr>
+<tr>
+<td>TRAN-SOURCE</td>
+<td>PIC X(10)</td>
+<td>Alpha</td>
+<td>Transaction source/channel</td>
+<td>E.g., 'POS', 'ONLINE', 'ATM'</td>
+</tr>
+<tr>
+<td>TRAN-DESC</td>
+<td>PIC X(100)</td>
+<td>Alpha</td>
+<td>Transaction description</td>
+<td>Free text</td>
+</tr>
+<tr>
+<td>TRAN-AMT</td>
+<td>PIC S9(09)V99</td>
+<td>Signed decimal</td>
+<td>Transaction amount</td>
+<td>Signed; positive = charge, negative = credit</td>
+</tr>
+<tr>
+<td>TRAN-MERCHANT-ID</td>
+<td>PIC 9(09)</td>
+<td>Numeric</td>
+<td>Merchant identifier</td>
+<td>Links to merchant master</td>
+</tr>
+<tr>
+<td>TRAN-MERCHANT-NAME</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Merchant name</td>
+<td>Display field</td>
+</tr>
+<tr>
+<td>TRAN-MERCHANT-CITY</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Merchant city</td>
+<td>Display field</td>
+</tr>
+<tr>
+<td>TRAN-MERCHANT-ZIP</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Merchant ZIP code</td>
+<td>Display field</td>
+</tr>
+<tr>
+<td>TRAN-CARD-NUM</td>
+<td>PIC X(16)</td>
+<td>Alphanumeric</td>
+<td>Card number used</td>
+<td>Foreign key → CARD-NUM</td>
+</tr>
+<tr>
+<td>TRAN-ORIG-TS</td>
+<td>PIC X(26)</td>
+<td>Alphanumeric</td>
+<td>Transaction origination timestamp</td>
+<td>ISO timestamp format</td>
+</tr>
+<tr>
+<td>TRAN-PROC-TS</td>
+<td>PIC X(26)</td>
+<td>Alphanumeric</td>
+<td>Transaction processing timestamp</td>
+<td>Set when posted to master</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(20)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pads record to 350 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cvtra06ycpy-daily-transaction-record-recln-350">CVTRA06Y.cpy — Daily Transaction Record (RECLN 350)</h3>
+<p>Identical layout to CVTRA05Y.cpy with <code>DALYTRAN-</code> prefix. Used for daily transaction input file processing. Same record length (350 bytes).</p>
+<h3 id="costm01cpy-transaction-record-for-statement-reporting">COSTM01.CPY — Transaction Record for Statement Reporting</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TRNX-KEY (group)</td>
+<td>—</td>
+<td>Group</td>
+<td>Composite key for statement sorting</td>
+<td></td>
+</tr>
+<tr>
+<td>TRNX-CARD-NUM</td>
+<td>PIC X(16)</td>
+<td>Alphanumeric</td>
+<td>Card number</td>
+<td>Part of key</td>
+</tr>
+<tr>
+<td>TRNX-ID</td>
+<td>PIC X(16)</td>
+<td>Alphanumeric</td>
+<td>Transaction ID</td>
+<td>Part of key</td>
+</tr>
+<tr>
+<td>TRNX-TYPE-CD</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Transaction type</td>
+<td>Same as TRAN-TYPE-CD</td>
+</tr>
+<tr>
+<td>TRNX-CAT-CD</td>
+<td>PIC 9(04)</td>
+<td>Numeric</td>
+<td>Transaction category</td>
+<td>Same as TRAN-CAT-CD</td>
+</tr>
+<tr>
+<td>TRNX-SOURCE</td>
+<td>PIC X(10)</td>
+<td>Alpha</td>
+<td>Transaction source</td>
+<td>Same as TRAN-SOURCE</td>
+</tr>
+<tr>
+<td>TRNX-DESC</td>
+<td>PIC X(100)</td>
+<td>Alpha</td>
+<td>Description</td>
+<td>Same as TRAN-DESC</td>
+</tr>
+<tr>
+<td>TRNX-AMT</td>
+<td>PIC S9(09)V99</td>
+<td>Signed decimal</td>
+<td>Amount</td>
+<td>Same as TRAN-AMT</td>
+</tr>
+<tr>
+<td>TRNX-MERCHANT-ID</td>
+<td>PIC 9(09)</td>
+<td>Numeric</td>
+<td>Merchant ID</td>
+<td>Same as TRAN-MERCHANT-ID</td>
+</tr>
+<tr>
+<td>TRNX-MERCHANT-NAME</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Merchant name</td>
+<td>Same as TRAN-MERCHANT-NAME</td>
+</tr>
+<tr>
+<td>TRNX-MERCHANT-CITY</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Merchant city</td>
+<td>Same as TRAN-MERCHANT-CITY</td>
+</tr>
+<tr>
+<td>TRNX-MERCHANT-ZIP</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Merchant ZIP</td>
+<td>Same as TRAN-MERCHANT-ZIP</td>
+</tr>
+<tr>
+<td>TRNX-ORIG-TS</td>
+<td>PIC X(26)</td>
+<td>Alphanumeric</td>
+<td>Origination timestamp</td>
+<td>Same as TRAN-ORIG-TS</td>
+</tr>
+<tr>
+<td>TRNX-PROC-TS</td>
+<td>PIC X(26)</td>
+<td>Alphanumeric</td>
+<td>Processing timestamp</td>
+<td>Same as TRAN-PROC-TS</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(20)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pad</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cvtra01ycpy-transaction-category-balance-record-recln-50">CVTRA01Y.cpy — Transaction Category Balance Record (RECLN 50)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TRAN-CAT-KEY (group)</td>
+<td>—</td>
+<td>Group</td>
+<td>Composite key (account + type + category)</td>
+<td></td>
+</tr>
+<tr>
+<td>TRANCAT-ACCT-ID</td>
+<td>PIC 9(11)</td>
+<td>Numeric</td>
+<td>Account identifier</td>
+<td>Foreign key → ACCT-ID</td>
+</tr>
+<tr>
+<td>TRANCAT-TYPE-CD</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Transaction type code</td>
+<td>Foreign key → TRAN-TYPE</td>
+</tr>
+<tr>
+<td>TRANCAT-CD</td>
+<td>PIC 9(04)</td>
+<td>Numeric</td>
+<td>Transaction category code</td>
+<td>Foreign key → TRAN-CAT-CD</td>
+</tr>
+<tr>
+<td>TRAN-CAT-BAL</td>
+<td>PIC S9(09)V99</td>
+<td>Signed decimal</td>
+<td>Running balance for this category</td>
+<td>Updated during transaction posting</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(22)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pads to 50 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cvtra02ycpy-disclosure-group-record-recln-50">CVTRA02Y.cpy — Disclosure Group Record (RECLN 50)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DIS-GROUP-KEY (group)</td>
+<td>—</td>
+<td>Group</td>
+<td>Composite key (group + type + category)</td>
+<td></td>
+</tr>
+<tr>
+<td>DIS-ACCT-GROUP-ID</td>
+<td>PIC X(10)</td>
+<td>Alphanumeric</td>
+<td>Account group identifier</td>
+<td>Links to ACCT-GROUP-ID</td>
+</tr>
+<tr>
+<td>DIS-TRAN-TYPE-CD</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Transaction type code</td>
+<td></td>
+</tr>
+<tr>
+<td>DIS-TRAN-CAT-CD</td>
+<td>PIC 9(04)</td>
+<td>Numeric</td>
+<td>Transaction category code</td>
+<td></td>
+</tr>
+<tr>
+<td>DIS-INT-RATE</td>
+<td>PIC S9(04)V99</td>
+<td>Signed decimal</td>
+<td>Interest rate for this group/type/category</td>
+<td>Percentage (e.g. 18.99)</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(28)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pads to 50 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cvtra03ycpy-transaction-type-record-recln-60">CVTRA03Y.cpy — Transaction Type Record (RECLN 60)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TRAN-TYPE</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Transaction type code</td>
+<td>Primary key; e.g. 'SA', 'CR', 'FE'</td>
+</tr>
+<tr>
+<td>TRAN-TYPE-DESC</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Type description</td>
+<td>Human-readable description</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(08)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pads to 60 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cvtra04ycpy-transaction-category-record-recln-60">CVTRA04Y.cpy — Transaction Category Record (RECLN 60)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TRAN-CAT-KEY (group)</td>
+<td>—</td>
+<td>Group</td>
+<td>Composite key (type + category)</td>
+<td></td>
+</tr>
+<tr>
+<td>TRAN-TYPE-CD</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Transaction type code</td>
+<td>Foreign key → TRAN-TYPE</td>
+</tr>
+<tr>
+<td>TRAN-CAT-CD</td>
+<td>PIC 9(04)</td>
+<td>Numeric</td>
+<td>Transaction category code</td>
+<td>Part of key</td>
+</tr>
+<tr>
+<td>TRAN-CAT-TYPE-DESC</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Category description</td>
+<td>Human-readable description</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(04)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td>Pads to 60 bytes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cvtra07ycpy-transaction-report-structures">CVTRA07Y.cpy — Transaction Report Structures</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REPT-SHORT-NAME</td>
+<td>PIC X(38)</td>
+<td>Alpha</td>
+<td>Report identifier ('DALYREPT')</td>
+<td>Constant</td>
+</tr>
+<tr>
+<td>REPT-LONG-NAME</td>
+<td>PIC X(41)</td>
+<td>Alpha</td>
+<td>Report title</td>
+<td>Constant</td>
+</tr>
+<tr>
+<td>REPT-START-DATE</td>
+<td>PIC X(10)</td>
+<td>Alpha</td>
+<td>Report start date</td>
+<td>User-supplied parameter</td>
+</tr>
+<tr>
+<td>REPT-END-DATE</td>
+<td>PIC X(10)</td>
+<td>Alpha</td>
+<td>Report end date</td>
+<td>User-supplied parameter</td>
+</tr>
+<tr>
+<td>TRAN-REPORT-TRANS-ID</td>
+<td>PIC X(16)</td>
+<td>Alpha</td>
+<td>Transaction ID in report</td>
+<td>Display field</td>
+</tr>
+<tr>
+<td>TRAN-REPORT-ACCOUNT-ID</td>
+<td>PIC X(11)</td>
+<td>Alpha</td>
+<td>Account ID in report</td>
+<td>Display field</td>
+</tr>
+<tr>
+<td>TRAN-REPORT-TYPE-CD</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Type code in report</td>
+<td>Display field</td>
+</tr>
+<tr>
+<td>TRAN-REPORT-TYPE-DESC</td>
+<td>PIC X(15)</td>
+<td>Alpha</td>
+<td>Type description</td>
+<td>Looked up from TRANTYPE</td>
+</tr>
+<tr>
+<td>TRAN-REPORT-CAT-CD</td>
+<td>PIC 9(04)</td>
+<td>Numeric</td>
+<td>Category code</td>
+<td>Display field</td>
+</tr>
+<tr>
+<td>TRAN-REPORT-CAT-DESC</td>
+<td>PIC X(29)</td>
+<td>Alpha</td>
+<td>Category description</td>
+<td>Looked up from TRANCATG</td>
+</tr>
+<tr>
+<td>TRAN-REPORT-SOURCE</td>
+<td>PIC X(10)</td>
+<td>Alpha</td>
+<td>Transaction source</td>
+<td>Display field</td>
+</tr>
+<tr>
+<td>TRAN-REPORT-AMT</td>
+<td>PIC -ZZZ,ZZZ,ZZZ.ZZ</td>
+<td>Edited numeric</td>
+<td>Formatted amount</td>
+<td>Report display</td>
+</tr>
+<tr>
+<td>REPT-PAGE-TOTAL</td>
+<td>PIC +ZZZ,ZZZ,ZZZ.ZZ</td>
+<td>Edited numeric</td>
+<td>Page subtotal</td>
+<td>Running total per page</td>
+</tr>
+<tr>
+<td>REPT-ACCOUNT-TOTAL</td>
+<td>PIC +ZZZ,ZZZ,ZZZ.ZZ</td>
+<td>Edited numeric</td>
+<td>Account subtotal</td>
+<td>Running total per account</td>
+</tr>
+<tr>
+<td>REPT-GRAND-TOTAL</td>
+<td>PIC +ZZZ,ZZZ,ZZZ.ZZ</td>
+<td>Edited numeric</td>
+<td>Grand total</td>
+<td>Sum of all transactions</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-exportimport-entity">5. Export/Import Entity</h2>
+<h3 id="cvexportcpy-multi-record-export-layout-recln-500">CVEXPORT.cpy — Multi-Record Export Layout (RECLN 500)</h3>
+<p><strong>Header fields</strong> (common to all record types):</p>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EXPORT-REC-TYPE</td>
+<td>PIC X(1)</td>
+<td>Alpha</td>
+<td>Record type indicator</td>
+<td>'C'=Customer, 'A'=Account, 'T'=Transaction, 'X'=Xref, 'D'=Card</td>
+</tr>
+<tr>
+<td>EXPORT-TIMESTAMP</td>
+<td>PIC X(26)</td>
+<td>Alphanumeric</td>
+<td>Export timestamp</td>
+<td>ISO format; REDEFINES to DATE + TIME</td>
+</tr>
+<tr>
+<td>EXPORT-SEQUENCE-NUM</td>
+<td>PIC 9(9) COMP</td>
+<td>Packed numeric</td>
+<td>Sequence number within export</td>
+<td>Auto-incremented</td>
+</tr>
+<tr>
+<td>EXPORT-BRANCH-ID</td>
+<td>PIC X(4)</td>
+<td>Alpha</td>
+<td>Branch identifier for migration</td>
+<td>Identifies source branch</td>
+</tr>
+<tr>
+<td>EXPORT-REGION-CODE</td>
+<td>PIC X(5)</td>
+<td>Alpha</td>
+<td>Region code</td>
+<td>Geographic region</td>
+</tr>
+<tr>
+<td>EXPORT-RECORD-DATA</td>
+<td>PIC X(460)</td>
+<td>Group/Redefines</td>
+<td>Payload area</td>
+<td>REDEFINES for each record type</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Payload variants</strong> (via REDEFINES on EXPORT-RECORD-DATA):
+- <strong>EXPORT-CUSTOMER-DATA</strong>: EXP-CUST-ID (COMP), name, address, phone, SSN, DOB, FICO (COMP-3)
+- <strong>EXPORT-ACCOUNT-DATA</strong>: EXP-ACCT-ID, status, balances (COMP-3/COMP), dates, ZIP, group
+- <strong>EXPORT-TRANSACTION-DATA</strong>: EXP-TRAN-ID, type, amount (COMP-3), merchant, timestamps
+- <strong>EXPORT-CARD-XREF-DATA</strong>: EXP-XREF-CARD-NUM, CUST-ID, ACCT-ID (COMP)
+- <strong>EXPORT-CARD-DATA</strong>: EXP-CARD-NUM, ACCT-ID (COMP), CVV (COMP), name, expiry, status</p>
+<hr />
+<h2 id="6-authorization-entity-sub-app-app-authorization-ims-db2-mq">6. Authorization Entity (Sub-App: <code>app-authorization-ims-db2-mq</code>)</h2>
+<h3 id="cipausmycpy-pending-authorization-summary-ims-root-segment">CIPAUSMY.cpy — Pending Authorization Summary (IMS Root Segment)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PA-ACCT-ID</td>
+<td>PIC S9(11) COMP-3</td>
+<td>Packed decimal</td>
+<td>Account identifier</td>
+<td>IMS root segment key</td>
+</tr>
+<tr>
+<td>PA-CUST-ID</td>
+<td>PIC 9(09)</td>
+<td>Numeric</td>
+<td>Customer ID</td>
+<td>Foreign key → CUST-ID</td>
+</tr>
+<tr>
+<td>PA-AUTH-STATUS</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Authorization status</td>
+<td>Active/inactive</td>
+</tr>
+<tr>
+<td>PA-ACCOUNT-STATUS</td>
+<td>PIC X(02) OCCURS 5</td>
+<td>Alpha array</td>
+<td>Account status codes (5 slots)</td>
+<td>Multi-value status</td>
+</tr>
+<tr>
+<td>PA-CREDIT-LIMIT</td>
+<td>PIC S9(09)V99 COMP-3</td>
+<td>Packed decimal</td>
+<td>Credit limit</td>
+<td>Same as account</td>
+</tr>
+<tr>
+<td>PA-CASH-LIMIT</td>
+<td>PIC S9(09)V99 COMP-3</td>
+<td>Packed decimal</td>
+<td>Cash advance limit</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-CREDIT-BALANCE</td>
+<td>PIC S9(09)V99 COMP-3</td>
+<td>Packed decimal</td>
+<td>Current credit balance</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-CASH-BALANCE</td>
+<td>PIC S9(09)V99 COMP-3</td>
+<td>Packed decimal</td>
+<td>Current cash balance</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-APPROVED-AUTH-CNT</td>
+<td>PIC S9(04) COMP</td>
+<td>Binary</td>
+<td>Count of approved authorizations</td>
+<td>Running counter</td>
+</tr>
+<tr>
+<td>PA-DECLINED-AUTH-CNT</td>
+<td>PIC S9(04) COMP</td>
+<td>Binary</td>
+<td>Count of declined authorizations</td>
+<td>Running counter</td>
+</tr>
+<tr>
+<td>PA-APPROVED-AUTH-AMT</td>
+<td>PIC S9(09)V99 COMP-3</td>
+<td>Packed decimal</td>
+<td>Total approved amount</td>
+<td>Running total</td>
+</tr>
+<tr>
+<td>PA-DECLINED-AUTH-AMT</td>
+<td>PIC S9(09)V99 COMP-3</td>
+<td>Packed decimal</td>
+<td>Total declined amount</td>
+<td>Running total</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(34)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="cipaudtycpy-pending-authorization-detail-ims-child-segment">CIPAUDTY.cpy — Pending Authorization Detail (IMS Child Segment)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PA-AUTH-DATE-9C</td>
+<td>PIC S9(05) COMP-3</td>
+<td>Packed decimal</td>
+<td>Authorization date (numeric)</td>
+<td>Part of segment key</td>
+</tr>
+<tr>
+<td>PA-AUTH-TIME-9C</td>
+<td>PIC S9(09) COMP-3</td>
+<td>Packed decimal</td>
+<td>Authorization time (numeric)</td>
+<td>Part of segment key</td>
+</tr>
+<tr>
+<td>PA-AUTH-ORIG-DATE</td>
+<td>PIC X(06)</td>
+<td>Alpha</td>
+<td>Original auth date (display)</td>
+<td>YYMMDD format</td>
+</tr>
+<tr>
+<td>PA-AUTH-ORIG-TIME</td>
+<td>PIC X(06)</td>
+<td>Alpha</td>
+<td>Original auth time (display)</td>
+<td>HHMMSS format</td>
+</tr>
+<tr>
+<td>PA-CARD-NUM</td>
+<td>PIC X(16)</td>
+<td>Alpha</td>
+<td>Card number</td>
+<td>Foreign key → CARD-NUM</td>
+</tr>
+<tr>
+<td>PA-AUTH-TYPE</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Authorization type</td>
+<td>E.g., 'SALE', 'CASH'</td>
+</tr>
+<tr>
+<td>PA-CARD-EXPIRY-DATE</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Card expiry (MMYY)</td>
+<td>Validated against card record</td>
+</tr>
+<tr>
+<td>PA-MESSAGE-TYPE</td>
+<td>PIC X(06)</td>
+<td>Alpha</td>
+<td>Message type code</td>
+<td>Protocol-specific</td>
+</tr>
+<tr>
+<td>PA-MESSAGE-SOURCE</td>
+<td>PIC X(06)</td>
+<td>Alpha</td>
+<td>Message source system</td>
+<td>Originating system</td>
+</tr>
+<tr>
+<td>PA-AUTH-ID-CODE</td>
+<td>PIC X(06)</td>
+<td>Alpha</td>
+<td>Authorization ID code</td>
+<td>Assigned on approval</td>
+</tr>
+<tr>
+<td>PA-AUTH-RESP-CODE</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Response code</td>
+<td>88: '00' = approved</td>
+</tr>
+<tr>
+<td>PA-AUTH-RESP-REASON</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Response reason code</td>
+<td>Detail code for decline</td>
+</tr>
+<tr>
+<td>PA-PROCESSING-CODE</td>
+<td>PIC 9(06)</td>
+<td>Numeric</td>
+<td>Processing code</td>
+<td>ISO 8583 processing code</td>
+</tr>
+<tr>
+<td>PA-TRANSACTION-AMT</td>
+<td>PIC S9(10)V99 COMP-3</td>
+<td>Packed decimal</td>
+<td>Requested transaction amount</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-APPROVED-AMT</td>
+<td>PIC S9(10)V99 COMP-3</td>
+<td>Packed decimal</td>
+<td>Approved amount</td>
+<td>May differ from requested</td>
+</tr>
+<tr>
+<td>PA-MERCHANT-CATAGORY-CODE</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Merchant category code (MCC)</td>
+<td>ISO 18245 MCC</td>
+</tr>
+<tr>
+<td>PA-ACQR-COUNTRY-CODE</td>
+<td>PIC X(03)</td>
+<td>Alpha</td>
+<td>Acquirer country code</td>
+<td>ISO 3166</td>
+</tr>
+<tr>
+<td>PA-POS-ENTRY-MODE</td>
+<td>PIC 9(02)</td>
+<td>Numeric</td>
+<td>POS entry mode</td>
+<td>Chip/swipe/manual</td>
+</tr>
+<tr>
+<td>PA-MERCHANT-ID</td>
+<td>PIC X(15)</td>
+<td>Alpha</td>
+<td>Merchant identifier</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-MERCHANT-NAME</td>
+<td>PIC X(22)</td>
+<td>Alpha</td>
+<td>Merchant name</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-MERCHANT-CITY</td>
+<td>PIC X(13)</td>
+<td>Alpha</td>
+<td>Merchant city</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-MERCHANT-STATE</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Merchant state</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-MERCHANT-ZIP</td>
+<td>PIC X(09)</td>
+<td>Alpha</td>
+<td>Merchant ZIP</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-TRANSACTION-ID</td>
+<td>PIC X(15)</td>
+<td>Alpha</td>
+<td>Transaction ID</td>
+<td>Unique per auth</td>
+</tr>
+<tr>
+<td>PA-MATCH-STATUS</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Auth/transaction match status</td>
+<td>88: 'P'=Pending, 'D'=Declined, 'E'=Expired, 'M'=Matched</td>
+</tr>
+<tr>
+<td>PA-AUTH-FRAUD</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Fraud indicator</td>
+<td>88: 'F'=Fraud confirmed, 'R'=Fraud removed</td>
+</tr>
+<tr>
+<td>PA-FRAUD-RPT-DATE</td>
+<td>PIC X(08)</td>
+<td>Alpha</td>
+<td>Fraud report date</td>
+<td>CCYYMMDD; set by COPAUS2C</td>
+</tr>
+<tr>
+<td>FILLER</td>
+<td>PIC X(17)</td>
+<td>Filler</td>
+<td>Reserved</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ccpaurqycpy-authorization-request-message-mq">CCPAURQY.cpy — Authorization Request Message (MQ)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PA-RQ-CARD-NUM</td>
+<td>PIC X(16)</td>
+<td>Alpha</td>
+<td>Card number</td>
+<td>Incoming auth request</td>
+</tr>
+<tr>
+<td>PA-RQ-CARD-EXPIRY-DATE</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Card expiry</td>
+<td>MMYY</td>
+</tr>
+<tr>
+<td>PA-RQ-AUTH-TYPE</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Authorization type</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-PROCESSING-CODE</td>
+<td>PIC 9(06)</td>
+<td>Numeric</td>
+<td>Processing code</td>
+<td>ISO 8583</td>
+</tr>
+<tr>
+<td>PA-RQ-TRANSACTION-AMT</td>
+<td>PIC +9(10).99</td>
+<td>Edited numeric</td>
+<td>Requested amount</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-MERCHANT-CATAGORY-CD</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>MCC code</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-ACQR-COUNTRY-CODE</td>
+<td>PIC X(03)</td>
+<td>Alpha</td>
+<td>Acquirer country</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-POS-ENTRY-MODE</td>
+<td>PIC 9(02)</td>
+<td>Numeric</td>
+<td>POS entry mode</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-MERCHANT-ID</td>
+<td>PIC X(15)</td>
+<td>Alpha</td>
+<td>Merchant ID</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-MERCHANT-NAME</td>
+<td>PIC X(22)</td>
+<td>Alpha</td>
+<td>Merchant name</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-MERCHANT-CITY</td>
+<td>PIC X(13)</td>
+<td>Alpha</td>
+<td>Merchant city</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-MERCHANT-STATE</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Merchant state</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-MERCHANT-ZIP</td>
+<td>PIC X(09)</td>
+<td>Alpha</td>
+<td>Merchant ZIP</td>
+<td></td>
+</tr>
+<tr>
+<td>PA-RQ-TRANSACTION-ID</td>
+<td>PIC X(15)</td>
+<td>Alpha</td>
+<td>Transaction ID</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ccpaurlycpy-authorization-response-message-mq">CCPAURLY.cpy — Authorization Response Message (MQ)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PA-RL-CARD-NUM</td>
+<td>PIC X(16)</td>
+<td>Alpha</td>
+<td>Card number</td>
+<td>Echo from request</td>
+</tr>
+<tr>
+<td>PA-RL-TRANSACTION-ID</td>
+<td>PIC X(15)</td>
+<td>Alpha</td>
+<td>Transaction ID</td>
+<td>Echo from request</td>
+</tr>
+<tr>
+<td>PA-RL-AUTH-ID-CODE</td>
+<td>PIC X(06)</td>
+<td>Alpha</td>
+<td>Authorization ID</td>
+<td>Assigned on approval</td>
+</tr>
+<tr>
+<td>PA-RL-AUTH-RESP-CODE</td>
+<td>PIC X(02)</td>
+<td>Alpha</td>
+<td>Response code</td>
+<td>'00' = approved</td>
+</tr>
+<tr>
+<td>PA-RL-AUTH-RESP-REASON</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Reason code</td>
+<td>Detail for decline</td>
+</tr>
+<tr>
+<td>PA-RL-APPROVED-AMT</td>
+<td>PIC +9(10).99</td>
+<td>Edited numeric</td>
+<td>Approved amount</td>
+<td>May differ from request</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ccpauerycpy-authorization-error-log-record">CCPAUERY.cpy — Authorization Error Log Record</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ERR-DATE</td>
+<td>PIC X(06)</td>
+<td>Alpha</td>
+<td>Error date</td>
+<td>YYMMDD</td>
+</tr>
+<tr>
+<td>ERR-TIME</td>
+<td>PIC X(06)</td>
+<td>Alpha</td>
+<td>Error time</td>
+<td>HHMMSS</td>
+</tr>
+<tr>
+<td>ERR-APPLICATION</td>
+<td>PIC X(08)</td>
+<td>Alpha</td>
+<td>Application name</td>
+<td>'CARDDEMO'</td>
+</tr>
+<tr>
+<td>ERR-PROGRAM</td>
+<td>PIC X(08)</td>
+<td>Alpha</td>
+<td>Program name</td>
+<td>Originating program</td>
+</tr>
+<tr>
+<td>ERR-LOCATION</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Code location</td>
+<td>Paragraph/section ID</td>
+</tr>
+<tr>
+<td>ERR-LEVEL</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Severity level</td>
+<td>88: 'L'=Log, 'I'=Info, 'W'=Warning, 'C'=Critical</td>
+</tr>
+<tr>
+<td>ERR-SUBSYSTEM</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Subsystem that failed</td>
+<td>88: 'A'=App, 'C'=CICS, 'I'=IMS, 'D'=DB2, 'M'=MQ, 'F'=File</td>
+</tr>
+<tr>
+<td>ERR-CODE-1</td>
+<td>PIC X(09)</td>
+<td>Alpha</td>
+<td>Primary error code</td>
+<td>System-specific (EIBRESP, SQLCODE, etc.)</td>
+</tr>
+<tr>
+<td>ERR-CODE-2</td>
+<td>PIC X(09)</td>
+<td>Alpha</td>
+<td>Secondary error code</td>
+<td>Additional detail</td>
+</tr>
+<tr>
+<td>ERR-MESSAGE</td>
+<td>PIC X(50)</td>
+<td>Alpha</td>
+<td>Error message text</td>
+<td>Human-readable</td>
+</tr>
+<tr>
+<td>ERR-EVENT-KEY</td>
+<td>PIC X(20)</td>
+<td>Alpha</td>
+<td>Key of record being processed</td>
+<td>For troubleshooting</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-ims-infrastructure-copybooks-sub-app-app-authorization-ims-db2-mq">7. IMS Infrastructure Copybooks (Sub-App: <code>app-authorization-ims-db2-mq</code>)</h2>
+<h3 id="imsfuncscpy-ims-dli-function-codes">IMSFUNCS.cpy — IMS DL/I Function Codes</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Value</th>
+<th>Business Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FUNC-GU</td>
+<td>PIC X(04)</td>
+<td>'GU  '</td>
+<td>Get Unique (direct read)</td>
+</tr>
+<tr>
+<td>FUNC-GHU</td>
+<td>PIC X(04)</td>
+<td>'GHU '</td>
+<td>Get Hold Unique (read for update)</td>
+</tr>
+<tr>
+<td>FUNC-GN</td>
+<td>PIC X(04)</td>
+<td>'GN  '</td>
+<td>Get Next (sequential read)</td>
+</tr>
+<tr>
+<td>FUNC-GHN</td>
+<td>PIC X(04)</td>
+<td>'GHN '</td>
+<td>Get Hold Next</td>
+</tr>
+<tr>
+<td>FUNC-GNP</td>
+<td>PIC X(04)</td>
+<td>'GNP '</td>
+<td>Get Next within Parent</td>
+</tr>
+<tr>
+<td>FUNC-GHNP</td>
+<td>PIC X(04)</td>
+<td>'GHNP'</td>
+<td>Get Hold Next within Parent</td>
+</tr>
+<tr>
+<td>FUNC-REPL</td>
+<td>PIC X(04)</td>
+<td>'REPL'</td>
+<td>Replace (update in place)</td>
+</tr>
+<tr>
+<td>FUNC-ISRT</td>
+<td>PIC X(04)</td>
+<td>'ISRT'</td>
+<td>Insert segment</td>
+</tr>
+<tr>
+<td>FUNC-DLET</td>
+<td>PIC X(04)</td>
+<td>'DLET'</td>
+<td>Delete segment</td>
+</tr>
+<tr>
+<td>PARMCOUNT</td>
+<td>PIC S9(05) COMP-5</td>
+<td>+4</td>
+<td>DL/I call parameter count</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pautbpcbcpy-pasflpcbcpy-padflpcbcpy-ims-pcb-masks">PAUTBPCB.CPY / PASFLPCB.CPY / PADFLPCB.CPY — IMS PCB Masks</h3>
+<p>Standard IMS PCB (Program Communication Block) layouts for PAUT, PASFL, and PADFL databases:</p>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Business Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>*-DBDNAME</td>
+<td>PIC X(08)</td>
+<td>Database name</td>
+</tr>
+<tr>
+<td>*-SEG-LEVEL</td>
+<td>PIC X(02)</td>
+<td>Segment level indicator</td>
+</tr>
+<tr>
+<td>*-PCB-STATUS</td>
+<td>PIC X(02)</td>
+<td>Status code from last DL/I call</td>
+</tr>
+<tr>
+<td>*-PCB-PROCOPT</td>
+<td>PIC X(04)</td>
+<td>Processing options</td>
+</tr>
+<tr>
+<td>*-SEG-NAME</td>
+<td>PIC X(08)</td>
+<td>Segment name from last call</td>
+</tr>
+<tr>
+<td>*-KEYFB-NAME</td>
+<td>PIC S9(05) COMP</td>
+<td>Key feedback length</td>
+</tr>
+<tr>
+<td>*-NUM-SENSEGS</td>
+<td>PIC S9(05) COMP</td>
+<td>Number of sensitive segments</td>
+</tr>
+<tr>
+<td>*-KEYFB</td>
+<td>PIC X(100–255)</td>
+<td>Key feedback area</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-db2-copybooks-sub-app-app-transaction-type-db2">8. DB2 Copybooks (Sub-App: <code>app-transaction-type-db2</code>)</h2>
+<h3 id="csdb2rpycpy-db2-common-procedures">CSDB2RPY.cpy — DB2 Common Procedures</h3>
+<p>Contains the <code>9998-PRIMING-QUERY</code> paragraph that validates DB2 connectivity with <code>SELECT 1 FROM SYSIBM.SYSDUMMY1</code>.</p>
+<h3 id="csdb2rwycpy-db2-working-storage">CSDB2RWY.cpy — DB2 Working Storage</h3>
+<p>Working storage variables for DB2 processing (SQLCODE display fields, return codes, etc.).</p>
+<hr />
+<h2 id="9-application-framework-copybooks">9. Application Framework Copybooks</h2>
+<h3 id="cocom01ycpy-communication-area-commarea">COCOM01Y.cpy — Communication Area (COMMAREA)</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+<th>Validation Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CDEMO-FROM-TRANID</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Source CICS transaction ID</td>
+<td>Navigation tracking</td>
+</tr>
+<tr>
+<td>CDEMO-FROM-PROGRAM</td>
+<td>PIC X(08)</td>
+<td>Alpha</td>
+<td>Source program name</td>
+<td>Navigation tracking</td>
+</tr>
+<tr>
+<td>CDEMO-TO-TRANID</td>
+<td>PIC X(04)</td>
+<td>Alpha</td>
+<td>Target CICS transaction ID</td>
+<td>Navigation tracking</td>
+</tr>
+<tr>
+<td>CDEMO-TO-PROGRAM</td>
+<td>PIC X(08)</td>
+<td>Alpha</td>
+<td>Target program name</td>
+<td>Navigation tracking</td>
+</tr>
+<tr>
+<td>CDEMO-USER-ID</td>
+<td>PIC X(08)</td>
+<td>Alpha</td>
+<td>Logged-in user ID</td>
+<td>Set at sign-on</td>
+</tr>
+<tr>
+<td>CDEMO-USER-TYPE</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>User type</td>
+<td>88: 'A'=Admin, 'U'=User</td>
+</tr>
+<tr>
+<td>CDEMO-PGM-CONTEXT</td>
+<td>PIC 9(01)</td>
+<td>Numeric</td>
+<td>Program re-entry context</td>
+<td>88: 0=Enter, 1=Reenter</td>
+</tr>
+<tr>
+<td>CDEMO-CUST-ID</td>
+<td>PIC 9(09)</td>
+<td>Numeric</td>
+<td>Current customer context</td>
+<td>Set during navigation</td>
+</tr>
+<tr>
+<td>CDEMO-CUST-FNAME</td>
+<td>PIC X(25)</td>
+<td>Alpha</td>
+<td>Customer first name</td>
+<td>Display cache</td>
+</tr>
+<tr>
+<td>CDEMO-CUST-MNAME</td>
+<td>PIC X(25)</td>
+<td>Alpha</td>
+<td>Customer middle name</td>
+<td>Display cache</td>
+</tr>
+<tr>
+<td>CDEMO-CUST-LNAME</td>
+<td>PIC X(25)</td>
+<td>Alpha</td>
+<td>Customer last name</td>
+<td>Display cache</td>
+</tr>
+<tr>
+<td>CDEMO-ACCT-ID</td>
+<td>PIC 9(11)</td>
+<td>Numeric</td>
+<td>Current account context</td>
+<td>Set during navigation</td>
+</tr>
+<tr>
+<td>CDEMO-ACCT-STATUS</td>
+<td>PIC X(01)</td>
+<td>Alpha</td>
+<td>Account status</td>
+<td>Cached from account record</td>
+</tr>
+<tr>
+<td>CDEMO-CARD-NUM</td>
+<td>PIC 9(16)</td>
+<td>Numeric</td>
+<td>Current card context</td>
+<td>Set during navigation</td>
+</tr>
+<tr>
+<td>CDEMO-LAST-MAP</td>
+<td>PIC X(7)</td>
+<td>Alpha</td>
+<td>Last BMS map displayed</td>
+<td>Navigation history</td>
+</tr>
+<tr>
+<td>CDEMO-LAST-MAPSET</td>
+<td>PIC X(7)</td>
+<td>Alpha</td>
+<td>Last BMS mapset used</td>
+<td>Navigation history</td>
+</tr>
+</tbody>
+</table>
+<h3 id="coadm02ycpy-admin-menu-options">COADM02Y.cpy — Admin Menu Options</h3>
+<p>Defines 6 admin menu options: User List, User Add, User Update, User Delete, Transaction Type List (DB2), Transaction Type Maintenance (DB2). Maps option numbers to program names (COUSR00C–COUSR03C, COTRTLIC, COTRTUPC).</p>
+<h3 id="comen02ycpy-main-menu-options">COMEN02Y.cpy — Main Menu Options</h3>
+<p>Defines 11 main menu options: Account View, Account Update, Credit Card List/View/Update, Transaction List/View/Add, Transaction Reports, Bill Payment, Pending Authorization View. Maps to program names with user-type access ('U' = all users).</p>
+<h3 id="cottl01ycpy-screen-title-constants">COTTL01Y.cpy — Screen Title Constants</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Value</th>
+<th>Business Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CCDA-TITLE01</td>
+<td>PIC X(40)</td>
+<td>'AWS Mainframe Modernization'</td>
+<td>Screen header line 1</td>
+</tr>
+<tr>
+<td>CCDA-TITLE02</td>
+<td>PIC X(40)</td>
+<td>'CardDemo'</td>
+<td>Screen header line 2</td>
+</tr>
+<tr>
+<td>CCDA-THANK-YOU</td>
+<td>PIC X(40)</td>
+<td>'Thank you for using CCDA...'</td>
+<td>Sign-off message</td>
+</tr>
+</tbody>
+</table>
+<h3 id="csdat01ycpy-datetime-working-storage">CSDAT01Y.cpy — Date/Time Working Storage</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WS-CURDATE (group)</td>
+<td>—</td>
+<td>Group</td>
+<td>Current date: YEAR(4)+MONTH(2)+DAY(2)</td>
+</tr>
+<tr>
+<td>WS-CURTIME (group)</td>
+<td>—</td>
+<td>Group</td>
+<td>Current time: HH+MM+SS+MS</td>
+</tr>
+<tr>
+<td>WS-CURDATE-MM-DD-YY</td>
+<td>—</td>
+<td>Group</td>
+<td>Formatted date: MM/DD/YY</td>
+</tr>
+<tr>
+<td>WS-CURTIME-HH-MM-SS</td>
+<td>—</td>
+<td>Group</td>
+<td>Formatted time: HH:MM:SS</td>
+</tr>
+<tr>
+<td>WS-TIMESTAMP</td>
+<td>—</td>
+<td>Group</td>
+<td>Full timestamp: YYYY-MM-DD HH:MM:SS.MMMMMM</td>
+</tr>
+</tbody>
+</table>
+<h3 id="csmsg01ycpy-csmsg02ycpy-message-working-storage">CSMSG01Y.cpy / CSMSG02Y.cpy — Message Working Storage</h3>
+<p>Standard message display areas and error message formatting fields used across all CICS programs.</p>
+<h3 id="cslkpcdycpy-lookup-code-repository">CSLKPCDY.cpy — Lookup Code Repository</h3>
+<p>Contains comprehensive validation tables:
+- <strong>North American phone area codes</strong>: 600+ valid NANPA area codes (88-level VALID-PHONE-AREA-CODE)
+- <strong>US state codes</strong>: All 50 states + territories
+- <strong>State-ZIP prefix mapping</strong>: First 2 digits of ZIP validated against state</p>
+<h3 id="cssetatycpy-screen-attribute-setting-copy-replacing">CSSETATY.cpy — Screen Attribute Setting (COPY REPLACING)</h3>
+<p>Template paragraph that sets BMS field color to red and marks with '*' when validation fails. Used with COPY REPLACING to generate field-specific validation display logic.</p>
+<h3 id="csstrpfycpy-pfkey-store-procedure">CSSTRPFY.cpy — PFKey Store Procedure</h3>
+<p>Maps CICS AID bytes (EIBAID) to application-level PFKey flags (CCARD-AID-ENTER, CCARD-AID-PFK01–PFK12). Handles PF1–PF24 with PF13–PF24 aliased to PF1–PF12.</p>
+<h3 id="csutldpycpy-date-validation-procedures-procedure-division">CSUTLDPY.cpy — Date Validation Procedures (Procedure Division)</h3>
+<p>Reusable date validation paragraphs:
+- <strong>EDIT-DATE-CCYYMMDD</strong>: Master date validator
+- <strong>EDIT-YEAR-CCYY</strong>: Year validation (1900–2099)
+- <strong>EDIT-MONTH</strong>: Month validation (1–12)
+- <strong>EDIT-DAY</strong>: Day validation (1–31)
+- <strong>EDIT-DAY-MONTH-YEAR</strong>: Cross-field validation (leap year, 30/31-day months)</p>
+<h3 id="csutldwycpy-date-validation-working-storage">CSUTLDWY.cpy — Date Validation Working Storage</h3>
+<p>Working storage fields used by CSUTLDPY date validation paragraphs.</p>
+<h3 id="codatecncpy-date-conversion-record">CODATECN.cpy — Date Conversion Record</h3>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>PIC Clause</th>
+<th>Data Type</th>
+<th>Business Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CODATECN-TYPE</td>
+<td>PIC X</td>
+<td>Alpha</td>
+<td>Input format: '1'=YYYYMMDD, '2'=YYYY-MM-DD</td>
+</tr>
+<tr>
+<td>CODATECN-INP-DATE</td>
+<td>PIC X(20)</td>
+<td>Alpha</td>
+<td>Input date string</td>
+</tr>
+<tr>
+<td>CODATECN-OUTTYPE</td>
+<td>PIC X</td>
+<td>Alpha</td>
+<td>Output format: '1'=YYYY-MM-DD, '2'=YYYYMMDD</td>
+</tr>
+<tr>
+<td>CODATECN-0UT-DATE</td>
+<td>PIC X(20)</td>
+<td>Alpha</td>
+<td>Output date string</td>
+</tr>
+<tr>
+<td>CODATECN-ERROR-MSG</td>
+<td>PIC X(38)</td>
+<td>Alpha</td>
+<td>Conversion error message</td>
+</tr>
+</tbody>
+</table>
+</div>
+</body>
+</html>
