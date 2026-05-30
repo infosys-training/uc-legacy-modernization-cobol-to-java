@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cutover Plan — CardDemo Migration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            color: #24292e;
+            background: #fff;
+        }
+        h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; color: #0366d6; }
+        h2 { border-bottom: 1px solid #e1e4e8; padding-bottom: 8px; margin-top: 32px; color: #0366d6; }
+        h3 { margin-top: 24px; color: #24292e; }
+        h4 { margin-top: 16px; color: #586069; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #d1d5da;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f8ff;
+            font-weight: 600;
+            color: #0366d6;
+        }
+        tr:nth-child(even) { background-color: #f6f8fa; }
+        tr:hover { background-color: #e1f0ff; }
+        code {
+            background-color: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid #e1e4e8;
+            line-height: 1.45;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #0366d6;
+            margin: 16px 0;
+            padding: 8px 16px;
+            color: #586069;
+            background: #f1f8ff;
+        }
+        a { color: #0366d6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        hr { border: none; border-top: 1px solid #e1e4e8; margin: 24px 0; }
+        strong { color: #24292e; }
+        ul, ol { padding-left: 24px; }
+        li { margin: 4px 0; }
+    </style>
+</head>
+<body>
+<h1>Cutover Plan — CardDemo COBOL-to-Java Migration</h1>
+<blockquote>
+<p>Phased migration sequence with program mapping, data store impacts, integration bridges, rollback plans, and acceptance criteria.</p>
+</blockquote>
+<hr />
+<h2>1. Migration Principles</h2>
+<ol>
+<li><strong>Never go dark</strong> — The production system must remain operational throughout migration. No big-bang cutover.</li>
+<li><strong>Prove before you switch</strong> — Each phase runs the Java service in shadow mode (parallel) before cutting over live traffic.</li>
+<li><strong>Rollback is mandatory</strong> — Every phase has a documented rollback procedure that restores the previous state within 30 minutes.</li>
+<li><strong>Data owns the timeline</strong> — Data migration complexity (not code complexity) determines phase sequencing.</li>
+<li><strong>Test parity first</strong> — No cutover until Java output matches COBOL output for the same input dataset.</li>
+</ol>
+<hr />
+<h2>2. Phase Overview</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Name</th>
+<th>Duration</th>
+<th>Programs Migrated</th>
+<th>Key Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Foundation</td>
+<td>3–4 weeks</td>
+<td>0 (infrastructure only)</td>
+<td>Schema design errors</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Quick Wins</td>
+<td>4–5 weeks</td>
+<td>7 (User Admin + Statement Gen)</td>
+<td>Security model change</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Database Bridge</td>
+<td>5–7 weeks</td>
+<td>6 (DB2 programs + Card Management)</td>
+<td>Dual-write consistency</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Core Business</td>
+<td>8–10 weeks</td>
+<td>9 (Account + Transaction Processing)</td>
+<td>ACCTFILE contention, validation parity</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Integration</td>
+<td>6–8 weeks</td>
+<td>8 (Authorization IMS/MQ)</td>
+<td>IMS data migration, MQ message format</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Batch Pipeline</td>
+<td>4–5 weeks</td>
+<td>6 (Remaining batch + Reporting)</td>
+<td>Batch output parity</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Decommission</td>
+<td>2–3 weeks</td>
+<td>8 (Utilities + Data Migration → Retire)</td>
+<td>Residual dependencies</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total estimated duration: 32–42 weeks (8–10 months)</strong></p>
+<hr />
+<h2>3. Phase 0 — Foundation (Weeks 1–4)</h2>
+<h3>Objective</h3>
+<p>Set up the target architecture, database schema, CI/CD pipeline, and shared libraries before migrating any program.</p>
+<h3>Programs Migrated</h3>
+<p>None — infrastructure only.</p>
+<h3>Deliverables</h3>
+<table>
+<thead>
+<tr>
+<th>Deliverable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PostgreSQL database</td>
+<td>Schema for all 15 target tables (see DOMAIN_DECOMPOSITION.md §8)</td>
+</tr>
+<tr>
+<td>Spring Boot parent POM</td>
+<td>Multi-module Maven/Gradle project with shared dependencies</td>
+</tr>
+<tr>
+<td><code>carddemo-validation</code> library</td>
+<td>Java port of CSLKPCDY (state codes, ZIP, phone) + CSUTLDPY (date validation)</td>
+</tr>
+<tr>
+<td><code>carddemo-commons</code> library</td>
+<td>Common DTOs, error handling, logging framework</td>
+</tr>
+<tr>
+<td>CI/CD pipeline</td>
+<td>GitHub Actions / Jenkins: build → test → deploy to staging</td>
+</tr>
+<tr>
+<td>Staging environment</td>
+<td>AWS ECS/EKS cluster + RDS PostgreSQL + SQS queues</td>
+</tr>
+<tr>
+<td>Data migration scripts</td>
+<td>VSAM → PostgreSQL ETL scripts (EBCDIC → UTF-8 conversion)</td>
+</tr>
+<tr>
+<td>Test harness</td>
+<td>Baseline output capture from COBOL programs (8 batch programs via GnuCOBOL)</td>
+</tr>
+</tbody>
+</table>
+<h3>Data Stores Affected</h3>
+<ul>
+<li><strong>Create:</strong> PostgreSQL database with all table DDL (empty tables)</li>
+<li><strong>No impact</strong> on production COBOL system</li>
+</ul>
+<h3>Integration Points</h3>
+<ul>
+<li>None — no bridges needed yet</li>
+</ul>
+<h3>Rollback Plan</h3>
+<ul>
+<li>Delete staging environment resources</li>
+<li>No production impact to roll back</li>
+</ul>
+<h3>Acceptance Criteria</h3>
+<ul>
+<li>[ ] All 15 PostgreSQL tables created with correct column types matching COBOL PIC clauses</li>
+<li>[ ] <code>carddemo-validation</code> library passes unit tests for all 50 US state codes, ZIP format, date validation</li>
+<li>[ ] CI/CD pipeline builds and deploys a hello-world Spring Boot app to staging</li>
+<li>[ ] EBCDIC-to-UTF-8 conversion tested against <code>app/data/</code> sample files with zero data loss</li>
+<li>[ ] Baseline output captured for CBSTM03A, CBACT01C, CBACT02C, CBACT03C, CBCUS01C, CBTRN01C/02C/03C</li>
+</ul>
+<hr />
+<h2>4. Phase 1 — Quick Wins (Weeks 5–9)</h2>
+<h3>Objective</h3>
+<p>Migrate the two most isolated functional areas to prove the migration approach and deliver early value.</p>
+<h3>Programs Migrated</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>LOC</th>
+<th>Target Service</th>
+<th>Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>COSGN00C.cbl</td>
+<td>529</td>
+<td>user-auth-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COUSR00C.cbl</td>
+<td>578</td>
+<td>user-auth-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COUSR01C.cbl</td>
+<td>498</td>
+<td>user-auth-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COUSR02C.cbl</td>
+<td>555</td>
+<td>user-auth-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COUSR03C.cbl</td>
+<td>490</td>
+<td>user-auth-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>CBSTM03A.CBL</td>
+<td>924</td>
+<td>reporting-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>CBSTM03B.CBL</td>
+<td>230</td>
+<td>reporting-service</td>
+<td>Rewrite</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: 3,804 LOC migrated (14% of estate)</strong></p>
+<h3>Data Stores Affected</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Target</th>
+<th>Migration Method</th>
+<th>Dual-Write?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>USRSEC (VSAM KSDS, 80B records)</td>
+<td><code>users</code> table (PostgreSQL)</td>
+<td>One-time ETL from EBCDIC flat file</td>
+<td>No — clean cutover (user data is small)</td>
+</tr>
+<tr>
+<td>Statement output files</td>
+<td><code>statements</code> table + S3 storage</td>
+<td>N/A — new output format</td>
+<td>No — batch job runs in one system only</td>
+</tr>
+</tbody>
+</table>
+<h3>Integration Points &amp; Temporary Bridges</h3>
+<table>
+<thead>
+<tr>
+<th>Bridge</th>
+<th>Purpose</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Auth Token Bridge</strong></td>
+<td>CICS programs check JWT validity via HTTP call to user-auth-service; Java services use JWT natively</td>
+<td>Until all CICS programs are migrated (Phases 2–4)</td>
+</tr>
+<tr>
+<td><strong>Menu Routing</strong></td>
+<td>New React/Angular frontend proxies to CICS for un-migrated screens; handles auth screens natively</td>
+<td>Until all online screens are migrated</td>
+</tr>
+</tbody>
+</table>
+<h3>Rollback Plan</h3>
+<ol>
+<li>Revert DNS/routing to point authentication back to CICS COSGN00C</li>
+<li>Restore USRSEC VSAM file from backup (taken before migration)</li>
+<li>Disable user-auth-service in load balancer</li>
+<li>Statement generation: revert JCL to execute CBSTM03A</li>
+<li><strong>Time to rollback: &lt; 15 minutes</strong></li>
+</ol>
+<h3>Acceptance Criteria</h3>
+<ul>
+<li>[ ] User login via Java service returns same access for all test accounts as CICS sign-on</li>
+<li>[ ] User CRUD operations (create, list, update, delete) produce identical results</li>
+<li>[ ] Passwords migrated with bcrypt hashing; old plain-text passwords no longer stored</li>
+<li>[ ] Statement generation output matches COBOL baseline character-by-character for 100 test accounts</li>
+<li>[ ] JWT tokens accepted by remaining CICS programs via auth bridge</li>
+<li>[ ] Performance: login latency &lt; 200ms (p99), statement generation throughput ≥ COBOL baseline</li>
+</ul>
+<hr />
+<h2>5. Phase 2 — Database Bridge (Weeks 10–16)</h2>
+<h3>Objective</h3>
+<p>Migrate programs already using DB2 (lowest friction database change) and the Card Management domain (establishing the reusable list/update pattern).</p>
+<h3>Programs Migrated</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>LOC</th>
+<th>Target Service</th>
+<th>Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>COTRTLIC.cbl</td>
+<td>2,098</td>
+<td>transaction-type-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COTRTUPC.cbl</td>
+<td>1,702</td>
+<td>transaction-type-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COBTUPDT.cbl</td>
+<td>~200</td>
+<td>transaction-type-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COCRDLIC.cbl</td>
+<td>1,459</td>
+<td>card-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COCRDSLC.cbl</td>
+<td>887</td>
+<td>card-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COCRDUPC.cbl</td>
+<td>1,560</td>
+<td>card-service</td>
+<td>Rewrite</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: 7,906 LOC migrated (cumulative: 11,710 LOC, 43% of estate)</strong></p>
+<h3>Data Stores Affected</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Target</th>
+<th>Migration Method</th>
+<th>Dual-Write?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DB2 TRANSACTION_TYPE</td>
+<td><code>transaction_types</code> (PostgreSQL)</td>
+<td>DB2 export → pg_restore</td>
+<td>No — clean cutover</td>
+</tr>
+<tr>
+<td>DB2 TRANSACTION_CATEGORY</td>
+<td><code>transaction_categories</code> (PostgreSQL)</td>
+<td>DB2 export → pg_restore</td>
+<td>No — clean cutover</td>
+</tr>
+<tr>
+<td>CARDFILE (VSAM KSDS)</td>
+<td><code>cards</code> (PostgreSQL)</td>
+<td>EBCDIC ETL</td>
+<td><strong>Yes — dual-write bridge</strong></td>
+</tr>
+<tr>
+<td>CARDXREF (VSAM KSDS)</td>
+<td><code>card_xref</code> (PostgreSQL)</td>
+<td>EBCDIC ETL</td>
+<td><strong>Yes — dual-write bridge</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>Integration Points &amp; Temporary Bridges</h3>
+<table>
+<thead>
+<tr>
+<th>Bridge</th>
+<th>Purpose</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>VSAM-DB Sync (Card)</strong></td>
+<td>Change Data Capture: writes to CARDFILE by remaining COBOL programs are replicated to <code>cards</code> table in near-real-time</td>
+<td>Until all card writers are migrated (already done in this phase for COCRDUPC; CBIMPORT in Phase 6)</td>
+</tr>
+<tr>
+<td><strong>Card API Gateway</strong></td>
+<td>CICS programs that READ CARDFILE continue as-is; new Java services read from <code>cards</code> table</td>
+<td>Until all card readers are migrated</td>
+</tr>
+<tr>
+<td><strong>DB2 → PostgreSQL</strong></td>
+<td>Transaction type lookups by CBTRN03C (still COBOL) redirected to PostgreSQL via ODBC bridge</td>
+<td>Until CBTRN03C migrates in Phase 5</td>
+</tr>
+</tbody>
+</table>
+<h3>Rollback Plan</h3>
+<ol>
+<li>Disable card-service and transaction-type-service in load balancer</li>
+<li>Restore CARDFILE and CARDXREF VSAM from backup</li>
+<li>Restore DB2 tables from backup</li>
+<li>Re-enable CICS programs for card management screens</li>
+<li>Stop VSAM-DB sync bridge</li>
+<li><strong>Time to rollback: &lt; 30 minutes</strong></li>
+</ol>
+<h3>Acceptance Criteria</h3>
+<ul>
+<li>[ ] Transaction type list pagination matches COTRTLIC output exactly (same ordering, same page size)</li>
+<li>[ ] Cascading delete in transaction-type-service matches COTRTUPC behavior (category records deleted with parent type)</li>
+<li>[ ] Card list pagination matches COCRDLIC STARTBR/READNEXT behavior (key-based cursor, same sort order)</li>
+<li>[ ] Card update matches COCRDUPC validation rules (expiry date check, status transitions)</li>
+<li>[ ] <code>AbstractListController</code> pattern validated and reusable (tested with both card list and tran-type list)</li>
+<li>[ ] VSAM-DB sync lag &lt; 5 seconds for card data</li>
+<li>[ ] All 16 SQL statements from COTRTLIC translated and producing identical result sets</li>
+</ul>
+<hr />
+<h2>6. Phase 3 — Core Business (Weeks 17–26)</h2>
+<h3>Objective</h3>
+<p>Migrate the highest-complexity domain (Account Management) and the core Transaction Processing programs. This is the highest-risk phase.</p>
+<h3>Programs Migrated</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>LOC</th>
+<th>Target Service</th>
+<th>Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>COACTUPC.cbl</td>
+<td>4,236</td>
+<td>account-service</td>
+<td>Rewrite + Strangler</td>
+</tr>
+<tr>
+<td>COACTVWC.cbl</td>
+<td>941</td>
+<td>account-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COACCT01.cbl</td>
+<td>320</td>
+<td>account-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COTRN00C.cbl</td>
+<td>806</td>
+<td>transaction-service</td>
+<td>Strangler</td>
+</tr>
+<tr>
+<td>COTRN01C.cbl</td>
+<td>530</td>
+<td>transaction-service</td>
+<td>Strangler</td>
+</tr>
+<tr>
+<td>COTRN02C.cbl</td>
+<td>710</td>
+<td>transaction-service</td>
+<td>Strangler</td>
+</tr>
+<tr>
+<td>COBIL00C.cbl</td>
+<td>672</td>
+<td>transaction-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COMEN01C.cbl</td>
+<td>488</td>
+<td>Frontend (React/Angular)</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>COADM01C.cbl</td>
+<td>288</td>
+<td>Frontend (React/Angular)</td>
+<td>Rewrite</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: 8,991 LOC migrated (cumulative: 20,701 LOC, 76% of estate)</strong></p>
+<h3>Data Stores Affected</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Target</th>
+<th>Migration Method</th>
+<th>Dual-Write?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACCTFILE (VSAM KSDS)</td>
+<td><code>accounts</code> (PostgreSQL)</td>
+<td>EBCDIC ETL</td>
+<td><strong>Yes — dual-write (most critical)</strong></td>
+</tr>
+<tr>
+<td>CUSTFILE (VSAM KSDS)</td>
+<td><code>customers</code> (PostgreSQL)</td>
+<td>EBCDIC ETL</td>
+<td><strong>Yes — dual-write</strong></td>
+</tr>
+<tr>
+<td>TRANSACT (VSAM KSDS)</td>
+<td><code>transactions</code> (PostgreSQL)</td>
+<td>EBCDIC ETL</td>
+<td><strong>Yes — dual-write</strong></td>
+</tr>
+<tr>
+<td>DALYTRAN (sequential)</td>
+<td><code>daily_transactions</code> (staging)</td>
+<td>File → DB loader</td>
+<td>Batch-only — no dual-write</td>
+</tr>
+<tr>
+<td>TCATBALF (VSAM KSDS)</td>
+<td><code>tran_category_balances</code></td>
+<td>EBCDIC ETL</td>
+<td>Batch-only</td>
+</tr>
+</tbody>
+</table>
+<h3>Integration Points &amp; Temporary Bridges</h3>
+<table>
+<thead>
+<tr>
+<th>Bridge</th>
+<th>Purpose</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>VSAM-DB Sync (Account)</strong></td>
+<td>Critical: ACCTFILE writes by remaining batch COBOL programs (CBACT04C, CBTRN02C) replicated to <code>accounts</code> table</td>
+<td>Until batch programs migrate in Phase 5</td>
+</tr>
+<tr>
+<td><strong>VSAM-DB Sync (Transaction)</strong></td>
+<td>TRANSACT writes by batch COBOL programs replicated to <code>transactions</code> table</td>
+<td>Until batch programs migrate in Phase 5</td>
+</tr>
+<tr>
+<td><strong>Account API Strangler</strong></td>
+<td>REST API wraps COACTUPC; new UI calls Java; COBOL serves as fallback for 2 weeks</td>
+<td>Disabled after validation</td>
+</tr>
+<tr>
+<td><strong>MQ Bridge (COACCT01)</strong></td>
+<td>Account inquiry MQ messages handled by account-service via SQS adapter</td>
+<td>Until authorization-service migrates in Phase 4</td>
+</tr>
+</tbody>
+</table>
+<h3>Rollback Plan</h3>
+<ol>
+<li>Route all traffic back to CICS programs via load balancer</li>
+<li>Restore ACCTFILE, CUSTFILE, TRANSACT VSAM files from backup taken at phase start</li>
+<li>Disable account-service and transaction-service</li>
+<li>Stop all VSAM-DB sync bridges</li>
+<li>Restore frontend to CICS BMS screens</li>
+<li><strong>Time to rollback: &lt; 30 minutes</strong> (VSAM restore is the bottleneck)</li>
+</ol>
+<h3>Acceptance Criteria</h3>
+<ul>
+<li>[ ] COACTUPC validation parity: all 5 field validators (date, SSN, phone, state, ZIP) produce identical accept/reject decisions for 10,000 test records</li>
+<li>[ ] Account update: same fields updated in same order with same error messages for 50 test scenarios</li>
+<li>[ ] Bill payment: COBIL00C balance deduction matches to the cent for 1,000 test transactions</li>
+<li>[ ] Transaction list pagination matches COTRN00C exactly</li>
+<li>[ ] ACCTFILE dual-write sync verified: 100% of COBOL-written records appear in PostgreSQL within 10 seconds</li>
+<li>[ ] Performance: account update &lt; 500ms (p99), transaction list &lt; 300ms (p99)</li>
+<li>[ ] Menu routing: all 11 COMEN01C targets accessible from new frontend; admin menu functional</li>
+<li>[ ] Shadow mode: Java and COBOL produce identical results for 1 week of production traffic</li>
+</ul>
+<hr />
+<h2>7. Phase 4 — Integration (Weeks 27–34)</h2>
+<h3>Objective</h3>
+<p>Migrate the most architecturally complex subsystem: Authorization Processing (IMS + MQ + CICS + DB2).</p>
+<h3>Programs Migrated</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>LOC</th>
+<th>Target Service</th>
+<th>Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>COPAUA0C.cbl</td>
+<td>1,026</td>
+<td>authorization-service</td>
+<td>Strangler</td>
+</tr>
+<tr>
+<td>COPAUS0C.cbl</td>
+<td>1,032</td>
+<td>authorization-service</td>
+<td>Strangler</td>
+</tr>
+<tr>
+<td>COPAUS1C.cbl</td>
+<td>512</td>
+<td>authorization-service</td>
+<td>Strangler</td>
+</tr>
+<tr>
+<td>COPAUS2C.cbl</td>
+<td>285</td>
+<td>authorization-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>CBPAUP0C.cbl</td>
+<td>350</td>
+<td>authorization-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>PAUDBLOD.CBL</td>
+<td>~210</td>
+<td>authorization-service (data tools)</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>PAUDBUNL.CBL</td>
+<td>~180</td>
+<td>authorization-service (data tools)</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>DBUNLDGS.CBL</td>
+<td>~195</td>
+<td>authorization-service (data tools)</td>
+<td>Rewrite</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: 3,790 LOC migrated (cumulative: 24,491 LOC, 90% of estate)</strong></p>
+<h3>Data Stores Affected</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Target</th>
+<th>Migration Method</th>
+<th>Dual-Write?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IMS AUTH database (hierarchical)</td>
+<td><code>authorization_summary</code>, <code>authorization_detail</code> (PostgreSQL)</td>
+<td>Custom IMS segment → relational ETL</td>
+<td>No — clean cutover (IMS is isolated)</td>
+</tr>
+<tr>
+<td>DB2 fraud flags</td>
+<td><code>fraud_flags</code> (PostgreSQL)</td>
+<td>DB2 export</td>
+<td>No — clean cutover</td>
+</tr>
+<tr>
+<td>MQ queues</td>
+<td>Amazon SQS queues</td>
+<td>Message format mapping</td>
+<td><strong>Yes — MQ-SQS bridge during transition</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>Integration Points &amp; Temporary Bridges</h3>
+<table>
+<thead>
+<tr>
+<th>Bridge</th>
+<th>Purpose</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MQ-SQS Bridge</strong></td>
+<td>Route MQ messages to SQS; authorization-service consumes from SQS; responses routed back to MQ for remaining consumers</td>
+<td>Until all MQ consumers are migrated (completed in this phase)</td>
+</tr>
+<tr>
+<td><strong>IMS Read Proxy</strong></td>
+<td>During early Phase 4, authorization-service reads from PostgreSQL while COBOL still reads from IMS</td>
+<td>2–3 weeks, until IMS is decommissioned</td>
+</tr>
+</tbody>
+</table>
+<h3>IMS-to-Relational Data Mapping</h3>
+<pre><code>IMS Hierarchy:                    PostgreSQL Tables:
+AUTH_SUMMARY (root segment)  →    authorization_summary (
+  ├── AUTH_DETAIL (child)            id, account_id, card_num,
+  └── AUTH_DETAIL              →     auth_date, auth_amount, status)
+                                  authorization_detail (
+                                     id, summary_id FK,
+                                     merchant, category, timestamp)
+</code></pre>
+<h3>Rollback Plan</h3>
+<ol>
+<li>Re-enable IMS database and COBOL programs</li>
+<li>Stop MQ-SQS bridge; restore MQ queue configuration</li>
+<li>Disable authorization-service</li>
+<li>IMS data is preserved (not deleted until Phase 6 decommission)</li>
+<li><strong>Time to rollback: &lt; 20 minutes</strong> (IMS is already running in parallel)</li>
+</ol>
+<h3>Acceptance Criteria</h3>
+<ul>
+<li>[ ] Authorization decision: COPAUA0C behavior replicated — same approve/deny decisions for 5,000 test authorization requests</li>
+<li>[ ] MQ message processing: request-response latency ≤ COBOL baseline</li>
+<li>[ ] IMS → PostgreSQL: all authorization records migrated with zero data loss (count match + checksum)</li>
+<li>[ ] Auth summary browse (COPAUS0C): pagination matches IMS GNP cursor behavior</li>
+<li>[ ] Auth detail update (COPAUS1C): same update semantics as IMS REPL</li>
+<li>[ ] Fraud marking (COPAUS2C): DB2 insert replicated identically in PostgreSQL</li>
+<li>[ ] Expired auth purge (CBPAUP0C): same records deleted for same date criteria</li>
+<li>[ ] SQS message throughput ≥ MQ throughput baseline</li>
+</ul>
+<hr />
+<h2>8. Phase 5 — Batch Pipeline (Weeks 35–39)</h2>
+<h3>Objective</h3>
+<p>Migrate remaining batch programs and complete the daily batch pipeline in Spring Batch. Retire VSAM-DB sync bridges.</p>
+<h3>Programs Migrated</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>LOC</th>
+<th>Target Service</th>
+<th>Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CBTRN01C.cbl</td>
+<td>494</td>
+<td>transaction-service (batch)</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>CBTRN02C.cbl</td>
+<td>731</td>
+<td>transaction-service (batch)</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>CBTRN03C.cbl</td>
+<td>649</td>
+<td>reporting-service (batch)</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>CBACT04C.cbl</td>
+<td>652</td>
+<td>transaction-service (batch)</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>CORPT00C.cbl</td>
+<td>407</td>
+<td>reporting-service</td>
+<td>Rewrite</td>
+</tr>
+<tr>
+<td>CODATE01.cbl</td>
+<td>280</td>
+<td>utility (date service)</td>
+<td>Rewrite</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: 3,213 LOC migrated (cumulative: 27,704 LOC, ~100% of business logic)</strong></p>
+<h3>Data Stores Affected</h3>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Retire VSAM-DB sync bridges</strong></td>
+<td>All programs now read/write PostgreSQL directly</td>
+</tr>
+<tr>
+<td><strong>Retire DALYTRAN flat file</strong></td>
+<td>Daily transactions loaded via REST API or database staging table</td>
+</tr>
+<tr>
+<td><strong>Replace GDG versioning</strong></td>
+<td>Database-based versioning with timestamped records</td>
+</tr>
+</tbody>
+</table>
+<h3>Daily Batch Pipeline — Before &amp; After</h3>
+<pre><code>BEFORE (JCL + COBOL):                     AFTER (Spring Batch + Step Functions):
+POSTTRAN.jcl → CBTRN02C                   PostTransactionStep
+     ↓                                         ↓
+INTCALC.jcl → CBACT04C                    InterestCalculationStep
+     ↓                                         ↓
+CREASTMT.JCL → CBSTM03A                   StatementGenerationStep (Phase 1)
+     ↓                                         ↓
+TRANREPT.jcl → CBTRN03C                   TransactionReportStep
+     ↓                                         ↓
+Control-M orchestration                    AWS Step Functions orchestration
+</code></pre>
+<h3>Integration Points &amp; Temporary Bridges</h3>
+<table>
+<thead>
+<tr>
+<th>Bridge</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VSAM-DB Sync (Account)</td>
+<td><strong>DECOMMISSION</strong> — CBACT04C and CBTRN02C now write to PostgreSQL directly</td>
+</tr>
+<tr>
+<td>VSAM-DB Sync (Transaction)</td>
+<td><strong>DECOMMISSION</strong> — all transaction writers now use PostgreSQL</td>
+</tr>
+<tr>
+<td>VSAM-DB Sync (Card)</td>
+<td><strong>DECOMMISSION</strong> — CBIMPORT (last card writer) migrates in Phase 6</td>
+</tr>
+<tr>
+<td>JCL Internal Reader (INTRDRJ1/J2)</td>
+<td><strong>DECOMMISSION</strong> — CORPT00C now triggers batch via REST API</td>
+</tr>
+</tbody>
+</table>
+<h3>Rollback Plan</h3>
+<ol>
+<li>Re-enable JCL batch pipeline with restored VSAM files</li>
+<li>Re-activate VSAM-DB sync bridges</li>
+<li>Disable Spring Batch jobs in Step Functions</li>
+<li><strong>Time to rollback: &lt; 30 minutes</strong></li>
+</ol>
+<h3>Acceptance Criteria</h3>
+<ul>
+<li>[ ] Daily batch pipeline end-to-end: input 10,000 daily transactions → same output as COBOL pipeline</li>
+<li>[ ] CBTRN02C parity: same transactions posted, same rejects generated, same balances updated (to the cent)</li>
+<li>[ ] CBACT04C parity: interest calculations match COBOL output for all rate tiers and proration scenarios</li>
+<li>[ ] CBTRN03C parity: report output character-by-character match for same input dataset</li>
+<li>[ ] Batch pipeline completes within SLA (≤ COBOL runtime + 10% margin)</li>
+<li>[ ] All VSAM-DB sync bridges successfully decommissioned</li>
+<li>[ ] Step Functions orchestration correctly handles step failures and retries</li>
+</ul>
+<hr />
+<h2>9. Phase 6 — Decommission (Weeks 40–42)</h2>
+<h3>Objective</h3>
+<p>Retire remaining utility programs, decommission VSAM files, shut down mainframe components, and archive COBOL source.</p>
+<h3>Programs Retired</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>LOC</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CBACT01C.cbl</td>
+<td>430</td>
+<td>Retire — replaced by SQL queries</td>
+</tr>
+<tr>
+<td>CBACT02C.cbl</td>
+<td>178</td>
+<td>Retire — replaced by SQL queries</td>
+</tr>
+<tr>
+<td>CBACT03C.cbl</td>
+<td>178</td>
+<td>Retire — replaced by SQL queries</td>
+</tr>
+<tr>
+<td>CBCUS01C.cbl</td>
+<td>178</td>
+<td>Retire — replaced by SQL queries</td>
+</tr>
+<tr>
+<td>CBEXPORT.cbl</td>
+<td>582</td>
+<td>Retire — PostgreSQL pg_dump replaces VSAM export</td>
+</tr>
+<tr>
+<td>CBIMPORT.cbl</td>
+<td>487</td>
+<td>Retire — database restore replaces VSAM import</td>
+</tr>
+<tr>
+<td>COBSWAIT.cbl</td>
+<td>41</td>
+<td>Retire — Thread.sleep() or scheduler wait</td>
+</tr>
+<tr>
+<td>CSUTLDTC.cbl</td>
+<td>157</td>
+<td>Retire — Java LocalDate replaces LE CEEDAYS</td>
+</tr>
+</tbody>
+</table>
+<h3>Decommission Checklist</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Action</th>
+<th>Verification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VSAM files (ACCTFILE, CARDFILE, CUSTFILE, CARDXREF, TRANSACT, USRSEC, TCATBALF, DISCGRP)</td>
+<td>Archive to S3, then delete</td>
+<td>Confirm all data in PostgreSQL matches final VSAM state</td>
+</tr>
+<tr>
+<td>IMS database</td>
+<td>Archive, then delete</td>
+<td>Confirm all data in PostgreSQL <code>authorization_*</code> tables</td>
+</tr>
+<tr>
+<td>DB2 tables (TRANSACTION_TYPE, TRANSACTION_CATEGORY)</td>
+<td>Archive, then delete</td>
+<td>Confirm all data in PostgreSQL</td>
+</tr>
+<tr>
+<td>MQ queues</td>
+<td>Archive configuration, delete queues</td>
+<td>Confirm SQS queues operational</td>
+</tr>
+<tr>
+<td>JCL jobs (46 files)</td>
+<td>Archive to S3</td>
+<td>Document mapping to Step Functions workflows</td>
+</tr>
+<tr>
+<td>BMS maps (16 files)</td>
+<td>Archive to S3</td>
+<td>Confirm React/Angular screens functional</td>
+</tr>
+<tr>
+<td>COBOL source (44 programs)</td>
+<td>Archive to S3 with full Git history</td>
+<td>Retain for compliance/audit (7 years)</td>
+</tr>
+<tr>
+<td>Control-M schedules</td>
+<td>Archive, then delete</td>
+<td>Confirm Step Functions schedules active</td>
+</tr>
+<tr>
+<td>Mainframe LPAR/region</td>
+<td>Decommission</td>
+<td>Final sign-off from operations</td>
+</tr>
+</tbody>
+</table>
+<h3>Rollback Plan</h3>
+<ul>
+<li><strong>No rollback</strong> — decommission happens only after 30-day stability observation period (post-Phase 5)</li>
+<li>All VSAM/IMS/DB2 data archived to S3 before deletion</li>
+<li>Archives retained for 7 years for regulatory compliance</li>
+</ul>
+<h3>Acceptance Criteria</h3>
+<ul>
+<li>[ ] 30 consecutive days of production operation on Java stack with zero P1 incidents</li>
+<li>[ ] All VSAM, IMS, and DB2 data archived to S3 with verified checksums</li>
+<li>[ ] Zero active connections to mainframe from any service</li>
+<li>[ ] Mainframe cost reduced to $0/month (or archive-only cost)</li>
+<li>[ ] COBOL source archived in Git with tags marking final production versions</li>
+<li>[ ] Compliance sign-off from audit team on data retention</li>
+</ul>
+<hr />
+<h2>10. Timeline Summary</h2>
+<pre><code>Week:  1    5    10   17   27   35   40  42
+       |    |    |    |    |    |    |   |
+       ├────┤    |    |    |    |    |   |
+       │ P0 │    |    |    |    |    |   |
+       │Found│   |    |    |    |    |   |
+       ├─────┤   |    |    |    |    |   |
+       │     │P1 │    |    |    |    |   |
+       │     │Quick   |    |    |    |   |
+       │     │Wins│   |    |    |    |   |
+       │     ├────┤   |    |    |    |   |
+       │     │    │P2 │    |    |    |   |
+       │     │    │DB  │   |    |    |   |
+       │     │    │Bridge  |    |    |   |
+       │     │    ├────┤   |    |    |   |
+       │     │    │    │P3 │    |    |   |
+       │     │    │    │Core    |    |   |
+       │     │    │    │Business│    |   |
+       │     │    │    ├────────┤    |   |
+       │     │    │    │        │P4  │   |
+       │     │    │    │        │Integ   |
+       │     │    │    │        ├────┤   |
+       │     │    │    │        │    │P5 │
+       │     │    │    │        │    │Batch
+       │     │    │    │        │    ├───┤
+       │     │    │    │        │    │   │P6
+       │     │    │    │        │    │   │Decom
+       ▼     ▼    ▼    ▼        ▼    ▼   ▼
+
+Programs:  0    7    13   22      30   36  44
+Migrated
+(cumul.)
+</code></pre>
+<hr />
+<h2>11. Parallel Workstreams</h2>
+<table>
+<thead>
+<tr>
+<th>Workstream</th>
+<th>Runs Across</th>
+<th>Team</th>
+<th>Activities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Data Migration</strong></td>
+<td>Phases 0–5</td>
+<td>1 engineer</td>
+<td>VSAM → PostgreSQL ETL, EBCDIC conversion, data validation</td>
+</tr>
+<tr>
+<td><strong>Frontend Development</strong></td>
+<td>Phases 1–4</td>
+<td>1–2 engineers</td>
+<td>React/Angular screens replacing BMS maps</td>
+</tr>
+<tr>
+<td><strong>API Development</strong></td>
+<td>Phases 1–5</td>
+<td>2 engineers</td>
+<td>Spring Boot services, REST APIs, Spring Batch jobs</td>
+</tr>
+<tr>
+<td><strong>Testing &amp; Validation</strong></td>
+<td>Phases 1–6</td>
+<td>1 engineer</td>
+<td>Output parity testing, performance benchmarking, regression suites</td>
+</tr>
+<tr>
+<td><strong>Infrastructure</strong></td>
+<td>Phases 0–6</td>
+<td>1 engineer (part-time)</td>
+<td>AWS setup, CI/CD, monitoring, alerting</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

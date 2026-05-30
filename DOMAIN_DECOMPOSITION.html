@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domain Decomposition — CardDemo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            color: #24292e;
+            background: #fff;
+        }
+        h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; color: #0366d6; }
+        h2 { border-bottom: 1px solid #e1e4e8; padding-bottom: 8px; margin-top: 32px; color: #0366d6; }
+        h3 { margin-top: 24px; color: #24292e; }
+        h4 { margin-top: 16px; color: #586069; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #d1d5da;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f8ff;
+            font-weight: 600;
+            color: #0366d6;
+        }
+        tr:nth-child(even) { background-color: #f6f8fa; }
+        tr:hover { background-color: #e1f0ff; }
+        code {
+            background-color: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid #e1e4e8;
+            line-height: 1.45;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #0366d6;
+            margin: 16px 0;
+            padding: 8px 16px;
+            color: #586069;
+            background: #f1f8ff;
+        }
+        a { color: #0366d6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        hr { border: none; border-top: 1px solid #e1e4e8; margin: 24px 0; }
+        strong { color: #24292e; }
+        ul, ol { padding-left: 24px; }
+        li { margin: 4px 0; }
+    </style>
+</head>
+<body>
+<h1>Domain Decomposition — CardDemo COBOL Estate</h1>
+<blockquote>
+<p>Bounded contexts identified from copybook sharing, JCL groupings, and data file coupling — mapped to candidate microservices.</p>
+</blockquote>
+<hr />
+<h2>1. Methodology</h2>
+<p>Bounded contexts are derived from three coupling dimensions:</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Signal</th>
+<th>Tool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Data coupling</strong></td>
+<td>Programs sharing the same copybooks (data structures)</td>
+<td>COPY statement analysis</td>
+</tr>
+<tr>
+<td><strong>File coupling</strong></td>
+<td>Programs reading/writing the same VSAM datasets</td>
+<td>JCL DD + I/O statement analysis</td>
+</tr>
+<tr>
+<td><strong>Control coupling</strong></td>
+<td>Programs calling each other (CALL/XCTL/LINK)</td>
+<td>Call graph analysis</td>
+</tr>
+</tbody>
+</table>
+<p>Programs with high coupling across all three dimensions belong to the same bounded context. Programs with minimal coupling can be extracted into separate services.</p>
+<hr />
+<h2>2. Copybook Sharing Matrix</h2>
+<h3>Core Business Copybooks — Shared Across Contexts</h3>
+<table>
+<thead>
+<tr>
+<th>Copybook</th>
+<th>Entity</th>
+<th>Used By (Programs)</th>
+<th>Contexts Sharing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CVACT01Y</td>
+<td>Account</td>
+<td>CBACT01C, CBACT04C, CBEXPORT, CBIMPORT, CBTRN01C, CBTRN02C, COACTUPC, COACTVWC, COBIL00C, COCRDSLC, COCRDUPC, COTRN02C, COPAUA0C, COPAUS0C</td>
+<td>Account, Card, Transaction, Auth, Migration</td>
+</tr>
+<tr>
+<td>CVACT02Y</td>
+<td>Card</td>
+<td>CBACT02C, CBEXPORT, CBIMPORT, CBTRN01C, COACTVWC, COCRDLIC, COCRDSLC, COCRDUPC, COPAUS0C, COTRTLIC</td>
+<td>Card, Transaction, Auth, TranType</td>
+</tr>
+<tr>
+<td>CVACT03Y</td>
+<td>Card-XREF</td>
+<td>CBACT03C, CBACT04C, CBEXPORT, CBIMPORT, CBTRN01C, CBTRN02C, CBTRN03C, COACTUPC, COACTVWC, COBIL00C, COCRDSLC, COCRDUPC, COTRN02C, COPAUA0C, COPAUS0C</td>
+<td>Account, Card, Transaction, Auth</td>
+</tr>
+<tr>
+<td>CVCUS01Y</td>
+<td>Customer</td>
+<td>CBCUS01C, CBEXPORT, CBIMPORT, CBTRN01C, COACTUPC, COACTVWC, COCRDSLC, COCRDUPC, COPAUA0C, COPAUS0C</td>
+<td>Account, Card, Transaction, Auth</td>
+</tr>
+<tr>
+<td>CVTRA05Y</td>
+<td>Transaction</td>
+<td>CBACT04C, CBEXPORT, CBIMPORT, CBTRN01C, CBTRN02C, CBTRN03C, COBIL00C, CORPT00C, COTRN00C, COTRN01C, COTRN02C</td>
+<td>Transaction, Reporting, BillPay</td>
+</tr>
+<tr>
+<td>COCOM01Y</td>
+<td>Framework</td>
+<td>All 21 CICS programs</td>
+<td>All online contexts (framework, not business)</td>
+</tr>
+</tbody>
+</table>
+<h3>Domain-Specific Copybooks — Isolated Within Contexts</h3>
+<table>
+<thead>
+<tr>
+<th>Copybook</th>
+<th>Entity</th>
+<th>Used By</th>
+<th>Context</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CSUSR01Y</td>
+<td>User Security</td>
+<td>COSGN00C, COUSR00C–03C, COACTUPC, COACTVWC, COCRDLIC, COMEN01C</td>
+<td>User Admin (primary); others for display only</td>
+</tr>
+<tr>
+<td>CVTRA01Y</td>
+<td>Tran Cat Balance</td>
+<td>CBACT04C, CBTRN02C</td>
+<td>Transaction Processing (batch only)</td>
+</tr>
+<tr>
+<td>CVTRA02Y</td>
+<td>Disclosure Group</td>
+<td>CBACT04C</td>
+<td>Interest Calculation (isolated)</td>
+</tr>
+<tr>
+<td>CVTRA03Y/04Y</td>
+<td>Tran Type/Category</td>
+<td>CBTRN03C</td>
+<td>Reporting (isolated)</td>
+</tr>
+<tr>
+<td>CVTRA06Y</td>
+<td>Daily Transaction</td>
+<td>CBTRN01C, CBTRN02C</td>
+<td>Transaction Processing (batch only)</td>
+</tr>
+<tr>
+<td>CVTRA07Y</td>
+<td>Tran Report</td>
+<td>CBTRN03C</td>
+<td>Reporting (isolated)</td>
+</tr>
+<tr>
+<td>CVEXPORT</td>
+<td>Export Layout</td>
+<td>CBEXPORT, CBIMPORT</td>
+<td>Data Migration (isolated)</td>
+</tr>
+<tr>
+<td>CIPAUSMY/CIPAUDTY</td>
+<td>IMS Auth Segments</td>
+<td>COPAUA0C, COPAUS0C–2C, CBPAUP0C, PAUDBLOD, PAUDBUNL, DBUNLDGS</td>
+<td>Authorization (isolated)</td>
+</tr>
+<tr>
+<td>CMQODV/CMQMDV/CMQV</td>
+<td>MQ Descriptors</td>
+<td>COPAUA0C, COACCT01, CODATE01</td>
+<td>Authorization + MQ Integration (isolated)</td>
+</tr>
+<tr>
+<td>DCLTRTYP/DCLTRCAT</td>
+<td>DB2 Declarations</td>
+<td>COTRTLIC, COTRTUPC</td>
+<td>Transaction Type Admin (isolated)</td>
+</tr>
+<tr>
+<td>COSTM01/CUSTREC</td>
+<td>Statement Fields</td>
+<td>CBSTM03A</td>
+<td>Statement Generation (isolated)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>3. Data File Coupling Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>VSAM Dataset</th>
+<th>Writers</th>
+<th>Readers</th>
+<th>Bounded Contexts Affected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACCTFILE</td>
+<td>CBACT04C, COACTUPC, COBIL00C, CBTRN02C, CBIMPORT</td>
+<td>13 programs</td>
+<td>Account, Transaction, BillPay, Migration</td>
+</tr>
+<tr>
+<td>CARDFILE</td>
+<td>COCRDUPC, CBIMPORT</td>
+<td>8 programs</td>
+<td>Card, Migration</td>
+</tr>
+<tr>
+<td>CUSTFILE</td>
+<td>CBIMPORT</td>
+<td>6 programs</td>
+<td>(Read-only from most contexts; written only by Migration)</td>
+</tr>
+<tr>
+<td>CARDXREF</td>
+<td>CBIMPORT</td>
+<td>11 programs</td>
+<td>(Reference data — read by all, written only by Migration)</td>
+</tr>
+<tr>
+<td>TRANSACT</td>
+<td>CBTRN02C, CBIMPORT</td>
+<td>5 programs</td>
+<td>Transaction, Reporting, Migration</td>
+</tr>
+<tr>
+<td>TCATBALF</td>
+<td>CBTRN02C</td>
+<td>CBACT04C</td>
+<td>Transaction → Interest Calc pipeline</td>
+</tr>
+<tr>
+<td>DALYTRAN</td>
+<td>(external input)</td>
+<td>CBTRN01C, CBTRN02C</td>
+<td>Transaction Processing (input only)</td>
+</tr>
+<tr>
+<td>USRSEC</td>
+<td>COUSR00C–03C</td>
+<td>COSGN00C</td>
+<td>User Admin (fully isolated)</td>
+</tr>
+<tr>
+<td>DISCGRP</td>
+<td>(JCL IDCAMS)</td>
+<td>CBACT04C</td>
+<td>Interest Calculation (isolated)</td>
+</tr>
+<tr>
+<td>IMS DB</td>
+<td>PAUDBLOD (load), COPAUS1C (update)</td>
+<td>COPAUA0C, COPAUS0C, CBPAUP0C, PAUDBUNL</td>
+<td>Authorization (fully isolated)</td>
+</tr>
+<tr>
+<td>DB2 Tables</td>
+<td>COTRTUPC (insert/update/delete), COPAUS2C (insert)</td>
+<td>COTRTLIC (select)</td>
+<td>Tran Type Admin + Fraud Marking</td>
+</tr>
+<tr>
+<td>MQ Queues</td>
+<td>COPAUA0C (PUT)</td>
+<td>COPAUA0C (GET)</td>
+<td>Authorization (isolated)</td>
+</tr>
+</tbody>
+</table>
+<h3>Key Observations for Context Boundaries</h3>
+<ol>
+<li><strong>ACCTFILE is the most shared resource</strong> — written by 5 programs across 4 contexts. This is the primary coupling point and must have a single-owner service with well-defined APIs.</li>
+<li><strong>CARDXREF is read by 11 programs</strong> but written only by CBIMPORT — it's reference data that can be exposed via a read-only API.</li>
+<li><strong>USRSEC is fully isolated</strong> — only User Admin programs touch it. Clean boundary.</li>
+<li><strong>IMS DB is fully isolated</strong> — only Authorization programs access it. Clean boundary.</li>
+<li><strong>DB2 tables are semi-isolated</strong> — Transaction Type Admin owns them; only COPAUS2C (fraud marking) writes across the boundary.</li>
+<li><strong>TRANSACT file</strong> is written by Transaction Processing and read by Reporting — this is a producer-consumer relationship (event-driven candidate).</li>
+</ol>
+<hr />
+<h2>4. JCL Job Groupings</h2>
+<h3>Group 1: Data Setup (Infrastructure)</h3>
+<table>
+<thead>
+<tr>
+<th>JCL Job</th>
+<th>Programs</th>
+<th>Datasets</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACCTFILE.jcl</td>
+<td>IDCAMS</td>
+<td>ACCTDATA VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>CARDFILE.jcl</td>
+<td>IDCAMS, SDSF</td>
+<td>CARDDATA VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>CUSTFILE.jcl</td>
+<td>IDCAMS, SDSF</td>
+<td>CUSTDATA VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>XREFFILE.jcl</td>
+<td>IDCAMS</td>
+<td>CARDXREF VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>TRANFILE.jcl</td>
+<td>IDCAMS, SDSF</td>
+<td>TRANSACT VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>TCATBALF.jcl</td>
+<td>IDCAMS</td>
+<td>TCATBALF VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>DISCGRP.jcl</td>
+<td>IDCAMS</td>
+<td>DISCGRP VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>TRANTYPE.jcl</td>
+<td>IDCAMS</td>
+<td>TRANTYPE VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>TRANCATG.jcl</td>
+<td>IDCAMS</td>
+<td>TRANCATG VSAM KSDS</td>
+<td>Cluster definition</td>
+</tr>
+<tr>
+<td>DUSRSECJ.jcl</td>
+<td>IDCAMS, IEBGENER</td>
+<td>USRSEC VSAM KSDS</td>
+<td>User security file</td>
+</tr>
+<tr>
+<td>DALYREJS.jcl</td>
+<td>IDCAMS</td>
+<td>DALYREJS</td>
+<td>Rejected transactions</td>
+</tr>
+<tr>
+<td>REPTFILE.jcl</td>
+<td>IDCAMS</td>
+<td>REPTFILE</td>
+<td>Report output</td>
+</tr>
+</tbody>
+</table>
+<p><strong>→ Maps to: Database DDL migrations (Flyway/Liquibase)</strong></p>
+<h3>Group 2: Daily Batch Pipeline (Core Business)</h3>
+<table>
+<thead>
+<tr>
+<th>JCL Job</th>
+<th>Programs</th>
+<th>Input Datasets</th>
+<th>Output Datasets</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POSTTRAN.jcl</td>
+<td>CBTRN02C</td>
+<td>DALYTRAN, ACCTDATA, CARDXREF</td>
+<td>TRANSACT, DALYREJS, TCATBALF, ACCTDATA</td>
+</tr>
+<tr>
+<td>INTCALC.jcl</td>
+<td>CBACT04C</td>
+<td>TCATBALF, CARDXREF, DISCGRP, ACCTDATA</td>
+<td>TRANSACT (GDG), ACCTDATA</td>
+</tr>
+<tr>
+<td>CREASTMT.JCL</td>
+<td>CBSTM03A, SORT</td>
+<td>ACCTDATA, CARDXREF, TRANSACT</td>
+<td>STATEMNT.PS, STATEMNT.HTML</td>
+</tr>
+<tr>
+<td>TRANREPT.jcl</td>
+<td>CBTRN03C, SORT</td>
+<td>TRANSACT, CARDXREF, TRANTYPE, TRANCATG</td>
+<td>TRANSACT.DALY (report)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>→ Maps to: <code>DailyBatchPipeline</code> (Spring Batch Job with 4 Steps, orchestrated by AWS Step Functions)</strong></p>
+<h3>Group 3: Data Migration Jobs</h3>
+<table>
+<thead>
+<tr>
+<th>JCL Job</th>
+<th>Programs</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CBEXPORT.jcl</td>
+<td>CBEXPORT</td>
+<td>Export all VSAM → sequential file</td>
+</tr>
+<tr>
+<td>CBIMPORT.jcl</td>
+<td>CBIMPORT</td>
+<td>Import sequential → VSAM files</td>
+</tr>
+</tbody>
+</table>
+<p><strong>→ Maps to: <code>DataMigrationService</code> (Spring Batch) — temporary, retire after cutover</strong></p>
+<h3>Group 4: Utility/Diagnostic Jobs</h3>
+<table>
+<thead>
+<tr>
+<th>JCL Job</th>
+<th>Programs</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>READACCT.jcl</td>
+<td>CBACT01C</td>
+<td>Read and split account file</td>
+</tr>
+<tr>
+<td>READCARD.jcl</td>
+<td>CBACT02C</td>
+<td>Read and print card file</td>
+</tr>
+<tr>
+<td>READCUST.jcl</td>
+<td>CBCUS01C</td>
+<td>Read and print customer file</td>
+</tr>
+<tr>
+<td>READXREF.jcl</td>
+<td>CBACT03C</td>
+<td>Read and print xref file</td>
+</tr>
+<tr>
+<td>WAITSTEP.jcl</td>
+<td>COBSWAIT</td>
+<td>Wait/delay utility</td>
+</tr>
+</tbody>
+</table>
+<p><strong>→ Maps to: Replaced by SQL queries / admin panel (no service equivalent)</strong></p>
+<h3>Group 5: Backup/GDG Management</h3>
+<table>
+<thead>
+<tr>
+<th>JCL Job</th>
+<th>Programs</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TRANBKP.jcl</td>
+<td>IDCAMS</td>
+<td>Transaction file backup to GDG</td>
+</tr>
+<tr>
+<td>DEFGDGB.jcl</td>
+<td>IDCAMS, IEBGENER</td>
+<td>Define GDG bases for backups</td>
+</tr>
+<tr>
+<td>DEFGDGD.jcl</td>
+<td>IDCAMS, IEBGENER</td>
+<td>Define GDG for reference data</td>
+</tr>
+<tr>
+<td>COMBTRAN.jcl</td>
+<td>IDCAMS, SORT</td>
+<td>Combine daily + backup transactions</td>
+</tr>
+<tr>
+<td>PRTCATBL.jcl</td>
+<td>SORT</td>
+<td>Print category balance report</td>
+</tr>
+</tbody>
+</table>
+<p><strong>→ Maps to: Database backup policies (RDS automated backups, pg_dump schedules)</strong></p>
+<h3>Group 6: IMS Administration</h3>
+<table>
+<thead>
+<tr>
+<th>JCL Job</th>
+<th>Programs</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PAUDBLOD</td>
+<td>PAUDBLOD</td>
+<td>IMS database load</td>
+</tr>
+<tr>
+<td>PAUDBUNL</td>
+<td>PAUDBUNL</td>
+<td>IMS database unload</td>
+</tr>
+<tr>
+<td>DBUNLDGS</td>
+<td>DBUNLDGS</td>
+<td>GSAM unload</td>
+</tr>
+<tr>
+<td>CBPAUP0C</td>
+<td>CBPAUP0C</td>
+<td>Expired auth purge</td>
+</tr>
+</tbody>
+</table>
+<p><strong>→ Maps to: <code>AuthorizationDataService</code> — PostgreSQL maintenance jobs</strong></p>
+<hr />
+<h2>5. Bounded Contexts &amp; Candidate Microservices</h2>
+<h3>Context 1: Account Management</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>COACTUPC (4,236), COACTVWC (941)</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>CVACT01Y, CVACT03Y, CVCUS01Y, CVCRD01Y, CSLKPCDY, CSSETATY, CSUTLDPY</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td><code>accounts</code> table (from ACCTFILE VSAM KSDS)</td>
+</tr>
+<tr>
+<td><strong>Data Read</strong></td>
+<td>customers, card_xref (via API calls to other services)</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>account-service</strong></td>
+</tr>
+<tr>
+<td><strong>API Surface</strong></td>
+<td>GET/PUT /accounts/{id}, GET /accounts/{id}/cards, GET /accounts/{id}/balance</td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Owns ACCTFILE writes; most complex program in estate; validation logic becomes shared library</td>
+</tr>
+</tbody>
+</table>
+<h3>Context 2: Card Management</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>COCRDLIC (1,459), COCRDSLC (887), COCRDUPC (1,560)</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>CVACT02Y, CVCRD01Y, CVACT03Y, CVCUS01Y</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td><code>cards</code> table (from CARDFILE), <code>card_xref</code> table (from CARDXREF)</td>
+</tr>
+<tr>
+<td><strong>Data Read</strong></td>
+<td>accounts, customers (via API)</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>card-service</strong></td>
+</tr>
+<tr>
+<td><strong>API Surface</strong></td>
+<td>GET /cards, GET /cards/{num}, PUT /cards/{num}, GET /cards?account={id}</td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Paginated browse pattern becomes <code>AbstractListController</code>; xref is owned here but read by many</td>
+</tr>
+</tbody>
+</table>
+<h3>Context 3: Transaction Processing</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>COTRN00C (806), COTRN01C (530), COTRN02C (710), CBTRN01C (494), CBTRN02C (731), COBIL00C (672)</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>CVTRA05Y, CVTRA06Y, CVTRA01Y, CVACT01Y, CVACT03Y</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td><code>transactions</code> table (from TRANSACT), <code>daily_transactions</code> (from DALYTRAN), <code>tran_category_balances</code> (from TCATBALF), <code>daily_rejects</code> (from DALYREJS)</td>
+</tr>
+<tr>
+<td><strong>Data Read</strong></td>
+<td>accounts, card_xref (via API)</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>transaction-service</strong></td>
+</tr>
+<tr>
+<td><strong>API Surface</strong></td>
+<td>GET/POST /transactions, GET /transactions/{id}, POST /transactions/post-daily, POST /bill-payments</td>
+</tr>
+<tr>
+<td><strong>JCL Jobs</strong></td>
+<td>POSTTRAN.jcl → Spring Batch <code>PostTransactionJob</code></td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Includes bill payment (COBIL00C) as it writes to TRANSACT and updates ACCTFILE (via account-service API). Publishes transaction events consumed by interest-calc and reporting</td>
+</tr>
+</tbody>
+</table>
+<h3>Context 4: Interest Calculation</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>CBACT04C (652)</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>CVTRA01Y, CVTRA02Y, CVACT01Y, CVACT03Y, CVTRA05Y</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td><code>disclosure_groups</code> table (from DISCGRP)</td>
+</tr>
+<tr>
+<td><strong>Data Read</strong></td>
+<td>accounts, tran_category_balances, card_xref (via API or shared DB)</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>interest-calculation-service</strong> (or module within transaction-service)</td>
+</tr>
+<tr>
+<td><strong>API Surface</strong></td>
+<td>POST /interest/calculate-daily</td>
+</tr>
+<tr>
+<td><strong>JCL Jobs</strong></td>
+<td>INTCALC.jcl → Spring Batch <code>InterestCalculationJob</code></td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Single program; could be a module inside transaction-service rather than a separate microservice. Consumes TCATBALF produced by POSTTRAN; writes back to accounts</td>
+</tr>
+</tbody>
+</table>
+<h3>Context 5: Statement &amp; Reporting</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>CBSTM03A (924), CBSTM03B (230), CBTRN03C (649), CORPT00C (407)</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>COSTM01, CUSTREC, CVACT01Y, CVACT03Y, CVTRA05Y, CVTRA03Y, CVTRA04Y, CVTRA07Y</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td>Statement output files, report output files</td>
+</tr>
+<tr>
+<td><strong>Data Read</strong></td>
+<td>accounts, customers, transactions, card_xref, tran_types (all via API)</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>reporting-service</strong></td>
+</tr>
+<tr>
+<td><strong>API Surface</strong></td>
+<td>POST /reports/statements, POST /reports/daily-transactions, GET /reports/{id}/download</td>
+</tr>
+<tr>
+<td><strong>JCL Jobs</strong></td>
+<td>CREASTMT.JCL → <code>StatementGenerationJob</code>; TRANREPT.jcl → <code>TransactionReportJob</code></td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Pure consumer of other contexts' data. No shared writes. Ideal for early migration (CBSTM03A as pilot)</td>
+</tr>
+</tbody>
+</table>
+<h3>Context 6: User &amp; Authentication</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>COSGN00C (529), COUSR00C (578), COUSR01C (498), COUSR02C (555), COUSR03C (490), COMEN01C (488), COADM01C (288)</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>CSUSR01Y, COADM02Y, COMEN02Y</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td><code>users</code> table (from USRSEC VSAM KSDS)</td>
+</tr>
+<tr>
+<td><strong>Data Read</strong></td>
+<td>None — fully independent</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>user-auth-service</strong></td>
+</tr>
+<tr>
+<td><strong>API Surface</strong></td>
+<td>POST /auth/login, POST /auth/logout, GET/POST/PUT/DELETE /users/{id}</td>
+</tr>
+<tr>
+<td><strong>JCL Jobs</strong></td>
+<td>DUSRSECJ.jcl → Flyway migration for user table</td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Completely isolated data. Includes menu programs (COMEN01C, COADM01C) which become frontend routing in React/Angular. Critical security fix: plain-text passwords → bcrypt</td>
+</tr>
+</tbody>
+</table>
+<h3>Context 7: Transaction Type Administration</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>COTRTLIC (2,098), COTRTUPC (1,702), COBTUPDT (batch)</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>DCLTRTYP, DCLTRCAT, CSDB2RWY, CVCRD01Y</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td><code>transaction_types</code> table, <code>transaction_categories</code> table (from DB2)</td>
+</tr>
+<tr>
+<td><strong>Data Read</strong></td>
+<td>None — fully independent</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>transaction-type-service</strong> (or admin module within transaction-service)</td>
+</tr>
+<tr>
+<td><strong>API Surface</strong></td>
+<td>GET/POST/PUT/DELETE /transaction-types/{id}, GET /transaction-categories</td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Already DB2 — easiest database migration. Could be a module within transaction-service. Isolated data, no VSAM dependency</td>
+</tr>
+</tbody>
+</table>
+<h3>Context 8: Authorization Processing</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>COPAUA0C (1,026), COPAUS0C (1,032), COPAUS1C (512), COPAUS2C (285), CBPAUP0C (350), PAUDBLOD, PAUDBUNL, DBUNLDGS</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>CIPAUSMY, CIPAUDTY, CCPAURQY, CCPAURLY, CCPAUERY, CMQODV, CMQMDV, CMQV, IMSFUNCS, PAUTBPCB, PADFLPCB, PASFLPCB</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td><code>authorization_summary</code> table, <code>authorization_detail</code> table (from IMS DB), <code>fraud_flags</code> table (from DB2)</td>
+</tr>
+<tr>
+<td><strong>Data Read</strong></td>
+<td>accounts, customers, cards (via API)</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>authorization-service</strong></td>
+</tr>
+<tr>
+<td><strong>API Surface</strong></td>
+<td>POST /authorizations/decide, GET /authorizations?account={id}, PUT /authorizations/{id}/fraud-flag, DELETE /authorizations/expired</td>
+</tr>
+<tr>
+<td><strong>JCL Jobs</strong></td>
+<td>PAUDBLOD → data migration; CBPAUP0C → scheduled cleanup</td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Most isolated subsystem — own data store (IMS), own messaging (MQ), own copybooks. All 12 auth-specific copybooks are used exclusively here. Must migrate as a unit</td>
+</tr>
+</tbody>
+</table>
+<h3>Context 9: Data Migration (Temporary)</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programs</strong></td>
+<td>CBEXPORT (582), CBIMPORT (487)</td>
+</tr>
+<tr>
+<td><strong>Copybooks</strong></td>
+<td>CVEXPORT + all core entity copybooks</td>
+</tr>
+<tr>
+<td><strong>Data Owned</strong></td>
+<td>Export/import sequential files</td>
+</tr>
+<tr>
+<td><strong>Data Read/Written</strong></td>
+<td>All 5 core VSAM files</td>
+</tr>
+<tr>
+<td><strong>Candidate Service</strong></td>
+<td><strong>data-migration-tools</strong> (temporary)</td>
+</tr>
+<tr>
+<td><strong>Notes</strong></td>
+<td>Cross-cutting — touches all data stores. Needed only during migration. Retire after cutover</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>6. Context Map (Inter-Service Dependencies)</h2>
+<pre><code>                        ┌─────────────────┐
+                        │  user-auth-     │
+                        │  service        │
+                        │  (JWT/OAuth2)   │
+                        └────────┬────────┘
+                                 │ authenticates
+                    ┌────────────┼────────────┐
+                    ▼            ▼             ▼
+          ┌─────────────┐ ┌──────────┐ ┌──────────────┐
+          │ account-    │ │ card-    │ │ transaction- │
+          │ service     │ │ service  │ │ type-service │
+          │ (ACCTFILE)  │ │(CARDFILE)│ │ (DB2 tables) │
+          └──────┬──────┘ └────┬─────┘ └──────┬───────┘
+                 │             │              │
+          reads ─┤─── reads ───┤              │ reads
+                 │             │              │
+          ┌──────▼─────────────▼──────────────▼───────┐
+          │         transaction-service                │
+          │   (TRANSACT, DALYTRAN, TCATBALF)           │
+          │   + interest-calculation module             │
+          │   + bill-payment module                     │
+          └──────────────────┬────────────────────────┘
+                             │ publishes events
+                    ┌────────┼────────┐
+                    ▼                 ▼
+          ┌─────────────┐   ┌─────────────────┐
+          │ reporting-  │   │ authorization-  │
+          │ service     │   │ service         │
+          │ (statements,│   │ (IMS→PostgreSQL,│
+          │  reports)   │   │  MQ→SQS)        │
+          └─────────────┘   └─────────────────┘
+</code></pre>
+<h3>Communication Patterns</h3>
+<table>
+<thead>
+<tr>
+<th>From → To</th>
+<th>Current Mechanism</th>
+<th>Target Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Online screens → Programs</td>
+<td>CICS XCTL/LINK</td>
+<td>REST API calls</td>
+</tr>
+<tr>
+<td>Programs → VSAM files</td>
+<td>READ/WRITE/REWRITE</td>
+<td>JPA Repository</td>
+</tr>
+<tr>
+<td>Programs → DB2</td>
+<td>EXEC SQL</td>
+<td>Spring Data JPA</td>
+</tr>
+<tr>
+<td>Programs → IMS</td>
+<td>CALL CBLTDLI</td>
+<td>JPA (relational mapping)</td>
+</tr>
+<tr>
+<td>Programs → MQ</td>
+<td>CALL MQOPEN/GET/PUT</td>
+<td>Spring JMS / Amazon SQS</td>
+</tr>
+<tr>
+<td>Batch pipeline steps</td>
+<td>JCL COND CODE</td>
+<td>Spring Batch Step flow</td>
+</tr>
+<tr>
+<td>Report request → Batch job</td>
+<td>JCL Internal Reader</td>
+<td>REST API + async job</td>
+</tr>
+<tr>
+<td>COMMAREA data passing</td>
+<td>Memory block</td>
+<td>DTO/POJO + REST payload</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>7. Shared Libraries (Cross-Cutting Concerns)</h2>
+<p>The following copybook-derived logic should become shared Java libraries rather than being duplicated across services:</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Source Copybooks</th>
+<th>Used By Services</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>carddemo-validation</code></td>
+<td>CSLKPCDY, CSUTLDPY, CSUTLDWY</td>
+<td>account, card, transaction</td>
+<td>State/ZIP/phone/date validation</td>
+</tr>
+<tr>
+<td><code>carddemo-commons</code></td>
+<td>COCOM01Y, COTTL01Y, CSDAT01Y, CSMSG01Y/02Y</td>
+<td>All online services</td>
+<td>Common DTOs, message formatting</td>
+</tr>
+<tr>
+<td><code>carddemo-security</code></td>
+<td>CSUSR01Y</td>
+<td>All services</td>
+<td>JWT token parsing, user context</td>
+</tr>
+<tr>
+<td><code>carddemo-screen-attrs</code></td>
+<td>CSSETATY, DFHBMSCA</td>
+<td>None (retired)</td>
+<td>BMS attributes — replaced by CSS/UI framework</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>8. Database Schema Mapping</h2>
+<table>
+<thead>
+<tr>
+<th>Bounded Context</th>
+<th>VSAM/DB2 Source</th>
+<th>Target Table(s)</th>
+<th>Owner Service</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Account</td>
+<td>ACCTFILE (KSDS, 300B)</td>
+<td><code>accounts</code></td>
+<td>account-service</td>
+</tr>
+<tr>
+<td>Card</td>
+<td>CARDFILE (KSDS, 150B)</td>
+<td><code>cards</code></td>
+<td>card-service</td>
+</tr>
+<tr>
+<td>Card XREF</td>
+<td>CARDXREF (KSDS, 50B)</td>
+<td><code>card_xref</code></td>
+<td>card-service</td>
+</tr>
+<tr>
+<td>Customer</td>
+<td>CUSTFILE (KSDS, 500B)</td>
+<td><code>customers</code></td>
+<td>account-service (or separate customer-service)</td>
+</tr>
+<tr>
+<td>Transaction</td>
+<td>TRANSACT (KSDS, 350B)</td>
+<td><code>transactions</code></td>
+<td>transaction-service</td>
+</tr>
+<tr>
+<td>Daily Trans</td>
+<td>DALYTRAN (sequential)</td>
+<td><code>daily_transactions</code> (staging)</td>
+<td>transaction-service</td>
+</tr>
+<tr>
+<td>Tran Cat Balance</td>
+<td>TCATBALF (KSDS)</td>
+<td><code>tran_category_balances</code></td>
+<td>transaction-service</td>
+</tr>
+<tr>
+<td>Daily Rejects</td>
+<td>DALYREJS (GDG)</td>
+<td><code>rejected_transactions</code></td>
+<td>transaction-service</td>
+</tr>
+<tr>
+<td>Disclosure Group</td>
+<td>DISCGRP (KSDS)</td>
+<td><code>disclosure_groups</code></td>
+<td>transaction-service</td>
+</tr>
+<tr>
+<td>Tran Type</td>
+<td>DB2 TRANSACTION_TYPE</td>
+<td><code>transaction_types</code></td>
+<td>transaction-type-service</td>
+</tr>
+<tr>
+<td>Tran Category</td>
+<td>DB2 TRANSACTION_CATEGORY</td>
+<td><code>transaction_categories</code></td>
+<td>transaction-type-service</td>
+</tr>
+<tr>
+<td>User Security</td>
+<td>USRSEC (KSDS, 80B)</td>
+<td><code>users</code></td>
+<td>user-auth-service</td>
+</tr>
+<tr>
+<td>Auth Summary</td>
+<td>IMS AUTH_SUMMARY</td>
+<td><code>authorization_summary</code></td>
+<td>authorization-service</td>
+</tr>
+<tr>
+<td>Auth Detail</td>
+<td>IMS AUTH_DETAIL</td>
+<td><code>authorization_detail</code></td>
+<td>authorization-service</td>
+</tr>
+<tr>
+<td>Fraud Flags</td>
+<td>DB2 FRAUD_FLAGS</td>
+<td><code>fraud_flags</code></td>
+<td>authorization-service</td>
+</tr>
+<tr>
+<td>Export Data</td>
+<td>Sequential file</td>
+<td>(temporary staging table)</td>
+<td>data-migration-tools</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modernization Blueprint — CardDemo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            color: #24292e;
+            background: #fff;
+        }
+        h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; color: #0366d6; }
+        h2 { border-bottom: 1px solid #e1e4e8; padding-bottom: 8px; margin-top: 32px; color: #0366d6; }
+        h3 { margin-top: 24px; color: #24292e; }
+        h4 { margin-top: 16px; color: #586069; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #d1d5da;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f8ff;
+            font-weight: 600;
+            color: #0366d6;
+        }
+        tr:nth-child(even) { background-color: #f6f8fa; }
+        tr:hover { background-color: #e1f0ff; }
+        code {
+            background-color: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid #e1e4e8;
+            line-height: 1.45;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #0366d6;
+            margin: 16px 0;
+            padding: 8px 16px;
+            color: #586069;
+            background: #f1f8ff;
+        }
+        a { color: #0366d6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        hr { border: none; border-top: 1px solid #e1e4e8; margin: 24px 0; }
+        strong { color: #24292e; }
+        ul, ol { padding-left: 24px; }
+        li { margin: 4px 0; }
+    </style>
+</head>
+<body>
+<h1>Modernization Blueprint — CardDemo COBOL Estate</h1>
+<blockquote>
+<p>Strategy evaluation for each functional area with recommended modernization approach.</p>
+</blockquote>
+<hr />
+<h2>1. Strategy Definitions</h2>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Description</th>
+<th>When to Use</th>
+<th>Effort</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Strangler Pattern</strong></td>
+<td>Wrap legacy with APIs; incrementally replace behind the façade</td>
+<td>When the system must remain live during migration; when interfaces are well-defined</td>
+<td>Medium</td>
+<td>Low — gradual rollback is easy</td>
+</tr>
+<tr>
+<td><strong>Replatform</strong></td>
+<td>Keep COBOL source; move to cloud runtime (AWS M2, Micro Focus, UniKix)</td>
+<td>When time-to-cloud is critical and business logic is stable</td>
+<td>Low</td>
+<td>Low — no code changes</td>
+</tr>
+<tr>
+<td><strong>Refactor</strong></td>
+<td>Restructure COBOL for maintainability without rewriting (modularize, decouple)</td>
+<td>When long-term COBOL retention is planned; when programs are too complex to rewrite safely</td>
+<td>Medium</td>
+<td>Medium — still mainframe-tied</td>
+</tr>
+<tr>
+<td><strong>Rewrite</strong></td>
+<td>Translate to modern language (Java/Kotlin/Spring Boot)</td>
+<td>When long-term maintainability, talent pool, and modern tooling are priorities</td>
+<td>High</td>
+<td>High — functional equivalence must be proven</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>2. Functional Area: Account Management</h2>
+<p><strong>Programs:</strong> COACTUPC.cbl (4,236 LOC), COACTVWC.cbl (941 LOC), COACCT01.cbl (320 LOC)
+<strong>Technology:</strong> CICS + VSAM + MQ (COACCT01)
+<strong>Data:</strong> ACCTFILE (VSAM KSDS), CARDXREF, CUSTFILE — 3 shared VSAM datasets
+<strong>Complexity:</strong> Very High — COACTUPC has 359 branching statements, 58 copybook references</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Strangler</td>
+<td>✓ High</td>
+<td>Wrap CICS with REST API façade; replace screens incrementally; live system stays operational</td>
+<td>Requires API gateway and dual-write during transition</td>
+</tr>
+<tr>
+<td>Replatform</td>
+<td>✓ Medium</td>
+<td>Quick win — COACTUPC runs on AWS M2 as-is</td>
+<td>4,236 LOC of tightly coupled BMS logic remains unmaintainable</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✗ Low</td>
+<td>Could split COACTUPC into sub-programs</td>
+<td>Still COBOL; doesn't solve talent shortage or BMS dependency</td>
+</tr>
+<tr>
+<td><strong>Rewrite</strong></td>
+<td><strong>✓ Recommended</strong></td>
+<td>Extract 5 validation modules (date, SSN, phone, state, ZIP) into reusable Java classes; decouple BMS from business logic; enable modern UI</td>
+<td>Highest risk — largest program in estate; extensive regression testing required</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Rewrite (with Strangler wrapper during transition)</strong></h3>
+<p><strong>Justification:</strong> COACTUPC is the #1 hotspot (score 74.8/100). Its 4,236 LOC contains deeply embedded field validation that is duplicated nowhere else. Rewriting allows extracting validation into reusable Java utility classes that benefit all downstream service development. Use the Strangler pattern during transition: wrap with a REST API, route new traffic to Java, keep COBOL fallback until parity is proven.</p>
+<p><strong>Target Architecture:</strong>
+- <code>AccountService</code> (Spring Boot) — business logic
+- <code>AccountValidationService</code> — reusable date/SSN/phone/state/ZIP validators
+- <code>AccountController</code> (REST API) — replaces BMS screens
+- PostgreSQL <code>accounts</code> table — replaces VSAM ACCTFILE</p>
+<hr />
+<h2>3. Functional Area: Credit Card Management</h2>
+<p><strong>Programs:</strong> COCRDLIC.cbl (1,459 LOC), COCRDSLC.cbl (887 LOC), COCRDUPC.cbl (1,560 LOC)
+<strong>Technology:</strong> CICS + VSAM
+<strong>Data:</strong> CARDFILE, CARDXREF, ACCTFILE, CUSTFILE — 4 shared VSAM datasets
+<strong>Complexity:</strong> High — paginated browse pattern (STARTBR/READNEXT/READPREV/ENDBR) used across 5+ programs</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Strangler</td>
+<td>✓ High</td>
+<td>Wrap card browse/update with REST; reuse pagination pattern</td>
+<td>Dual-system state sync needed</td>
+</tr>
+<tr>
+<td>Replatform</td>
+<td>✓ Medium</td>
+<td>Quick lift to M2</td>
+<td>Doesn't address browse pattern complexity</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✓ Low</td>
+<td>Modularize browse into common routine</td>
+<td>Still COBOL with BMS dependency</td>
+</tr>
+<tr>
+<td><strong>Rewrite</strong></td>
+<td><strong>✓ Recommended</strong></td>
+<td>Create generic <code>AbstractListController</code> with Spring Data paging; reuse for all list screens</td>
+<td>Need to replicate VSAM browse semantics exactly</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Rewrite</strong></h3>
+<p><strong>Justification:</strong> The paginated browse pattern (STARTBR/READNEXT/READPREV/ENDBR) appears in COCRDLIC, COTRN00C, COUSR00C, COPAUS0C, and COTRTLIC. Rewriting COCRDLIC first establishes the reusable <code>AbstractListController</code> pattern for all other list screens, yielding a 5× reuse multiplier. Card update (COCRDUPC, 1,560 LOC) is simpler than account update and serves as a lower-risk validation of the update-screen migration approach.</p>
+<p><strong>Target Architecture:</strong>
+- <code>CardService</code> (Spring Boot) — CRUD operations
+- <code>AbstractListController&lt;T&gt;</code> — generic paginated list (reusable)
+- PostgreSQL <code>cards</code>, <code>card_xref</code> tables — replaces VSAM CARDFILE + CARDXREF</p>
+<hr />
+<h2>4. Functional Area: Transaction Processing</h2>
+<p><strong>Programs:</strong> COTRN00C.cbl (806 LOC), COTRN01C.cbl (530 LOC), COTRN02C.cbl (710 LOC — online add), CBTRN01C.cbl (494 LOC — batch daily), CBTRN02C.cbl (731 LOC — batch posting), CBTRN03C.cbl (649 LOC — batch report)
+<strong>Technology:</strong> CICS (online) + VSAM (batch) — no DB2/IMS/MQ dependency
+<strong>Data:</strong> TRANSACT (VSAM KSDS), DALYTRAN (sequential), TCATBALF, DALYREJS, CARDXREF, ACCTFILE
+<strong>Complexity:</strong> Medium — CBTRN02C has 96 IF blocks for validation; CBTRN03C has report formatting logic</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Strangler</strong></td>
+<td><strong>✓ Recommended (online)</strong></td>
+<td>Wrap COTRN00C/01C/02C with REST API; online screens are stateless views</td>
+<td>Need temporary bridge for VSAM-to-DB during transition</td>
+</tr>
+<tr>
+<td>Replatform</td>
+<td>✓ High</td>
+<td>Entire transaction subsystem runs on M2</td>
+<td>Batch pipeline still file-dependent</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✓ Medium</td>
+<td>Split CBTRN02C validation into sub-programs</td>
+<td>Doesn't solve data store modernization</td>
+</tr>
+<tr>
+<td><strong>Rewrite</strong></td>
+<td><strong>✓ Recommended (batch)</strong></td>
+<td>CBTRN01C/02C/03C are self-contained; map cleanly to Spring Batch</td>
+<td>Must preserve exact validation rules and rounding</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Hybrid — Strangler (online) + Rewrite (batch)</strong></h3>
+<p><strong>Justification:</strong> Online transaction screens (COTRN00C/01C/02C) are thin CICS views that can be wrapped with REST APIs via the Strangler pattern while batch programs run in parallel. Batch programs (CBTRN01C/02C/03C) are self-contained sequential processors with no CICS dependency — they map directly to Spring Batch <code>ItemReader → ItemProcessor → ItemWriter</code> steps. The batch pipeline (POSTTRAN → INTCALC → CREASTMT → TRANREPT) can be migrated as a unit to Spring Batch with a shared <code>transactions</code> database table.</p>
+<p><strong>Target Architecture:</strong>
+- <code>TransactionService</code> (Spring Boot) — online CRUD
+- <code>TransactionPostingJob</code> (Spring Batch) — replaces CBTRN02C
+- <code>InterestCalculationJob</code> (Spring Batch) — replaces CBACT04C
+- <code>TransactionReportJob</code> (Spring Batch) — replaces CBTRN03C
+- PostgreSQL <code>transactions</code>, <code>daily_transactions</code>, <code>tran_category_balances</code> tables</p>
+<hr />
+<h2>5. Functional Area: Statement Generation</h2>
+<p><strong>Programs:</strong> CBSTM03A.CBL (924 LOC), CBSTM03B.CBL (230 LOC — I/O submodule)
+<strong>Technology:</strong> Pure batch — no CICS, no DB2, no IMS, no MQ
+<strong>Data:</strong> Reads 4 VSAM files (XREF, CUST, ACCT, TRNX); writes text + HTML statement files
+<strong>Complexity:</strong> Medium LOC but highest I/O count in estate (115 operations)</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Strangler</td>
+<td>✗ N/A</td>
+<td>Batch job — no API to wrap</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Replatform</td>
+<td>✓ Medium</td>
+<td>Runs on M2 without changes</td>
+<td>File-based output model doesn't scale</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✓ Low</td>
+<td>Could modularize further</td>
+<td>Still generates text files</td>
+</tr>
+<tr>
+<td><strong>Rewrite</strong></td>
+<td><strong>✓ Recommended</strong></td>
+<td>Replace file I/O with template engine; enable PDF/email delivery</td>
+<td>Must replicate statement layout exactly</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Rewrite (pilot batch migration)</strong></h3>
+<p><strong>Justification:</strong> CBSTM03A is the <strong>ideal pilot program</strong> for batch migration because: (1) self-contained with only one CALL dependency (CBSTM03B), (2) no CICS/DB2/IMS/MQ dependencies, (3) already generates HTML output, (4) highest I/O count (115 ops) demonstrates Spring Batch's streaming advantage. Success here proves the batch migration approach for all remaining batch programs.</p>
+<p><strong>Target Architecture:</strong>
+- <code>StatementGenerationJob</code> (Spring Batch) — main job
+- Thymeleaf/FreeMarker templates — replaces line-by-line WRITE statements
+- PDF generation via iText/OpenPDF — new capability
+- Email delivery integration — new capability</p>
+<hr />
+<h2>6. Functional Area: User Administration</h2>
+<p><strong>Programs:</strong> COUSR00C.cbl (578 LOC), COUSR01C.cbl (498 LOC), COUSR02C.cbl (555 LOC), COUSR03C.cbl (490 LOC)
+<strong>Technology:</strong> CICS + VSAM (user security file)
+<strong>Data:</strong> USRSEC (VSAM KSDS, 80-byte records) — isolated, no shared data with other domains
+<strong>Complexity:</strong> Low — standard CRUD with simple field validation</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Strangler</td>
+<td>✓ High</td>
+<td>Simple REST wrapper around user CRUD</td>
+<td>Overkill for such a small domain</td>
+</tr>
+<tr>
+<td>Replatform</td>
+<td>✓ High</td>
+<td>Quick M2 lift</td>
+<td>Perpetuates plain-text password storage</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✗ Low</td>
+<td>Cannot fix security issues without rewrite</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Rewrite</strong></td>
+<td><strong>✓ Recommended</strong></td>
+<td>Replace plain-text passwords with bcrypt; add Spring Security; modern auth flows</td>
+<td>Small scope makes this low-risk</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Rewrite</strong></h3>
+<p><strong>Justification:</strong> The user security file stores passwords in plain text (<code>SEC-USR-PWD PIC X(08)</code>). This is a critical security vulnerability that cannot be fixed without a rewrite. The domain is fully isolated (no shared data files with other domains) and small (4 programs, ~2,100 total LOC), making it the lowest-risk rewrite target in the estate.</p>
+<p><strong>Target Architecture:</strong>
+- <code>UserService</code> (Spring Boot + Spring Security) — auth and user management
+- PostgreSQL <code>users</code> table with bcrypt password hashing
+- JWT/OAuth2 token-based authentication — replaces CICS sign-on</p>
+<hr />
+<h2>7. Functional Area: Transaction Type Administration (DB2)</h2>
+<p><strong>Programs:</strong> COTRTLIC.cbl (2,098 LOC), COTRTUPC.cbl (1,702 LOC), COBTUPDT.cbl (batch updater)
+<strong>Technology:</strong> CICS + DB2 — already using relational database
+<strong>Data:</strong> DB2 tables: TRANSACTION_TYPE, TRANSACTION_CATEGORY — isolated from VSAM
+<strong>Complexity:</strong> High — cursor-based pagination, cascading deletes, 7+16 SQL statements</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Strangler</td>
+<td>✓ High</td>
+<td>Wrap DB2 CRUD with REST; SQL already translatable</td>
+<td>Need to maintain DB2 and new DB in parallel</td>
+</tr>
+<tr>
+<td>Replatform</td>
+<td>✓ High</td>
+<td>DB2 translates easily to RDS PostgreSQL</td>
+<td>Still COBOL programs on top</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✓ Medium</td>
+<td>Could simplify cursor logic</td>
+<td>Still CICS-dependent</td>
+</tr>
+<tr>
+<td><strong>Rewrite</strong></td>
+<td><strong>✓ Recommended</strong></td>
+<td>DB2 SQL maps 1:1 to JPA/Spring Data; natural database modernization entry point</td>
+<td>Cursor pagination semantics differ slightly from Spring Data paging</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Rewrite</strong></h3>
+<p><strong>Justification:</strong> These programs already use DB2 with standard SQL, making them the natural entry point for database modernization. The SQL statements translate with minimal changes to JPA. COTRTLIC's cursor-based pagination (<code>DECLARE CURSOR</code>, <code>FETCH</code>, <code>CLOSE</code>) maps to Spring Data's <code>Pageable</code> interface. Cascading deletes in COTRTUPC map to JPA <code>@OneToMany(cascade=CascadeType.ALL)</code>. This domain is isolated from VSAM, so migration has no impact on other functional areas.</p>
+<p><strong>Target Architecture:</strong>
+- <code>TransactionTypeService</code> (Spring Boot + Spring Data JPA) — CRUD
+- PostgreSQL <code>transaction_types</code>, <code>transaction_categories</code> tables — migrated from DB2
+- Flyway migrations — DDL management</p>
+<hr />
+<h2>8. Functional Area: Authorization Processing (IMS/MQ/CICS)</h2>
+<p><strong>Programs:</strong> COPAUA0C.cbl (1,026 LOC), COPAUS0C.cbl (1,032 LOC), COPAUS1C.cbl (512 LOC), COPAUS2C.cbl (285 LOC), CBPAUP0C.cbl (350 LOC — batch purge), PAUDBLOD.CBL, PAUDBUNL.CBL, DBUNLDGS.CBL
+<strong>Technology:</strong> CICS + IMS (DL/I) + MQ + DB2 — most complex subsystem stack
+<strong>Data:</strong> IMS hierarchical database (authorization segments), MQ queues, DB2 fraud table, VSAM files
+<strong>Complexity:</strong> Very High — COPAUA0C spans 3 middleware subsystems simultaneously</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Strangler</strong></td>
+<td><strong>✓ Recommended</strong></td>
+<td>Wrap MQ interface with adapter; keep IMS temporarily; gradually replace</td>
+<td>Allows phased decoupling of 3 subsystems</td>
+</tr>
+<tr>
+<td><strong>Replatform</strong></td>
+<td>✓ Medium</td>
+<td>Move to M2 with IMS emulation</td>
+<td>IMS emulation has limitations</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✗ Low</td>
+<td>Cannot simplify 3-subsystem integration in COBOL</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Rewrite</td>
+<td>✓ Medium</td>
+<td>Clean architecture possible</td>
+<td>Highest risk — 3 subsystems to replace simultaneously</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Strangler Pattern (phased subsystem replacement)</strong></h3>
+<p><strong>Justification:</strong> COPAUA0C is the most architecturally complex program, spanning MQ, IMS, and CICS simultaneously. A full rewrite would require replacing all three subsystems at once, which is extremely risky. The Strangler approach allows decoupling in phases:</p>
+<ol>
+<li><strong>Phase A:</strong> Wrap MQ interface with Spring JMS adapter → replace MQ first</li>
+<li><strong>Phase B:</strong> Migrate IMS hierarchical data to PostgreSQL (2 tables: <code>authorization_summary</code>, <code>authorization_detail</code>) → replace IMS DL/I calls with JPA</li>
+<li><strong>Phase C:</strong> Replace CICS screens with REST API → complete the migration</li>
+</ol>
+<p><strong>Target Architecture:</strong>
+- <code>AuthorizationService</code> (Spring Boot) — decision engine
+- Spring JMS — replaces MQ integration
+- PostgreSQL <code>authorization_summary</code>, <code>authorization_detail</code> tables — replaces IMS DB
+- <code>FraudService</code> — replaces COPAUS2C DB2 operations</p>
+<hr />
+<h2>9. Functional Area: Data Migration (Export/Import)</h2>
+<p><strong>Programs:</strong> CBEXPORT.cbl (582 LOC), CBIMPORT.cbl (487 LOC)
+<strong>Technology:</strong> Pure batch — no CICS/DB2/IMS/MQ
+<strong>Data:</strong> Reads/writes all 5 core VSAM files + sequential export file
+<strong>Complexity:</strong> Low — sequential file processing with record-type switching</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Strangler</td>
+<td>✗ N/A</td>
+<td>Batch job — no API to wrap</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Replatform</strong></td>
+<td><strong>✓ Recommended (interim)</strong></td>
+<td>Run on M2 during transition — these jobs are needed until VSAM is retired</td>
+<td>No code changes needed</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✗ Low</td>
+<td>Already simple enough</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Rewrite</td>
+<td>✓ Low priority</td>
+<td>Will be obsolete once all data is in PostgreSQL</td>
+<td>Wasted effort if done too early</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Replatform (interim), then Retire</strong></h3>
+<p><strong>Justification:</strong> Export/Import jobs exist to move data between mainframe environments. Once all data is migrated to PostgreSQL, these jobs become obsolete. Replatform them to M2 during the transition period to support data migration activities, then retire them after cutover.</p>
+<hr />
+<h2>10. Functional Area: Reporting</h2>
+<p><strong>Programs:</strong> CORPT00C.cbl (407 LOC — online report request), CBTRN03C.cbl (649 LOC — batch report generator)
+<strong>Technology:</strong> CICS (online request) + batch (report generation) + JCL intrader (job submission)
+<strong>Data:</strong> TRANSACT, CARDXREF, TRANTYPE, TRANCATG, DATEPARM
+<strong>Complexity:</strong> Medium — control-break report formatting in CBTRN03C</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Strangler</td>
+<td>✓ Medium</td>
+<td>Wrap CORPT00C with REST API for report requests</td>
+<td>Batch report generation still needed</td>
+</tr>
+<tr>
+<td>Replatform</td>
+<td>✓ Medium</td>
+<td>Runs on M2</td>
+<td>Text-based reports don't meet modern expectations</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>✗ Low</td>
+<td>Cannot change output format without rewrite</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Rewrite</strong></td>
+<td><strong>✓ Recommended</strong></td>
+<td>Replace text reports with modern dashboards/PDF; eliminate JCL intrader dependency</td>
+<td>Must replicate exact report layout for compliance</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Rewrite</strong></h3>
+<p><strong>Justification:</strong> CORPT00C submits batch JCL via the internal reader (INTRDRJ1/J2), which has no cloud equivalent. CBTRN03C generates fixed-width text reports that must be modernized. Rewrite as a Spring Batch report job with JasperReports or HTML/PDF output, triggered via REST API instead of JCL submission.</p>
+<p><strong>Target Architecture:</strong>
+- <code>ReportService</code> (Spring Boot) — REST API for report requests (replaces CORPT00C + JCL intrader)
+- <code>TransactionReportJob</code> (Spring Batch + JasperReports) — replaces CBTRN03C
+- PDF/HTML output — replaces text reports</p>
+<hr />
+<h2>11. Functional Area: Batch Utilities</h2>
+<p><strong>Programs:</strong> CBACT01C.cbl (430 LOC — file splitter), CBACT02C.cbl (178 LOC — card reader), CBACT03C.cbl (178 LOC — xref reader), CBCUS01C.cbl (178 LOC — customer reader), COBSWAIT.cbl (41 LOC — wait utility), CSUTLDTC.cbl (157 LOC — date utility)
+<strong>Technology:</strong> Pure batch — simple file read/print utilities
+<strong>Data:</strong> Individual VSAM files (one per program)
+<strong>Complexity:</strong> Very Low — 41–430 LOC, simple sequential processing</p>
+<h3>Strategy Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Feasibility</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Replatform</strong></td>
+<td><strong>✓ Recommended (interim)</strong></td>
+<td>Trivial M2 lift; already GnuCOBOL-compatible</td>
+<td>Will become obsolete</td>
+</tr>
+<tr>
+<td>Rewrite</td>
+<td>✓ Low priority</td>
+<td>Simple to rewrite but low business value</td>
+<td>Wasted effort — these are diagnostic tools</td>
+</tr>
+</tbody>
+</table>
+<h3><strong>Recommendation: Replatform (interim), then Retire</strong></h3>
+<p><strong>Justification:</strong> These are diagnostic/utility programs used for data verification. They have no business logic. Replatform to M2 during transition for data validation support, then retire once database access tools (SQL clients, admin panels) replace them.</p>
+<hr />
+<h2>12. Strategy Summary Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Functional Area</th>
+<th>Programs</th>
+<th>Total LOC</th>
+<th>Strategy</th>
+<th>Priority</th>
+<th>Effort (weeks)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User Administration</td>
+<td>4</td>
+<td>2,121</td>
+<td><strong>Rewrite</strong></td>
+<td>P1 — Quick Win</td>
+<td>3–4</td>
+</tr>
+<tr>
+<td>Statement Generation</td>
+<td>2</td>
+<td>1,154</td>
+<td><strong>Rewrite</strong> (Pilot)</td>
+<td>P1 — Pilot</td>
+<td>3–4</td>
+</tr>
+<tr>
+<td>Transaction Type (DB2)</td>
+<td>3</td>
+<td>3,800</td>
+<td><strong>Rewrite</strong></td>
+<td>P2</td>
+<td>4–6</td>
+</tr>
+<tr>
+<td>Credit Card Management</td>
+<td>3</td>
+<td>3,906</td>
+<td><strong>Rewrite</strong></td>
+<td>P2</td>
+<td>5–7</td>
+</tr>
+<tr>
+<td>Account Management</td>
+<td>3</td>
+<td>5,497</td>
+<td><strong>Rewrite</strong> + Strangler</td>
+<td>P3</td>
+<td>8–12</td>
+</tr>
+<tr>
+<td>Transaction Processing</td>
+<td>6</td>
+<td>3,920</td>
+<td><strong>Hybrid</strong> (Strangler + Rewrite)</td>
+<td>P3</td>
+<td>6–8</td>
+</tr>
+<tr>
+<td>Reporting</td>
+<td>2</td>
+<td>1,056</td>
+<td><strong>Rewrite</strong></td>
+<td>P4</td>
+<td>3–4</td>
+</tr>
+<tr>
+<td>Authorization (IMS/MQ)</td>
+<td>8</td>
+<td>3,640</td>
+<td><strong>Strangler</strong> (phased)</td>
+<td>P5</td>
+<td>10–14</td>
+</tr>
+<tr>
+<td>Data Migration</td>
+<td>2</td>
+<td>1,069</td>
+<td><strong>Replatform</strong> → Retire</td>
+<td>P6</td>
+<td>1–2</td>
+</tr>
+<tr>
+<td>Batch Utilities</td>
+<td>6</td>
+<td>1,162</td>
+<td><strong>Replatform</strong> → Retire</td>
+<td>P6</td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td><strong>39+</strong></td>
+<td><strong>~27,350</strong></td>
+<td></td>
+<td></td>
+<td><strong>44–62 weeks</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>13. Key Decision Points</h2>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Options</th>
+<th>Recommendation</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Target database</td>
+<td>PostgreSQL vs. Oracle vs. Aurora</td>
+<td><strong>PostgreSQL (Aurora)</strong></td>
+<td>Open-source, AWS-native, cost-effective; DB2 SQL translates cleanly</td>
+</tr>
+<tr>
+<td>Application framework</td>
+<td>Spring Boot vs. Quarkus vs. Micronaut</td>
+<td><strong>Spring Boot</strong></td>
+<td>Largest ecosystem; Spring Batch for batch jobs; Spring Data for DB; Spring Security for auth</td>
+</tr>
+<tr>
+<td>UI framework</td>
+<td>React vs. Angular vs. Vue</td>
+<td><strong>React or Angular</strong></td>
+<td>Team preference; both support the component model needed to replace BMS screens</td>
+</tr>
+<tr>
+<td>Message broker</td>
+<td>RabbitMQ vs. Amazon SQS vs. Kafka</td>
+<td><strong>Amazon SQS/SNS</strong></td>
+<td>Managed service; simpler than MQ; sufficient for authorization message flow</td>
+</tr>
+<tr>
+<td>Batch scheduler</td>
+<td>Spring Batch + Scheduler vs. AWS Step Functions</td>
+<td><strong>AWS Step Functions</strong></td>
+<td>Replaces Control-M scheduling; native AWS integration; visual workflow</td>
+</tr>
+<tr>
+<td>IMS replacement</td>
+<td>PostgreSQL tables vs. DynamoDB</td>
+<td><strong>PostgreSQL</strong></td>
+<td>IMS hierarchy maps to 2 relational tables; consistent with rest of migration</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
