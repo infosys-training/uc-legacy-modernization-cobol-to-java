@@ -1,0 +1,279 @@
+# Migration Test Strategy — CardDemo COBOL-to-Java
+
+## 1. Overview
+
+This document defines the testing approach for verifying that Java rewrites of CardDemo COBOL programs produce **identical results** to the original COBOL implementations. The strategy covers four testing layers: golden-file tests, differential tests, batch reconciliation, and contract tests.
+
+**Estate:** 44 COBOL programs (27 main + 17 sub-app), 9 data files, 33 JCL batch jobs  
+**Total LOC:** 27,350  
+**Test Data:** `app/data/ASCII/` — 9 files, 628 records total
+
+---
+
+## 2. Golden-File Tests
+
+### 2.1 Concept
+
+For each data file, parse the fixed-width COBOL records into structured JSON using the corresponding copybook layout. These JSON files serve as the **canonical reference** — any Java parser or service must produce the same structured output when reading the same input.
+
+### 2.2 Programs to Capture Outputs For
+
+| Priority | Program | Input Files | Output Files | Golden File |
+|----------|---------|-------------|--------------|-------------|
+| P1 | CBACT01C | acctdata.txt | OUTFILE, ARRYFILE, VBRCFILE | `golden-files/cbact01c-out.json` |
+| P1 | CBACT02C | carddata.txt | SYSPRINT (console) | `golden-files/cbact02c-out.json` |
+| P1 | CBACT03C | cardxref.txt | SYSPRINT (console) | `golden-files/cbact03c-out.json` |
+| P1 | CBCUS01C | custdata.txt | SYSPRINT (console) | `golden-files/cbcus01c-out.json` |
+| P2 | CBTRN02C | dailytran.txt, acctdata.txt | TRANSACT (updated), DALYREJS | `golden-files/cbtrn02c-out.json` |
+| P2 | CBACT04C | acctdata.txt, tcatbal.txt, discgrp.txt | ACCTFILE (updated) | `golden-files/cbact04c-out.json` |
+| P3 | CBSTM03A | acctdata.txt, custdata.txt, cardxref.txt | Statement text + HTML | `golden-files/cbstm03a-out.json` |
+| P3 | CBTRN03C | TRANSACT, cardxref.txt, trantype.txt | Report file | `golden-files/cbtrn03c-out.json` |
+| P4 | CBEXPORT | All VSAM files | Export sequential file | `golden-files/cbexport-out.json` |
+| P4 | CBIMPORT | Export file | All VSAM files (loaded) | `golden-files/cbimport-out.json` |
+
+### 2.3 Input Data
+
+All tests use the files in `app/data/ASCII/`:
+
+| File | Records | Rec Len | Copybook | Entity |
+|------|---------|---------|----------|--------|
+| acctdata.txt | 50 | 300 | CVACT01Y | Account |
+| carddata.txt | 50 | 150 | CVACT02Y | Card |
+| cardxref.txt | 50 | 37* | CVACT03Y | Card-Account XREF |
+| custdata.txt | 50 | 500 | CVCUS01Y | Customer |
+| dailytran.txt | 300 | 350 | CVTRA06Y | Daily Transaction |
+| discgrp.txt | 51 | 50 | CVTRA02Y | Disclosure Group |
+| tcatbal.txt | 50 | 51* | CVTRA01Y | Tran Category Balance |
+| trancatg.txt | 18 | 60 | CVTRA04Y | Transaction Category |
+| trantype.txt | 7 | 60 | CVTRA03Y | Transaction Type |
+
+*\*Note: cardxref.txt records are 37 bytes (copybook says 50 — file may be trimmed). tcatbal.txt records are 52 bytes (copybook says 50 — includes line endings). Verify during parsing.*
+
+### 2.4 Comparison Method
+
+1. **Parse** the COBOL data file using the copybook-based parser in `test-harness/`
+2. **Serialize** each record to JSON with field names matching the copybook
+3. **Save** as `golden-files/<entity>.json`
+4. **Compare** Java program output against golden file using field-by-field diff
+5. **Report** mismatches with: record number, field name, expected value, actual value
+
+### 2.5 Golden File Format
+
+```json
+{
+  "metadata": {
+    "source_file": "acctdata.txt",
+    "copybook": "CVACT01Y",
+    "record_length": 300,
+    "record_count": 50,
+    "generated_at": "2026-05-26T00:00:00Z"
+  },
+  "records": [
+    {
+      "record_number": 1,
+      "fields": {
+        "ACCT-ID": 1,
+        "ACCT-ACTIVE-STATUS": "Y",
+        "ACCT-CURR-BAL": "194.00",
+        "ACCT-CREDIT-LIMIT": "2020.00",
+        ...
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 3. Differential Tests
+
+### 3.1 Side-by-Side Execution
+
+For batch programs, run both COBOL and Java implementations with the **same input** and compare outputs:
+
+```
+┌─────────────────┐         ┌──────────────┐
+│  Input Files    │────────►│  COBOL Pgm   │──── COBOL Output
+│  (ASCII data)   │         └──────────────┘
+│                 │         ┌──────────────┐
+│                 │────────►│  Java Pgm    │──── Java Output
+└─────────────────┘         └──────────────┘
+                                    │
+                            ┌──────────────┐
+                            │  Diff Engine │──── Mismatch Report
+                            └──────────────┘
+```
+
+### 3.2 Execution Modes
+
+| Mode | Description | When to Use |
+|------|-------------|-------------|
+| **Record-level diff** | Compare each output record field-by-field | Default for all batch programs |
+| **Aggregate diff** | Compare record counts, totals, checksums | Quick smoke test before deep diff |
+| **Byte-level diff** | Raw byte comparison of output files | When investigating format discrepancies |
+
+### 3.3 COBOL Baseline Generation
+
+Since we cannot run COBOL directly in the Java environment, baselines are generated by:
+
+1. **Parsing input files** through the copybook-based parser to produce golden JSONs
+2. **Documenting expected transformations** per program (e.g., CBACT01C: date format change, zero-debit substitution)
+3. **Computing expected output** mathematically from input + business rules
+4. **Storing expected outputs** as golden files for automated comparison
+
+### 3.4 Known COBOL Behaviors to Test
+
+| Behavior | Programs Affected | Test Case |
+|----------|------------------|-----------|
+| Trailing overpunch sign encoding | All with PIC S9(n)V99 | Verify `{`/`}`/`A-I`/`J-R` decode correctly |
+| Implied decimal (V) | All monetary fields | Verify scale=2 applied correctly |
+| COMP-3 (packed decimal) | CBACT01C (OUT-FILE debit) | Verify packed vs display format |
+| Zero-value substitution | CBACT01C (debit → 2525.00) | Verify business rule applied |
+| Date reformatting | CBACT01C (COBDATFT call) | Verify YYYY-MM-DD ↔ YYYYMMDD |
+| COBOL INITIALIZE | CBACT01C (ARR-ARRAY-REC) | Verify zeroed fields in slots 4-5 |
+| High-value / low-value | CICS programs | Verify X'FF' / X'00' handling |
+
+---
+
+## 4. Batch Reconciliation
+
+### 4.1 Reconciliation Check Types
+
+| Check | Description | Formula |
+|-------|-------------|---------|
+| **Record Count** | Input record count = output record count | `count(input) == count(output)` |
+| **Sum Validation** | Sum of a numeric field across all records | `sum(field, input) == sum(field, output)` |
+| **Cross-Reference Integrity** | Every foreign key in file A exists in file B | `all(A.fk in B.pk)` |
+| **Hash Checksum** | SHA-256 of concatenated key fields | `hash(input_keys) == hash(output_keys)` |
+| **Range Validation** | Numeric fields within expected bounds | `min <= field <= max` |
+| **Uniqueness** | Primary key fields are unique | `count(distinct pk) == count(pk)` |
+
+### 4.2 Per-File Reconciliation Rules
+
+| File | Record Count | Sum Fields | Cross-Ref Check | Unique Key |
+|------|-------------|------------|-----------------|------------|
+| acctdata.txt | 50 | ACCT-CURR-BAL, ACCT-CREDIT-LIMIT | — | ACCT-ID |
+| carddata.txt | 50 | — | CARD-ACCT-ID → acctdata.ACCT-ID | CARD-NUM |
+| cardxref.txt | 50 | — | XREF-ACCT-ID → acctdata.ACCT-ID, XREF-CUST-ID → custdata.CUST-ID | XREF-CARD-NUM |
+| custdata.txt | 50 | — | — | CUST-ID |
+| dailytran.txt | 300 | DALYTRAN-AMT | DALYTRAN-CARD-NUM → cardxref.XREF-CARD-NUM | DALYTRAN-ID |
+| discgrp.txt | 51 | DIS-INT-RATE | DIS-ACCT-GROUP-ID → acctdata.ACCT-GROUP-ID* | DIS-GROUP-KEY |
+| tcatbal.txt | 50 | TRAN-CAT-BAL | TRANCAT-ACCT-ID → acctdata.ACCT-ID | TRAN-CAT-KEY |
+| trancatg.txt | 18 | — | TRAN-TYPE-CD → trantype.TRAN-TYPE | TRAN-CAT-KEY |
+| trantype.txt | 7 | — | — | TRAN-TYPE |
+
+### 4.3 Post-Batch-Run Checks
+
+After each batch job completes (COBOL or Java), run:
+
+1. **Pre-run snapshot:** Record counts and sums of all affected files
+2. **Post-run snapshot:** Same metrics after the job
+3. **Delta validation:** Verify deltas match expected business rules
+4. **Referential integrity:** Re-verify all cross-reference links
+
+---
+
+## 5. Contract Tests
+
+### 5.1 File Format Contracts
+
+Each VSAM file / sequential file has a **contract** defined by its copybook. These contracts must be enforced:
+
+| Contract | Source | Enforcement |
+|----------|--------|-------------|
+| Record length | Copybook `RECLN` comment | Assert `line.length() == expected` |
+| Field positions | PIC clause byte offsets | Parser validates field boundaries |
+| Field types | PIC 9 vs PIC X vs PIC S9V | Type-safe parsing with validation |
+| Key ordering | VSAM KSDS key field | Assert records sorted by primary key |
+| Sign encoding | PIC S (signed) fields | Validate overpunch chars are in valid set |
+
+### 5.2 Inter-Program Contracts
+
+| Producer | Consumer | Contract |
+|----------|----------|----------|
+| CBTRN02C | CBTRN03C | TRANSACT file: 350-byte records, sorted by TRAN-ID |
+| CBTRN02C | CBACT04C | ACCTFILE: updated balances, TCATBALF: updated category balances |
+| CBACT04C | CBSTM03A | ACCTFILE: interest applied to ACCT-CURR-BAL |
+| CBIMPORT | All online programs | All VSAM files populated with valid data |
+| CBEXPORT | CBIMPORT | Export file: concatenated records with type prefix |
+
+### 5.3 API Contract Tests (Post-Migration)
+
+When COBOL programs are replaced by Java services, define REST API contracts:
+
+```yaml
+# Example: account-service contract
+GET /api/accounts/{id}:
+  response:
+    acctId: integer (maps to ACCT-ID PIC 9(11))
+    activeStatus: string (maps to ACCT-ACTIVE-STATUS PIC X(01))
+    currBal: decimal (maps to ACCT-CURR-BAL PIC S9(10)V99)
+    # All monetary fields: BigDecimal with scale=2
+```
+
+### 5.4 Contract Versioning
+
+- Store contracts as JSON Schema files in `test-harness/contracts/`
+- Version contracts alongside the migration phases
+- Breaking changes require explicit migration of downstream consumers
+
+---
+
+## 6. Test Execution Pipeline
+
+### 6.1 Automated Test Flow
+
+```
+1. Parse input data → golden JSON files (one-time setup)
+2. Run Java program with same input
+3. Parse Java output → actual JSON
+4. Run field-by-field comparison (golden vs actual)
+5. Run reconciliation checks (counts, sums, cross-refs)
+6. Generate mismatch report
+7. Pass/fail gate: 0 mismatches required
+```
+
+### 6.2 CI Integration
+
+```yaml
+# GitHub Actions workflow (future)
+migration-tests:
+  steps:
+    - run: mvn test -pl test-harness   # Unit tests
+    - run: python test-harness/run_golden_tests.py  # Golden file comparison
+    - run: python test-harness/run_reconciliation.py  # Data integrity
+```
+
+### 6.3 Test Coverage Matrix
+
+| Migration Phase | Programs | Test Type | Status |
+|----------------|----------|-----------|--------|
+| P1 (User Admin + Reporting) | COSGN00C, COUSR00-03C, CBSTM03A/B | Golden + Contract | Planned |
+| P2 (Tran Type + Card) | COTRTLIC, COTRTUPC, COCRDLIC/SLC/UPC | Contract + Differential | Planned |
+| P3 (Account + Transaction) | COACTUPC, COACTVWC, COTRN00-02C | All 4 types | Planned |
+| P4 (Authorization) | COPAUA0C, COPAUS0-2C | Contract + Reconciliation | Planned |
+| P5 (Batch Pipeline) | CBTRN01-03C, CBACT04C, CORPT00C | Golden + Reconciliation | Planned |
+| P6 (Data Migration) | CBEXPORT, CBIMPORT | Reconciliation + Contract | Planned |
+
+---
+
+## 7. Tools & Utilities
+
+| Tool | Location | Purpose |
+|------|----------|---------|
+| `CobolRecordParser` | `test-harness/src/main/python/cobol_parser.py` | Parse fixed-width COBOL data files using copybook definitions |
+| `OutputComparator` | `test-harness/src/main/python/comparator.py` | Field-by-field diff of two JSON outputs |
+| `ReconciliationRunner` | `test-harness/src/main/python/reconciliation.py` | Record count, sum, cross-ref, uniqueness checks |
+| Golden file generator | `test-harness/generate_golden_files.py` | One-time generation of reference JSON from ASCII data |
+
+---
+
+## 8. Success Criteria
+
+| Criterion | Threshold |
+|-----------|-----------|
+| Field-level match rate | **100%** (zero mismatches for all golden-file comparisons) |
+| Record count match | **100%** (input count = output count for all batch jobs) |
+| Numeric sum accuracy | **Exact match** (BigDecimal comparison, no floating-point tolerance) |
+| Cross-reference integrity | **100%** (all foreign keys resolve) |
+| Performance | Java batch ≤ 110% of COBOL runtime |
