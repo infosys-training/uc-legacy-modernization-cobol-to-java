@@ -40,12 +40,17 @@ class GoldenFileComparisonTest {
     }
 
     @Test
-    void binaryGolden_comp3DebitField_blockedByComp3Bug() throws Exception {
-        // Binary output crashes because CobolBinaryOutputWriter.COMP3_DIGITS=12 (even)
-        // triggers StringIndexOutOfBoundsException in Comp3Encoder.
-        // Once fixed to 13, this test should verify COMP-3 bytes at offset 90-96
-        // encode 2525.00 as {0x00,0x00,0x02,0x52,0x50,0x00,0x0C}.
-        assertThatThrownBy(() -> processor.process(inputFile(), tempDir, OutputFormat.COBOL_BINARY))
-                .isInstanceOf(StringIndexOutOfBoundsException.class);
+    void binaryGolden_comp3DebitField() throws Exception {
+        processor.process(inputFile(), tempDir, OutputFormat.COBOL_BINARY);
+
+        byte[] outData = Files.readAllBytes(tempDir.resolve("out-accounts.bin"));
+        // COMP-3 debit field starts at offset 90 in each 107-byte record
+        // First record debit=2525.00 (default when input is 0)
+        // 2525.00 → 13 digits → "0000000252500" → packed: 00 00 00 02 52 50 0C
+        byte[] comp3Debit = new byte[7];
+        System.arraycopy(outData, 90, comp3Debit, 0, 7);
+        assertThat(comp3Debit).isEqualTo(new byte[]{
+                0x00, 0x00, 0x00, 0x02, 0x52, 0x50, 0x0C
+        });
     }
 }

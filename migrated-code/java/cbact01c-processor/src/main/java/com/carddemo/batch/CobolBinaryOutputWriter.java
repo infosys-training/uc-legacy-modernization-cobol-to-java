@@ -16,7 +16,7 @@ public class CobolBinaryOutputWriter implements OutputWriter {
     private static final int OUT_RECORD_LEN = 107;
     private static final int ARRAY_RECORD_LEN = 110;
     private static final int ZONED_DECIMAL_DIGITS = 12;
-    private static final int COMP3_DIGITS = 12;
+    private static final int COMP3_DIGITS = 13;
 
     private final Comp3Encoder comp3Encoder = new Comp3Encoder();
     private final ZonedDecimalEncoder zonedEncoder = new ZonedDecimalEncoder();
