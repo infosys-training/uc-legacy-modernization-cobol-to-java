@@ -137,4 +137,32 @@ class OccursArrayTest {
         assertThat(result.isMatch()).isFalse();
         assertThat(result.getSeverity()).isEqualTo(MismatchSeverity.WARNING);
     }
+
+    @Test
+    void shouldErrorOnElementMismatchEvenWhenExtrasAreDefault() {
+        // Bug scenario: element mismatch in common prefix + extras are zeros
+        // Must report ERROR for the element mismatch, not WARNING for partial arrays
+        List<BigDecimal> cobolArray = new ArrayList<>(List.of(
+            new BigDecimal("10.00"), new BigDecimal("999.00"), new BigDecimal("30.00"),
+            BigDecimal.ZERO, BigDecimal.ZERO
+        ));
+        List<BigDecimal> javaArray = new ArrayList<>(List.of(
+            new BigDecimal("10.00"), new BigDecimal("20.00"), new BigDecimal("30.00")
+        ));
+
+        Map<String, Object> expected = new LinkedHashMap<>();
+        expected.put("ACCT-DEBIT-ARR", cobolArray);
+
+        Map<String, Object> actual = new LinkedHashMap<>();
+        actual.put("ACCT-DEBIT-ARR", javaArray);
+
+        List<ComparisonResult> results = comparator.compare(expected, actual,
+            EnumSet.of(ToleranceRule.ALLOW_PARTIAL_ARRAYS));
+
+        assertThat(results).hasSize(1);
+        ComparisonResult result = results.get(0);
+        assertThat(result.isMatch()).isFalse();
+        assertThat(result.getSeverity()).isEqualTo(MismatchSeverity.ERROR);
+        assertThat(result.getNote()).contains("Element 1 differs");
+    }
 }

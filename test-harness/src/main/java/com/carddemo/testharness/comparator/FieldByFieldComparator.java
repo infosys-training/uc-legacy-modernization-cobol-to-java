@@ -200,6 +200,12 @@ public class FieldByFieldComparator {
             }
             if (toleranceRules.contains(ToleranceRule.ALLOW_PARTIAL_ARRAYS)
                     && toleranceRulesConfig.isAllowPartialArrays()) {
+                if (!allMatch) {
+                    return new ComparisonResult(fieldName, expected, actual, false, null,
+                        MismatchSeverity.ERROR,
+                        notes.toString().trim() + " COBOL has " + expected.size()
+                            + " elements, Java has " + actual.size());
+                }
                 if (extrasAreDefault) {
                     return new ComparisonResult(fieldName, expected, actual, false,
                         "ALLOW_PARTIAL_ARRAYS", MismatchSeverity.WARNING,
