@@ -5,6 +5,9 @@ import java.math.BigDecimal;
 public class Comp3Encoder {
 
     public byte[] encode(BigDecimal value, int totalDigits) {
+        if (totalDigits % 2 == 0) {
+            throw new IllegalArgumentException("totalDigits must be odd, but was " + totalDigits);
+        }
         boolean negative = value.signum() < 0;
         BigDecimal abs = value.abs();
         String digits = abs.movePointRight(2).toBigInteger().toString();

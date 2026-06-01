@@ -77,6 +77,41 @@ class AccountFileProcessorJsonTest {
     }
 
     @Test
+    void nonZeroDebit_preservedInOutput() throws Exception {
+        // Build a 300-char record with a non-zero debit (500.00) at bytes 90-101.
+        // Field layout: acctId(11) activeStatus(1) balance(12) creditLimit(12)
+        //   cashCreditLimit(12) openDate(10) expDate(10) reissueDate(10)
+        //   cycleCredit(12) cycleDebit(12) addrZip(10) groupId(10) filler(178)
+        String record =
+                "00000000099"                   // acctId
+                + "Y"                           // activeStatus
+                + "00000001000{"                 // currentBalance = 100.00
+                + "00000020000{"                 // creditLimit = 2000.00
+                + "00000010000{"                 // cashCreditLimit = 1000.00
+                + "2024-01-01"                   // openDate
+                + "2026-01-01"                   // expirationDate
+                + "2025-06-01"                   // reissueDate
+                + "00000000000{"                 // currentCycleCredit = 0.00
+                + "00000005000{"                 // currentCycleDebit = 500.00 (non-zero)
+                + "1234567890"                   // addressZip
+                + "GRPTEST   ";                  // groupId
+        // Pad to 300 chars
+        record = String.format("%-300s", record);
+
+        Path input = tempDir.resolve("nonzero-debit.txt");
+        Files.writeString(input, record + System.lineSeparator());
+
+        Path outDir = tempDir.resolve("out");
+        processor.process(input, outDir, OutputFormat.JSON);
+
+        String line = Files.readAllLines(outDir.resolve("out-accounts.jsonl")).get(0);
+        JsonNode node = mapper.readTree(line);
+        BigDecimal debit = node.get("currentCycleDebit").decimalValue();
+        // Non-zero debit should be preserved, NOT replaced with 2525.00
+        assertThat(debit).isEqualByComparingTo(new BigDecimal("500.00"));
+    }
+
+    @Test
     void firstVbRecord_isVb1WithAcctId() throws Exception {
         processor.process(inputFile(), tempDir, OutputFormat.JSON);
 

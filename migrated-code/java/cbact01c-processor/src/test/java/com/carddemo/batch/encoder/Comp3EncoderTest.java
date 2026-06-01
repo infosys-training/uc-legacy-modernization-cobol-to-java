@@ -13,8 +13,6 @@ class Comp3EncoderTest {
     // COMP-3 for PIC S9(10)V99 has 12 data digits. The encoder requires an odd
     // totalDigits so a leading pad nibble is added, giving 13 digit slots packed
     // into 7 bytes (6 paired-digit bytes + 1 lastDigit|sign byte).
-    // NOTE: CobolBinaryOutputWriter.COMP3_DIGITS is set to 12 (even), which
-    // triggers StringIndexOutOfBoundsException — that is a source bug.
     private static final int TOTAL_DIGITS = 13;
 
     @Test
@@ -72,5 +70,12 @@ class Comp3EncoderTest {
         assertThat(result).isEqualTo(new byte[]{
                 0x00, 0x00, 0x00, 0x01, 0x52, 0x50, 0x0C
         });
+    }
+
+    @Test
+    void encode_evenTotalDigits_throwsIllegalArgument() {
+        assertThatThrownBy(() -> encoder.encode(new BigDecimal("2525.00"), 12))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("totalDigits must be odd");
     }
 }
