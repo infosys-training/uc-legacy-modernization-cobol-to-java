@@ -26,13 +26,23 @@ public class CobolBinaryOutputWriter implements OutputWriter {
     private final VariableLengthRecordWriter vbrcWriter;
 
     public CobolBinaryOutputWriter(Path outputDir) throws IOException {
-        outFileStream = new BufferedOutputStream(
-                Files.newOutputStream(outputDir.resolve("out-accounts.bin")));
-        arryFileStream = new BufferedOutputStream(
-                Files.newOutputStream(outputDir.resolve("array-records.bin")));
-        vbrcWriter = new VariableLengthRecordWriter(
-                new BufferedOutputStream(
-                        Files.newOutputStream(outputDir.resolve("vb-records.bin"))));
+        OutputStream outStream = null;
+        OutputStream arryStream = null;
+        try {
+            outStream = new BufferedOutputStream(
+                    Files.newOutputStream(outputDir.resolve("out-accounts.bin")));
+            arryStream = new BufferedOutputStream(
+                    Files.newOutputStream(outputDir.resolve("array-records.bin")));
+            vbrcWriter = new VariableLengthRecordWriter(
+                    new BufferedOutputStream(
+                            Files.newOutputStream(outputDir.resolve("vb-records.bin"))));
+            this.outFileStream = outStream;
+            this.arryFileStream = arryStream;
+        } catch (IOException e) {
+            if (outStream != null) outStream.close();
+            if (arryStream != null) arryStream.close();
+            throw e;
+        }
     }
 
     @Override
@@ -96,9 +106,15 @@ public class CobolBinaryOutputWriter implements OutputWriter {
 
     @Override
     public void close() throws IOException {
-        outFileStream.close();
-        arryFileStream.close();
-        vbrcWriter.close();
+        try {
+            outFileStream.close();
+        } finally {
+            try {
+                arryFileStream.close();
+            } finally {
+                vbrcWriter.close();
+            }
+        }
     }
 
     private int writeAsciiLeftPadZero(byte[] buf, int offset, String value, int width) {

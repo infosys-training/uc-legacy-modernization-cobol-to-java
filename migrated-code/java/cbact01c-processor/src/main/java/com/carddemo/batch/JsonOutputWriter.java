@@ -17,9 +17,19 @@ public class JsonOutputWriter implements OutputWriter {
     private final BufferedWriter vbRecordWriter;
 
     public JsonOutputWriter(Path outputDir) throws IOException {
-        outAccountWriter = Files.newBufferedWriter(outputDir.resolve("out-accounts.jsonl"));
-        arrayRecordWriter = Files.newBufferedWriter(outputDir.resolve("array-records.jsonl"));
-        vbRecordWriter = Files.newBufferedWriter(outputDir.resolve("vb-records.jsonl"));
+        BufferedWriter outWriter = null;
+        BufferedWriter arrWriter = null;
+        try {
+            outWriter = Files.newBufferedWriter(outputDir.resolve("out-accounts.jsonl"));
+            arrWriter = Files.newBufferedWriter(outputDir.resolve("array-records.jsonl"));
+            vbRecordWriter = Files.newBufferedWriter(outputDir.resolve("vb-records.jsonl"));
+            this.outAccountWriter = outWriter;
+            this.arrayRecordWriter = arrWriter;
+        } catch (IOException e) {
+            if (outWriter != null) outWriter.close();
+            if (arrWriter != null) arrWriter.close();
+            throw e;
+        }
     }
 
     @Override
@@ -48,8 +58,14 @@ public class JsonOutputWriter implements OutputWriter {
 
     @Override
     public void close() throws IOException {
-        outAccountWriter.close();
-        arrayRecordWriter.close();
-        vbRecordWriter.close();
+        try {
+            outAccountWriter.close();
+        } finally {
+            try {
+                arrayRecordWriter.close();
+            } finally {
+                vbRecordWriter.close();
+            }
+        }
     }
 }
