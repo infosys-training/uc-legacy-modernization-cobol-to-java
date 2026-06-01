@@ -133,7 +133,7 @@ public class AccountFileProcessor {
     private OutputWriter createWriter(OutputFormat format, Path outputDir) throws IOException {
         return switch (format) {
             case JSON -> new JsonOutputWriter(outputDir);
-            case COBOL_BINARY -> throw new UnsupportedOperationException("COBOL_BINARY output not yet implemented");
+            case COBOL_BINARY -> new CobolBinaryOutputWriter(outputDir);
         };
     }
 }
