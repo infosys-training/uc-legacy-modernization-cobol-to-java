@@ -78,6 +78,15 @@ public class AccountFileProcessor {
     }
 
     // 1300-POPUL-ACCT-RECORD
+    //
+    // COBOL fidelity note (CBACT01C.cbl:236-238):
+    // The original IF/END-IF has no ELSE and no unconditional MOVE for the
+    // debit field, so non-zero values leave OUT-ACCT-CURR-CYC-DEBIT stale
+    // (uninitialised on the first record, carried over from the previous
+    // record thereafter).  This is almost certainly a mainframe bug.
+    // The Java version intentionally copies the actual debit value when
+    // non-zero, producing correct output.  See nonZeroDebit_preservedInOutput
+    // test for coverage of this path.
     private OutAccountRecord buildOutRecord(AccountRecord acct) {
         String formattedReissueDate = dateFormatter.convertDate(acct.reissueDate(), '2', '2');
 

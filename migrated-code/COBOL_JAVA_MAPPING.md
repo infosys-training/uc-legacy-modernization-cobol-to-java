@@ -17,7 +17,7 @@
 | `0000-ACCTFILE-OPEN` | Constructor / `process()` init | File open via BufferedReader |
 | `1000-ACCTFILE-GET-NEXT` | `processNextRecord()` | readline + parse |
 | `1100-DISPLAY-ACCT-RECORD` | `logAccountRecord()` | SLF4J logging |
-| `1300-POPUL-ACCT-RECORD` | `buildOutRecord()` | Transform + date format + debit default |
+| `1300-POPUL-ACCT-RECORD` | `buildOutRecord()` | Transform + date format + debit default. **Fidelity note:** COBOL has no ELSE/MOVE for non-zero debit (stale output field); Java intentionally uses actual value — see comment in source. |
 | `1400-POPUL-ARRAY-RECORD` | `buildArrayRecord()` | Hardcoded array population |
 | `1500-POPUL-VBRC-RECORD` | `buildVbRecords()` | VB1 + VB2 construction |
 | `9910-DISPLAY-IO-STATUS` | Exception handling | IOException / FileNotFoundException |
