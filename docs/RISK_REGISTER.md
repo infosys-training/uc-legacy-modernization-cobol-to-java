@@ -271,6 +271,8 @@ The highest-risk scenario involves ACCTDATA — classified as "Shared-Mutable" i
 
 **Risk Score:** 2 (1 × 2)
 
+> **Review Note:** Given ACCTDATA is Shared-Mutable with 6 concurrent writers (CBIMPORT, CBTRN01C, CBTRN02C, CBACT04C, COACTUPC, COBIL00C) across Account, Card, and Transaction domains, the Likelihood score of Low (1) should be re-evaluated. Consider bumping to Medium (2) which would raise the Risk Score from 2 to 4.
+
 **Mitigation Strategy:**
 1. Implement record-level checksums (CRC32 of full record bytes) on both VSAM and PostgreSQL sides
 2. Run a nightly reconciliation job comparing record counts and `SUM(ACCT-CURR-BAL)` across all accounts
@@ -312,10 +314,10 @@ In the current COBOL system, these cross-domain writes are atomic — VSAM file 
 **Risk Score:** 9 (3 × 3)
 
 **Mitigation Strategy:**
-1. **Keep batch monolithic through Phase 3:** Do not decompose POSTTRAN or INTCALC until the saga infrastructure is proven in Phase 4
-2. **Implement the saga pattern for Phase 4 (Transaction Management):**
-   - POSTTRAN saga: `TransactionService.post()` → `AccountService.updateBalance()` with compensating rollback
-   - INTCALC saga: `AccountService.calculateInterest()` → `TransactionService.createInterestRecord()` with compensating rollback
+1. **Keep POSTTRAN batch monolithic through Phase 3:** Do not decompose POSTTRAN until the saga infrastructure is proven in Phase 4. INTCALC (CBACT04C) migrates in Phase 3 (Account Management) and requires saga pattern at that point.
+2. **Implement the saga pattern:**
+   - **Phase 3 (Account Management):** INTCALC saga: `AccountService.calculateInterest()` → `TransactionService.createInterestRecord()` with compensating rollback
+   - **Phase 4 (Transaction Management):** POSTTRAN saga: `TransactionService.post()` → `AccountService.updateBalance()` with compensating rollback
 3. **Run parallel batch:** Execute both COBOL and Java batch, compare outputs field-by-field, for a minimum of 30 days before cutting over
 4. **Use outbox pattern:** Each service writes its local change + an outbox event in a single database transaction; a relay publishes the event to Kafka for the downstream service
 5. **Implement idempotency keys:** Each transaction posting gets a unique key to prevent duplicate processing during retries
@@ -329,9 +331,9 @@ If the saga pattern introduces unacceptable latency or failure rates (>0.1% comp
 - Parallel-run comparison shows drift in `ACCT-CURR-BAL` totals
 - Saga orchestration latency >500ms per transaction (vs. <1ms for VSAM direct write)
 
-**Related Cutover Phase:** Phase 4 (Transaction Management — POSTTRAN/INTCALC are the critical-risk programs)
+**Related Cutover Phase:** Phase 3 (Account Management — INTCALC/CBACT04C) and Phase 4 (Transaction Management — POSTTRAN/CBTRN01C)
 
-**Related Domain:** Transaction Management (POSTTRAN owner), Account Management (INTCALC owner, POSTTRAN writes to ACCTDATA)
+**Related Domain:** Account Management (INTCALC/CBACT04C owner), Transaction Management (POSTTRAN/CBTRN01C owner, POSTTRAN writes to ACCTDATA)
 
 ---
 

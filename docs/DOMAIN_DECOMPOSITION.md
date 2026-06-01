@@ -275,7 +275,7 @@ All 46 JCL jobs (38 core + 5 auth sub-app + 3 tran-type sub-app) are classified 
 | ACCTFILE | `app/jcl/ACCTFILE.jcl` | Define/load ACCTDATA VSAM | ACCTDATA | No |
 | READACCT | `app/jcl/READACCT.jcl` | Sequential read/audit account (CBACT01C) | ACCTDATA (read) | No |
 
-#### Card Domain (3 jobs)
+#### Card Domain (4 jobs)
 
 | Job | File | Purpose | Datasets Touched | Cross-Domain? |
 |-----|------|---------|-----------------|---------------|
@@ -284,7 +284,7 @@ All 46 JCL jobs (38 core + 5 auth sub-app + 3 tran-type sub-app) are classified 
 | XREFFILE | `app/jcl/XREFFILE.jcl` | Define/load CARDXREF VSAM | CARDXREF | **Shared** — XREF spans Card/Customer/Account |
 | READXREF | `app/jcl/READXREF.jcl` | Sequential read/audit XREF (CBACT03C) | CARDXREF (read) | **Shared** — reads tri-domain data |
 
-#### Transaction Domain (17 jobs)
+#### Transaction Domain (16 jobs)
 
 | Job | File | Purpose | Datasets Touched | Cross-Domain? |
 |-----|------|---------|-----------------|---------------|
@@ -620,6 +620,7 @@ _(None — Customer is a pure data provider)_
 |---------------|---------|----------|
 | CAAV | COACTVWC | Account view |
 | CAAU | COACTUPC | Account update |
+| CABP | COBIL00C | Bill payment |
 
 #### Batch Jobs
 
@@ -636,7 +637,6 @@ _(None — Customer is a pure data provider)_
 |--------|--------|-----------|---------|
 | CBTRN01C | Transaction | Direct VSAM write | Update ACCT-CURR-BAL after posting |
 | CBTRN02C | Transaction | Direct VSAM write | Update balance after validation |
-| COBIL00C | Transaction | Direct VSAM write | Update balance after bill payment |
 | COPAUA0C | Authorization | VSAM read | Verify account for authorization |
 | COACCT01 | MQ Integration | VSAM read | Account inquiry via MQ |
 | COCRDLIC, COCRDSLC, COCRDUPC | Card | VSAM read | Account lookup from card screens |
@@ -806,7 +806,6 @@ _(None — Customer is a pure data provider)_
 | CATV | COTRN01C | Transaction view |
 | CATA | COTRN02C | Transaction add |
 | CARP | CORPT00C | Reports |
-| CABP | COBIL00C | Bill payment |
 | CTTT | COTRTLIC | Transaction type list (DB2) |
 | CTTU | COTRTUPC | Transaction type update (DB2) |
 

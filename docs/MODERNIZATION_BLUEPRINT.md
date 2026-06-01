@@ -382,10 +382,9 @@ Furthermore, this rewrite is a prerequisite for Statement Generation modernizati
 | `COACTVWC.cbl` | CICS Online | 941 | **55** (Rank #8) | Account View — display account details by ID |
 | `CBACT01C.cbl` | Batch | 430 | — | Read Account VSAM; write to flat output files |
 | `CBACT04C.cbl` | Batch | 652 | — | Interest calculation — compute interest on account balances |
-| `CBTRN01C.cbl` | Batch | 494 | — | Post daily transactions — update account balances |
 | `COBIL00C.cbl` | CICS Online | 572 | — | Bill Payment — process payments against accounts |
 
-**Total LOC:** 7,325
+**Total LOC:** 6,831
 **Copybooks:** CVACT01Y (300-byte account record), CVACT02Y, CVACT03Y, COCOM01Y, CSDAT01Y, CSMSG01Y, CSMSG02Y, CSUTLDWY, CSSETATY (×30+ validation tables), BMS maps (COACTVW, COACTUP, COBIL00)
 **CICS Transactions:** CAAV (Account View), CAAU (Account Update), CABP (Bill Payment)
 **Data Store:** ACCTDAT VSAM KSDS (300-byte records, key = ACCT-ID 11 digits); also accessed via CARDAIX alternate index
@@ -672,6 +671,11 @@ The critical dependency is CARDXREF — the "Rosetta Stone" that links Card, Cus
 | `COBTUPDT.cbl` | Batch/DB2 | 237 | — | Batch update of transaction types in DB2 |
 
 **Total LOC:** 10,178
+
+> **Note:** CBACT04C is listed under Transaction Management for analytical completeness (it processes transaction category balances), but Account Management is the primary owner per CUTOVER_PLAN Phase 3.
+
+> **LOC Reconciliation:** The Blueprint total of 10,178 includes COBIL00C (652 LOC) which is now assigned to Account Management, and uses different LOC counts for COBSWAIT (53→41) and CSUTLDTC (72→157) per wc -l verification. The CUTOVER_PLAN Phase 4 total of 9,724 is authoritative.
+
 **Copybooks:** CVTRA05Y (350-byte transaction record), CVTRA06Y (daily input), CVTRA01Y–04Y (category/type/report structures), CVTRA07Y (report formatting), COSTM01 (statement transaction), DCLTRTYP (DB2 type), DCLTRCAT (DB2 category), CSDB2RPY, CSDB2RWY
 **CICS Transactions:** CATL (List), CATV (View), CATA (Add), CARP (Reports), CTTT (Type List), CTTU (Type Update)
 **Data Stores:** TRANSACT VSAM KSDS (350-byte, key = TRAN-ID 16 bytes); DALYTRAN sequential; DB2 tables TRANSACTION_TYPE and TRANSACTION_CATEGORY; TCATBALF VSAM; TRANTYPE/TRANCATG VSAM (ref data sync from DB2)
@@ -1138,7 +1142,7 @@ graph LR
 | 1 | CBACT01C.cbl | Core | Batch | 430 | Account Management |
 | 2 | CBACT02C.cbl | Core | Batch | 178 | Credit Card Management |
 | 3 | CBACT03C.cbl | Core | Batch | 178 | Credit Card Management |
-| 4 | CBACT04C.cbl | Core | Batch | 652 | Transaction Management (Interest Calc) |
+| 4 | CBACT04C.cbl | Core | Batch | 652 | Account Management (Interest Calc) |
 | 5 | CBCUS01C.cbl | Core | Batch | 178 | Customer Management |
 | 6 | CBEXPORT.cbl | Core | Batch | 582 | Cross-Domain (Data Migration) |
 | 7 | CBIMPORT.cbl | Core | Batch | 487 | Cross-Domain (Data Migration) |

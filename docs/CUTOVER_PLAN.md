@@ -83,6 +83,8 @@
 
 This plan defines a **5-phase migration cutover** for the CardDemo application — a 44-program, 30,175 LOC mainframe credit card management system spanning COBOL, CICS, VSAM, IMS, DB2, and MQ technologies.
 
+> **Note:** This document is the authoritative sequencing model. DOMAIN_DECOMPOSITION uses 6 phases and MODERNIZATION_BLUEPRINT uses 4 waves for analytical purposes; this CUTOVER_PLAN's 5-phase model is the operational reference.
+
 ### Migration Structure
 
 | Phase | Domain(s) | Strategy | Relative Timing |
@@ -349,6 +351,8 @@ The following must be in place before Phase 1 begins:
 | COADM01C | `app/cbl/COADM01C.cbl` | CICS Online | 288 | Spring Boot — Admin menu routing (navigation concern absorbed into API gateway) |
 | COMEN01C | `app/cbl/COMEN01C.cbl` | CICS Online | 308 | Spring Boot — Main menu routing (navigation concern absorbed into frontend SPA) |
 
+> **Note:** COADM01C and COMEN01C are classified as "Cross-Domain (Navigation)" in MODERNIZATION_BLUEPRINT. They are included here because they must be migrated as part of the security domain, but their navigation logic spans all domains.
+
 **Total: 7 programs, 7,427 LOC**
 
 **Strategy:** Strangler Pattern (API-first, incremental replacement)
@@ -428,7 +432,7 @@ The following must be in place before Phase 1 begins:
 
 ### a. Phase Name & Objective
 
-**Phase 4: Transaction Management Strangler** — Incrementally replace the largest and most complex domain (10,178 LOC, 14 programs) using the Strangler Pattern. Begins with eliminating the dual-store sync pattern (transaction types already in DB2), wraps online CRUD with APIs, and progressively replaces the batch pipeline (POSTTRAN → INTCALC → statement generation) with event-driven processing.
+**Phase 4: Transaction Management Strangler** — Incrementally replace the largest and most complex domain (9,724 LOC, 14 programs) using the Strangler Pattern. Begins with eliminating the dual-store sync pattern (transaction types already in DB2), wraps online CRUD with APIs, and progressively replaces the batch pipeline (POSTTRAN → INTCALC → statement generation) with event-driven processing.
 
 ### b. Programs Migrating
 
@@ -557,10 +561,10 @@ The following must be in place before Phase 1 begins:
 
 | Program | File | Type | LOC | Target Technology |
 |---------|------|------|-----|-------------------|
-| COACCT01 | `app/app-vsam-mq/cbl/COACCT01.cbl` | CICS/MQ | ~350 | Decommissioned — Account API replaces MQ-based inquiry |
-| CODATE01 | `app/app-vsam-mq/cbl/CODATE01.cbl` | CICS/MQ | ~200 | Decommissioned — `java.time` validation replaces MQ-based service |
+| COACCT01 | `app/app-vsam-mq/cbl/COACCT01.cbl` | CICS/MQ | 620 | Decommissioned — Account API replaces MQ-based inquiry |
+| CODATE01 | `app/app-vsam-mq/cbl/CODATE01.cbl` | CICS/MQ | 524 | Decommissioned — `java.time` validation replaces MQ-based service |
 
-**Total: 10 programs, ~4,894 LOC**
+**Total: 10 programs, 5,488 LOC**
 
 **Strategy:** Rewrite (Java 17 / Spring Boot 3.x / Spring Kafka / PostgreSQL)
 
