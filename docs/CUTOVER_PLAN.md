@@ -343,7 +343,7 @@ The following must be in place before Phase 1 begins:
 |---------|------|------|-----|-------------------|
 | COACTVWC | `app/cbl/COACTVWC.cbl` | CICS Online | 941 | Spring Data JPA — `GET /api/accounts/{id}` (Sub-phase 3A) |
 | COACTUPC | `app/cbl/COACTUPC.cbl` | CICS Online | 4,236 | Spring Boot — Account Update service with extracted validation (Sub-phase 3B–3C) |
-| CBACT01C | `app/cbl/CBACT01C.cbl` | Batch | 430 | Decommissioned (replaced by `GET /api/accounts` with streaming) |
+| CBACT01C | `app/cbl/CBACT01C.cbl` | Batch | 430 | **MIGRATED** — Plain Java 17+ CLI (`migrated-code/java/cbact01c-processor/`). Mapping: `migrated-code/COBOL_JAVA_MAPPING.md`. Test coverage: 36 tests (7 classes), 100% pass. |
 | CBACT04C | `app/cbl/CBACT04C.cbl` | Batch | 652 | Spring Batch — scheduled interest calculation job (Sub-phase 3D) |
 | COBIL00C | `app/cbl/COBIL00C.cbl` | CICS Online | 572 | Spring Boot — `POST /api/accounts/{id}/credit` (Sub-phase 3C) |
 | COADM01C | `app/cbl/COADM01C.cbl` | CICS Online | 288 | Spring Boot — Admin menu routing (navigation concern absorbed into API gateway) |
@@ -812,7 +812,7 @@ All 44 programs in the CardDemo estate are assigned to exactly one phase:
 | 11 | CBACT03C | `app/cbl/CBACT03C.cbl` | Phase 2 |
 | 12 | COACTVWC | `app/cbl/COACTVWC.cbl` | Phase 3 |
 | 13 | COACTUPC | `app/cbl/COACTUPC.cbl` | Phase 3 |
-| 14 | CBACT01C | `app/cbl/CBACT01C.cbl` | Phase 3 |
+| 14 | CBACT01C | `app/cbl/CBACT01C.cbl` | Phase 3 — **MIGRATED** |
 | 15 | CBACT04C | `app/cbl/CBACT04C.cbl` | Phase 3 |
 | 16 | COBIL00C | `app/cbl/COBIL00C.cbl` | Phase 3 |
 | 17 | COADM01C | `app/cbl/COADM01C.cbl` | Phase 3 |
