@@ -596,6 +596,7 @@ _(None — Customer is a pure data provider)_
 | CBACT04C | `app/cbl/CBACT04C.cbl` | Batch | Interest calculation — compute interest, update accounts and transactions |
 | COACTUPC | `app/cbl/COACTUPC.cbl` | CICS Online | Account update with field validation |
 | COACTVWC | `app/cbl/COACTVWC.cbl` | CICS Online | Account view |
+| COBIL00C | `app/cbl/COBIL00C.cbl` | CICS Online | Bill payment — credits account balance (primary writer to ACCTDATA) |
 
 #### Copybooks Owned vs. Shared
 
@@ -747,7 +748,7 @@ _(None — Customer is a pure data provider)_
 ### 6.5 Transaction Management
 
 **Candidate Microservice**: `transaction-service`
-**Responsibility**: Transaction lifecycle — daily posting, validation, reporting, bill payment, statement generation. Includes transaction type reference data management.
+**Responsibility**: Transaction lifecycle — daily posting, validation, reporting, statement generation. Includes transaction type reference data management. (Note: COBIL00C bill payment is assigned to Account Management per CUTOVER_PLAN Phase 3, since its primary operation is crediting account balances in ACCTDATA.)
 
 #### Programs Owned
 
@@ -762,7 +763,6 @@ _(None — Customer is a pure data provider)_
 | COTRN01C | `app/cbl/COTRN01C.cbl` | CICS Online | Transaction detail view |
 | COTRN02C | `app/cbl/COTRN02C.cbl` | CICS Online | Transaction add |
 | CORPT00C | `app/cbl/CORPT00C.cbl` | CICS Online | Report selection/submission |
-| COBIL00C | `app/cbl/COBIL00C.cbl` | CICS Online | Bill payment |
 | CSUTLDTC | `app/cbl/CSUTLDTC.cbl` | Utility | Date validation subroutine |
 | COBTUPDT | `app/app-transaction-type-db2/cbl/COBTUPDT.cbl` | Batch (DB2) | Batch update transaction types |
 | COTRTLIC | `app/app-transaction-type-db2/cbl/COTRTLIC.cbl` | CICS/DB2 | Transaction type list |
@@ -1048,9 +1048,9 @@ graph TB
 |----------------|-------------------|-------------|-------------|---------------|-------------|
 | **Security / Identity** | `identity-service` | COSGN00C, COUSR00C–03C | USRSEC | `/api/auth/*`, `/api/users/*` | **None** — standalone |
 | **Customer Management** | `customer-service` | CBCUS01C | CUSTDATA | `/api/customers/*` | **None** — data provider |
-| **Account Management** | `account-service` | CBACT01C, CBACT04C, COACTUPC, COACTVWC | ACCTDATA, DISCGRP, TCATBALF | `/api/accounts/*` | card-service (XREF lookup), customer-service (name display), transaction-service (interest posting) |
+| **Account Management** | `account-service` | CBACT01C, CBACT04C, COACTUPC, COACTVWC, COBIL00C | ACCTDATA, DISCGRP, TCATBALF | `/api/accounts/*`, `/api/accounts/{id}/credit` | card-service (XREF lookup), customer-service (name display), transaction-service (interest posting) |
 | **Credit Card Management** | `card-service` | CBACT02C, CBACT03C, COCRDLIC, COCRDSLC, COCRDUPC | CARDDATA, CARDXREF, CARDAIX | `/api/cards/*`, `/api/cards/{num}/xref` | account-service (account info display), customer-service (customer info display) |
-| **Transaction Management** | `transaction-service` | CBTRN01C–03C, CBSTM03A/B, COTRN00C–02C, CORPT00C, COBIL00C, CSUTLDTC, COBTUPDT, COTRTLIC, COTRTUPC | TRANSACT, DALYTRAN, DALYREJS, REPTFILE, STMTFILE, TRANTYPE, TRANCATG, DB2 TRNTYPE/TRNTYCAT | `/api/transactions/*`, `/api/payments`, `/api/statements/*`, `/api/reports/*`, `/api/transaction-types/*` | account-service (balance updates), card-service (XREF + card validation), customer-service (statement customer data) |
+| **Transaction Management** | `transaction-service` | CBTRN01C–03C, CBSTM03A/B, COTRN00C–02C, CORPT00C, CSUTLDTC, COBTUPDT, COTRTLIC, COTRTUPC | TRANSACT, DALYTRAN, DALYREJS, REPTFILE, STMTFILE, TRANTYPE, TRANCATG, DB2 TRNTYPE/TRNTYCAT | `/api/transactions/*`, `/api/statements/*`, `/api/reports/*`, `/api/transaction-types/*` | account-service (balance updates, bill payment via `/api/accounts/{id}/credit`), card-service (XREF + card validation), customer-service (statement customer data) |
 | **Authorization / Fraud** | `authorization-service` | COPAUA0C, COPAUS0C–2C, CBPAUP0C, DBUNLDGS, PAUDBLOD, PAUDBUNL | IMS PAUTBDB, DB2 AUTHFRDS | `/api/authorizations/*`, `/api/fraud-reports` | account-service (account verification), card-service (card verification), customer-service (customer info) |
 
 ### Cross-Cutting Concerns (Not Microservices)

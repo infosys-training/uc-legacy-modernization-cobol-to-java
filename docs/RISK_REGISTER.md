@@ -157,7 +157,7 @@ As documented in `DOMAIN_DECOMPOSITION.md` §3.1, CVACT03Y is the only copybook 
 **Mitigation Strategy:**
 1. Designate the Card service (`card-service`) as the sole owner of CARDXREF data, migrated to a `card_xref` PostgreSQL table
 2. Expose a high-performance lookup API: `GET /api/cards/{cardNum}/xref` → returns `{custId, acctId}`
-3. Deploy the Card service XREF lookup endpoint in **Phase 1** (Security & Authentication Foundation), before any consumer domain goes live
+3. Deploy the Card service XREF lookup endpoint in **Phase 2** (Customer & Card Domain Core), before any consumer domain goes live
 4. During the parallel-run period, implement a dual-read strategy: Java services call the Card service API; COBOL programs continue reading VSAM directly
 5. Add a Redis/Hazelcast cache in front of the XREF lookup API — this dataset is read-heavy (16 readers, 1 writer: CBIMPORT) and changes infrequently
 
@@ -258,7 +258,7 @@ If IMS migration proves infeasible within the timeline, replatform the authoriza
 **Category:** Data
 
 **Description:**
-During the parallel-run phases (Phases 4–6), both VSAM and PostgreSQL will contain live data. The migration strategy (MODERNIZATION_BLUEPRINT.md §1) requires incremental sync between the two stores: PostgreSQL becomes the primary for migrated domains while VSAM remains primary for un-migrated domains. The sync patterns include:
+During the parallel-run phases (Phases 3–5), both VSAM and PostgreSQL will contain live data. The migration strategy (MODERNIZATION_BLUEPRINT.md §1) requires incremental sync between the two stores: PostgreSQL becomes the primary for migrated domains while VSAM remains primary for un-migrated domains. The sync patterns include:
 
 - **DB2 → VSAM replica via batch:** The weekly MNTTRDB2 job updates DB2 transaction types, then CLOSEFIL → DISCGRP → OPENFIL refreshes the VSAM disclosure group file from DB2 (documented in DEPENDENCY_MAP.md §6.3)
 - **VSAM → PostgreSQL ETL:** The pre-migration ETL pipeline (CUTOVER_PLAN.md §2 Prerequisites) must handle incremental sync for ACCTDATA (300-byte records), TRANSACT (350-byte records), CARDDATA (150-byte records), CUSTDATA (500-byte records), and CARDXREF (50-byte records)
@@ -604,7 +604,7 @@ graph TD
 
 | Risk Pair | Compounding Effect | Combined Mitigation |
 |-----------|-------------------|---------------------|
-| **RISK-01 + RISK-05** | CARDXREF coupling means POSTTRAN/INTCALC cannot decompose without Card service API; if XREF API is slow, saga patterns add latency on top of the cross-domain write overhead | Deploy XREF API with <5ms SLA in Phase 1; validate saga performance with production-scale XREF lookups |
+| **RISK-01 + RISK-05** | CARDXREF coupling means POSTTRAN/INTCALC cannot decompose without Card service API; if XREF API is slow, saga patterns add latency on top of the cross-domain write overhead | Deploy XREF API with <5ms SLA in Phase 2; validate saga performance with production-scale XREF lookups |
 | **RISK-05 + RISK-10** | Cross-domain batch mutations require precise testing to validate saga correctness; without automated tests, saga compensation errors go undetected | Build golden-file tests specifically for POSTTRAN and INTCALC before attempting saga decomposition |
 | **RISK-06 + RISK-10** | COBOL SME departure leaves no one to verify Java behavioral equivalence; automated tests become the only safety net, but they don't exist yet | Front-load golden-file test creation while SMEs are available; have SMEs review test assertions |
 | **RISK-02 + RISK-09** | Scheduling chain failures extend the batch window; extended batch windows increase online downtime — a feedback loop | Implement circuit breakers in scheduling chains; fail-fast rather than retry indefinitely |
@@ -657,6 +657,6 @@ Each risk's early warning indicators should be tracked in a monitoring dashboard
 ### Risk Retirement Criteria
 
 A risk is retired (removed from active monitoring) when:
-1. The risk's root cause has been eliminated (e.g., RISK-02 is retired when all VSAM files are decommissioned in Phase 8)
+1. The risk's root cause has been eliminated (e.g., RISK-02 is retired when all VSAM files are decommissioned after Phase 5)
 2. The risk's early warning indicators have been green for 30 consecutive days after the related phase completes
 3. The project team unanimously agrees the risk is no longer relevant at a Quarterly Risk Retrospective

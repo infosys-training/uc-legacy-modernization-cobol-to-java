@@ -416,7 +416,7 @@ The following must be in place before Phase 1 begins:
 ### g. Estimated Scope
 
 - **Programs:** 7
-- **LOC:** 7,847
+- **LOC:** 7,427
 - **Complexity:** Highest in estate (COACTUPC is #1 hotspot, score 96)
 - **Batch jobs eliminated:** CLOSEFIL/OPENFIL (for account operations), INTCALC.jcl (replaced by Spring Batch)
 - **Batch jobs requiring adaptation:** POSTTRAN.jcl (must call Account API for balance updates — coordinated in Phase 4)
@@ -527,7 +527,7 @@ The following must be in place before Phase 1 begins:
 ### g. Estimated Scope
 
 - **Programs:** 14
-- **LOC:** 9,651
+- **LOC:** 9,724
 - **Complexity:** Highest total volume; COTRTLIC (#2 hotspot, score 89) and COTRTUPC (#3, score 87); CBSTM03A (#9, score 54, 97 I/O ops)
 - **Batch jobs decommissioned:** TRANEXTR, TRANCATG, TRANTYPE, MNTTRDB2 (dual-store sync); POSTTRAN, COMBTRAN (replaced by Kafka); CREASTMT, TXT2PDF1, PRTCATBL (replaced by Spring Batch); TRANBKP (replaced by DB backup); CLOSEFIL/OPENFIL (eliminated); WAITSTEP (eliminated)
 - **Duration:** 16–20 weeks (across all sub-phases)
