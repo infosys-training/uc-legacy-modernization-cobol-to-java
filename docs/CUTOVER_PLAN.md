@@ -630,7 +630,7 @@ The following must be in place before Phase 1 begins:
 ### g. Estimated Scope
 
 - **Programs:** 10
-- **LOC:** ~4,894
+- **LOC:** 5,488
 - **Complexity:** Highest technology diversity (IMS + DB2 + VSAM + MQ); COPAUS0C rank #6, COPAUA0C rank #7
 - **Technologies eliminated:** IMS HIDAM, IBM MQ, VSAM cross-lookups (replaced by service calls to Card/Account)
 - **Batch jobs decommissioned:** CBPAUP0J (replaced by scheduled task), DBPAUTP0, LOADPADB, UNLDPADB, UNLDGSAM (IMS utilities — all eliminated)

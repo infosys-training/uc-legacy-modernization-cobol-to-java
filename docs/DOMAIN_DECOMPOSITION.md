@@ -1143,10 +1143,10 @@ Based on coupling analysis, recommended migration order:
 |-------|---------|-----------|
 | **Phase 1** | `identity-service` | Zero outbound dependencies; clean USRSEC ownership; lowest risk |
 | **Phase 2** | `customer-service` | No online writes; pure read-provider; low coupling |
-| **Phase 3** | `card-service` | Owns CARDXREF; must be extracted before Account/Transaction can decouple |
-| **Phase 4** | `account-service` | After Card service provides XREF API; high contention requires saga patterns |
-| **Phase 5** | `transaction-service` | Largest domain (14 programs); depends on Account and Card APIs being available |
-| **Phase 6** | `authorization-service` | Most complex (IMS + DB2 + MQ); spans 3 storage technologies; migrate last |
+| **Phase 2** | `card-service` | Owns CARDXREF; must be extracted before Account/Transaction can decouple |
+| **Phase 3** | `account-service` | After Card service provides XREF API; high contention requires saga patterns |
+| **Phase 4** | `transaction-service` | Largest domain (14 programs); depends on Account and Card APIs being available |
+| **Phase 5** | `authorization-service` | Most complex (IMS + DB2 + MQ); spans 3 storage technologies; migrate last |
 
 ---
 
