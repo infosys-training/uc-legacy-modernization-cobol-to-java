@@ -343,7 +343,7 @@ The following must be in place before Phase 1 begins:
 |---------|------|------|-----|-------------------|
 | COACTVWC | `app/cbl/COACTVWC.cbl` | CICS Online | 941 | Spring Data JPA — `GET /api/accounts/{id}` (Sub-phase 3A) |
 | COACTUPC | `app/cbl/COACTUPC.cbl` | CICS Online | 4,236 | Spring Boot — Account Update service with extracted validation (Sub-phase 3B–3C) |
-| CBACT01C | `app/cbl/CBACT01C.cbl` | Batch | 430 | **MIGRATED** — Plain Java 17+ CLI (`migrated-code/java/cbact01c-processor/`). Mapping: `migrated-code/COBOL_JAVA_MAPPING.md`. Test coverage: 36 tests (7 classes), 100% pass. |
+| CBACT01C | `app/cbl/CBACT01C.cbl` | Batch | 430 | **MIGRATED** — Plain Java 17+ CLI (`migrated-code/java/cbact01c-processor/`). Mapping: `migrated-code/COBOL_JAVA_MAPPING.md`. Test coverage: 36 tests (7 classes), 100% pass. _(Code delivered in [PR #54](https://github.com/infosys-training/uc-legacy-modernization-cobol-to-java/pull/54); paths exist after that PR merges to main.)_ |
 | CBACT04C | `app/cbl/CBACT04C.cbl` | Batch | 652 | Spring Batch — scheduled interest calculation job (Sub-phase 3D) |
 | COBIL00C | `app/cbl/COBIL00C.cbl` | CICS Online | 572 | Spring Boot — `POST /api/accounts/{id}/credit` (Sub-phase 3C) |
 | COADM01C | `app/cbl/COADM01C.cbl` | CICS Online | 288 | Spring Boot — Admin menu routing (navigation concern absorbed into API gateway) |
