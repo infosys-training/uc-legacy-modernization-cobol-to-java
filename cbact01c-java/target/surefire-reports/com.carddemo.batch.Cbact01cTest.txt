@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.carddemo.batch.Cbact01cTest
+-------------------------------------------------------------------------------
+Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.147 s -- in com.carddemo.batch.Cbact01cTest
