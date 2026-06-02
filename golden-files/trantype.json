@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "source_file": "trantype.txt",
+    "copybook": "CVTRA03Y.cpy",
+    "entity": "Transaction Type",
+    "description": "Lookup table mapping transaction type codes to descriptions",
+    "record_length": 60,
+    "record_count": 7,
+    "file_size_bytes": 433
+  },
+  "field_definitions": [
+    {
+      "name": "TRAN-TYPE",
+      "offset": 0,
+      "length": 2,
+      "pic": "X(02)",
+      "type": "alphanumeric",
+      "business_meaning": "Transaction type code (01=Purchase, 02=Payment, 03=Return, etc.)"
+    },
+    {
+      "name": "TRAN-TYPE-DESC",
+      "offset": 2,
+      "length": 50,
+      "pic": "X(50)",
+      "type": "alphanumeric",
+      "business_meaning": "Human-readable transaction type description"
+    }
+  ],
+  "numeric_summaries": {},
+  "records": [
+    {
+      "TRAN-TYPE": "01",
+      "TRAN-TYPE-DESC": "Purchase",
+      "_record_number": 1
+    },
+    {
+      "TRAN-TYPE": "02",
+      "TRAN-TYPE-DESC": "Payment",
+      "_record_number": 2
+    },
+    {
+      "TRAN-TYPE": "03",
+      "TRAN-TYPE-DESC": "Credit",
+      "_record_number": 3
+    },
+    {
+      "TRAN-TYPE": "04",
+      "TRAN-TYPE-DESC": "Authorization",
+      "_record_number": 4
+    },
+    {
+      "TRAN-TYPE": "05",
+      "TRAN-TYPE-DESC": "Refund",
+      "_record_number": 5
+    },
+    {
+      "TRAN-TYPE": "06",
+      "TRAN-TYPE-DESC": "Reversal",
+      "_record_number": 6
+    },
+    {
+      "TRAN-TYPE": "07",
+      "TRAN-TYPE-DESC": "Adjustment",
+      "_record_number": 7
+    }
+  ]
+}
