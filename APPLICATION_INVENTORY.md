@@ -7,12 +7,12 @@
 | Metric | Count |
 |--------|-------|
 | Total COBOL programs | 44 |
-| Main programs (`app/cbl/`) | 28 |
+| Main programs (`app/cbl/`) | 31 |
 | Sub-application programs | 13 |
 | Batch programs | 16 |
 | Online (CICS) programs | 21 |
 | Sub-app (IMS/DB2/MQ) programs | 7 |
-| JCL jobs (`app/jcl/` + sub-apps) | 54 |
+| JCL jobs (`app/jcl/` + sub-apps) | 46 |
 | Copybooks | 47 |
 | BMS screen maps | 17 |
 | Total lines of COBOL | 27,350 |

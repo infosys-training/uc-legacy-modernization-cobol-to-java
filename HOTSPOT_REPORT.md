@@ -78,77 +78,7 @@ All scores normalized to the program with the highest value in each dimension = 
 
 ---
 
-### Rank #4: COCRDUPC.cbl — Credit Card Update (Online/CICS)
-
-| Metric | Value | Normalized |
-|--------|-------|-----------|
-| LOC | 1,560 | 36.8 |
-| Copybook refs | 16 | 27.6 |
-| I/O operations | 12 | 10.2 |
-| IF/EVALUATE stmts | 80 | 46.0 |
-| Inter-program deps | 4 (CARDFILE R/W, XCTL to/from COMEN01C, COMMAREA) | 40.0 |
-
-**Composite Score: 33.6**
-
-**Why it's #4:** High branching density (80 IF/EVALUATE, nesting depth 85 — highest in estate). Validates card fields before REWRITE. Pattern is similar to COACTUPC but scoped to card entity only.
-
-**Modernization approach:** Extract as `CardService` with `CardController`. Reuse validation pattern from COACTUPC migration.
-
----
-
-### Rank #5: COCRDLIC.cbl — Credit Card List (Online/CICS)
-
-| Metric | Value | Normalized |
-|--------|-------|-----------|
-| LOC | 1,459 | 34.4 |
-| Copybook refs | 14 | 24.1 |
-| I/O operations | 16 | 13.6 |
-| IF/EVALUATE stmts | 68 | 39.1 |
-| Inter-program deps | 4 (CARDFILE browse, XCTL to COCRDSLC/COCRDUPC, COMMAREA) | 40.0 |
-
-**Composite Score: 31.7**
-
-**Why it's #5:** Implements the paginated browse pattern (STARTBR/READNEXT/ENDBR) used by 5+ programs. Nesting depth 73. Converting this pattern creates a reusable template for COTRN00C, COUSR00C, and COPAUS0C.
-
-**Modernization approach:** Create generic `AbstractListController<T>` with Spring Data pagination. First instance handles cards; pattern reused for transactions, users, and authorization records.
-
----
-
-### Rank #6: COPAUA0C.cbl — Authorization Decision Engine (Online/CICS+IMS+MQ)
-
-| Metric | Value | Normalized |
-|--------|-------|-----------|
-| LOC | 1,026 | 24.2 |
-| Copybook refs | 17 | 29.3 |
-| I/O operations | 27 | 22.9 |
-| IF/EVALUATE stmts | 31 | 17.8 |
-| Inter-program deps | 9 (3 MQ queues, 2 IMS segments, 3 VSAM files, COMMAREA) | 90.0 |
-
-**Composite Score: 35.0**
-
-**Why it's #6 (but Priority 3 for migration):** Most architecturally complex program — spans CICS, IMS, and MQ in a single execution flow. Moderate LOC but highest dependency count. Reads MQ request, queries IMS auth database (GU/REPL/ISRT), reads 3 VSAM files (XREF, ACCT, CUST), and sends MQ response. Must be migrated as a unit with COPAUS0C/1C/2C.
-
-**Modernization approach:** Spring JMS for MQ replacement. IMS hierarchy (CIPAUSMY root → CIPAUDTY dependent) maps to 2 relational tables with FK. CICS READ calls become JPA repository lookups. Phase carefully — this is the integration boundary with external systems.
-
----
-
-### Rank #7: COPAUS0C.cbl — Pending Auth Summary Browse (Online/CICS+IMS)
-
-| Metric | Value | Normalized |
-|--------|-------|-----------|
-| LOC | 1,032 | 24.4 |
-| Copybook refs | 15 | 25.9 |
-| I/O operations | 11 | 9.3 |
-| IF/EVALUATE stmts | 36 | 20.7 |
-| Inter-program deps | 6 (2 IMS segments, 3 VSAM files, LINK to COPAUS1C) | 60.0 |
-
-**Composite Score: 27.2**
-
-**Why it's #7:** Part of the IMS authorization chain (COPAUS0C→1C→2C). Uses IMS GU/GNP for hierarchical traversal. LINK (not XCTL) to COPAUS1C means it expects return — more complex than simple navigation.
-
----
-
-### Rank #8: CBSTM03A.CBL — Statement Generation (Batch)
+### Rank #4: CBSTM03A.CBL — Statement Generation (Batch)
 
 | Metric | Value | Normalized |
 |--------|-------|-----------|
@@ -160,13 +90,101 @@ All scores normalized to the program with the highest value in each dimension = 
 
 **Composite Score: 36.1**
 
-**Why it's #8 (but Priority 1 for migration pilot):** Highest I/O density in the entire estate (118 operations — 97 WRITEs for text/HTML output). Self-contained batch with no CICS dependency. Calls CBSTM03B 12 times as I/O submodule. Generates both text and HTML statements.
+**Why it's #4 (and Priority 1 for migration pilot):** Highest I/O density in the entire estate (118 operations — 97 WRITEs for text/HTML output). Self-contained batch with no CICS dependency. Calls CBSTM03B 12 times as I/O submodule. Generates both text and HTML statements.
 
 **Modernization approach:** **Best candidate for migration pilot** — self-contained, no CICS, measurable output. Spring Batch job with `JdbcBatchItemWriter`. Replace 97 individual WRITEs with Thymeleaf template-based bulk generation. CBSTM03B folds into the ItemReader/ItemWriter pattern.
 
 ---
 
-### Rank #9: COACTVWC.cbl — Account View (Online/CICS)
+### Rank #5: COPAUA0C.cbl — Authorization Decision Engine (Online/CICS+IMS+MQ)
+
+| Metric | Value | Normalized |
+|--------|-------|-----------|
+| LOC | 1,026 | 24.2 |
+| Copybook refs | 17 | 29.3 |
+| I/O operations | 27 | 22.9 |
+| IF/EVALUATE stmts | 31 | 17.8 |
+| Inter-program deps | 9 (3 MQ queues, 2 IMS segments, 3 VSAM files, COMMAREA) | 90.0 |
+
+**Composite Score: 35.0**
+
+**Why it's #5:** Most architecturally complex program — spans CICS, IMS, and MQ in a single execution flow. Moderate LOC but highest dependency count. Reads MQ request, queries IMS auth database (GU/REPL/ISRT), reads 3 VSAM files (XREF, ACCT, CUST), and sends MQ response. Must be migrated as a unit with COPAUS0C/1C/2C.
+
+**Modernization approach:** Spring JMS for MQ replacement. IMS hierarchy (CIPAUSMY root → CIPAUDTY dependent) maps to 2 relational tables with FK. CICS READ calls become JPA repository lookups. Phase carefully — this is the integration boundary with external systems.
+
+---
+
+### Rank #6: COCRDUPC.cbl — Credit Card Update (Online/CICS)
+
+| Metric | Value | Normalized |
+|--------|-------|-----------|
+| LOC | 1,560 | 36.8 |
+| Copybook refs | 16 | 27.6 |
+| I/O operations | 12 | 10.2 |
+| IF/EVALUATE stmts | 80 | 46.0 |
+| Inter-program deps | 4 (CARDFILE R/W, XCTL to/from COMEN01C, COMMAREA) | 40.0 |
+
+**Composite Score: 33.6**
+
+**Why it's #6:** High branching density (80 IF/EVALUATE, nesting depth 85 — highest in estate). Validates card fields before REWRITE. Pattern is similar to COACTUPC but scoped to card entity only.
+
+**Modernization approach:** Extract as `CardService` with `CardController`. Reuse validation pattern from COACTUPC migration.
+
+---
+
+### Rank #7: COCRDLIC.cbl — Credit Card List (Online/CICS)
+
+| Metric | Value | Normalized |
+|--------|-------|-----------|
+| LOC | 1,459 | 34.4 |
+| Copybook refs | 14 | 24.1 |
+| I/O operations | 16 | 13.6 |
+| IF/EVALUATE stmts | 68 | 39.1 |
+| Inter-program deps | 4 (CARDFILE browse, XCTL to COCRDSLC/COCRDUPC, COMMAREA) | 40.0 |
+
+**Composite Score: 31.7**
+
+**Why it's #7:** Implements the paginated browse pattern (STARTBR/READNEXT/ENDBR) used by 5+ programs. Nesting depth 73. Converting this pattern creates a reusable template for COTRN00C, COUSR00C, and COPAUS0C.
+
+**Modernization approach:** Create generic `AbstractListController<T>` with Spring Data pagination. First instance handles cards; pattern reused for transactions, users, and authorization records.
+
+---
+
+### Rank #8: COPAUS0C.cbl — Pending Auth Summary Browse (Online/CICS+IMS)
+
+| Metric | Value | Normalized |
+|--------|-------|-----------|
+| LOC | 1,032 | 24.4 |
+| Copybook refs | 15 | 25.9 |
+| I/O operations | 11 | 9.3 |
+| IF/EVALUATE stmts | 36 | 20.7 |
+| Inter-program deps | 6 (2 IMS segments, 3 VSAM files, LINK to COPAUS1C) | 60.0 |
+
+**Composite Score: 27.2**
+
+**Why it's #8:** Part of the IMS authorization chain (COPAUS0C→1C→2C). Uses IMS GU/GNP for hierarchical traversal. LINK (not XCTL) to COPAUS1C means it expects return — more complex than simple navigation.
+
+---
+
+### Rank #9: CBTRN02C.cbl — Transaction Posting (Batch)
+
+| Metric | Value | Normalized |
+|--------|-------|-----------|
+| LOC | 731 | 17.3 |
+| Copybook refs | 5 | 8.6 |
+| I/O operations | 24 | 20.3 |
+| IF/EVALUATE stmts | 48 | 27.6 |
+| Inter-program deps | 5 (DALYTRAN, XREF, ACCT, TRANSACT, TCATBAL) | 50.0 |
+
+**Composite Score: 24.3**
+
+**Why it's #9:** Core batch posting engine — validates daily transactions and writes to master file. Updates account balances and category balance accumulators. Central to the daily batch pipeline.
+
+**Modernization approach:** Spring Batch step with chunk-oriented processing. ItemReader for DALYTRAN, ItemProcessor for validation, ItemWriter for TRANSACT + ACCOUNT updates.
+
+---
+
+### Rank #10: COACTVWC.cbl — Account View (Online/CICS)
 
 | Metric | Value | Normalized |
 |--------|-------|-----------|
@@ -178,25 +196,9 @@ All scores normalized to the program with the highest value in each dimension = 
 
 **Composite Score: 23.5**
 
-**Why it's #9:** Read-only account display with card and customer info lookups. Lower risk — no writes. Shares data access patterns with COACTUPC.
+**Why it's #10:** Read-only account display with card and customer info lookups. Lower risk — no writes. Shares data access patterns with COACTUPC.
 
 **Modernization approach:** Migrate alongside COACTUPC as the read-only endpoint of `AccountService`. Simple `GET /accounts/{id}` REST endpoint.
-
----
-
-### Rank #10: COCRDSLC.cbl — Credit Card Detail View (Online/CICS)
-
-| Metric | Value | Normalized |
-|--------|-------|-----------|
-| LOC | 887 | 20.9 |
-| Copybook refs | 16 | 27.6 |
-| I/O operations | 7 | 5.9 |
-| IF/EVALUATE stmts | 37 | 21.3 |
-| Inter-program deps | 3 (CARDFILE + ACCTFILE read, XCTL, COMMAREA) | 30.0 |
-
-**Composite Score: 21.6**
-
-**Why it's #10:** Read-only card detail with cross-entity lookup (card → account → customer). Pattern matches COACTVWC.
 
 ---
 
@@ -220,32 +222,32 @@ All scores normalized to the program with the highest value in each dimension = 
 | 14 | COTRN02C.cbl | 783 | 11 | 9 | 27 | 19.0 | Online (CICS) |
 | 15 | COTRN00C.cbl | 699 | 8 | 8 | 34 | 17.5 | Online (CICS) |
 | 16 | COUSR00C.cbl | 695 | 9 | 7 | 33 | 16.8 | Online (CICS) |
-| 17 | CORPT00C.cbl | 649 | 8 | 5 | 25 | 14.9 | Online (CICS) |
-| 18 | CBEXPORT.cbl | 582 | 6 | 29 | 14 | 14.8 | Batch |
-| 19 | COPAUS1C.cbl | 604 | 11 | 8 | 18 | 14.2 | Online (CICS+IMS) |
-| 20 | COACCT01.cbl | 620 | 7 | 29 | 8 | 14.0 | Online (CICS+MQ) |
-| 21 | CODATE01.cbl | 524 | 6 | 27 | 6 | 12.3 | Online (CICS+MQ) |
-| 22 | COBIL00C.cbl | 572 | 11 | 9 | 21 | 14.1 | Online (CICS) |
+| 17 | CBTRN01C.cbl | 494 | 6 | 18 | 33 | 15.3 | Batch |
+| 18 | CORPT00C.cbl | 649 | 8 | 5 | 25 | 14.9 | Online (CICS) |
+| 19 | CBEXPORT.cbl | 582 | 6 | 29 | 14 | 14.8 | Batch |
+| 20 | COPAUS1C.cbl | 604 | 11 | 8 | 18 | 14.2 | Online (CICS+IMS) |
+| 21 | COBIL00C.cbl | 572 | 11 | 9 | 21 | 14.1 | Online (CICS) |
+| 22 | COACCT01.cbl | 620 | 7 | 29 | 8 | 14.0 | Online (CICS+MQ) |
 | 23 | CBIMPORT.cbl | 487 | 6 | 29 | 10 | 13.0 | Batch |
-| 24 | CBTRN01C.cbl | 494 | 6 | 18 | 33 | 15.3 | Batch |
-| 25 | CBACT01C.cbl | 430 | 2 | 16 | 10 | 9.7 | Batch |
-| 26 | COUSR02C.cbl | 414 | 9 | 5 | 18 | 10.8 | Online (CICS) |
-| 27 | CBPAUP0C.cbl | 386 | 2 | 22 | 8 | 9.5 | Batch (IMS) |
-| 28 | PAUDBLOD.CBL | 369 | 4 | 14 | 11 | 9.3 | Batch (IMS) |
-| 29 | DBUNLDGS.CBL | 366 | 6 | 17 | 8 | 9.6 | Batch (IMS/GSAM) |
-| 30 | COUSR03C.cbl | 359 | 9 | 5 | 14 | 9.4 | Online (CICS) |
+| 24 | CODATE01.cbl | 524 | 6 | 27 | 6 | 12.3 | Online (CICS+MQ) |
+| 25 | COUSR02C.cbl | 414 | 9 | 5 | 18 | 10.8 | Online (CICS) |
+| 26 | CBACT01C.cbl | 430 | 2 | 16 | 10 | 9.7 | Batch |
+| 27 | DBUNLDGS.CBL | 366 | 6 | 17 | 8 | 9.6 | Batch (IMS/GSAM) |
+| 28 | CBPAUP0C.cbl | 386 | 2 | 22 | 8 | 9.5 | Batch (IMS) |
+| 29 | COUSR03C.cbl | 359 | 9 | 5 | 14 | 9.4 | Online (CICS) |
+| 30 | PAUDBLOD.CBL | 369 | 4 | 14 | 11 | 9.3 | Batch (IMS) |
 | 31 | COTRN01C.cbl | 330 | 9 | 4 | 12 | 8.5 | Online (CICS) |
 | 32 | PAUDBUNL.CBL | 317 | 4 | 15 | 8 | 8.0 | Batch (IMS) |
 | 33 | COMEN01C.cbl | 308 | 10 | 0 | 14 | 7.8 | Online (CICS) |
 | 34 | COUSR01C.cbl | 299 | 10 | 3 | 10 | 7.4 | Online (CICS) |
-| 35 | COADM01C.cbl | 288 | 10 | 0 | 8 | 6.5 | Online (CICS) |
-| 36 | COSGN00C.cbl | 260 | 10 | 3 | 10 | 7.0 | Online (CICS) |
-| 37 | COPAUS2C.cbl | 244 | 1 | 3 | 4 | 3.7 | Online (CICS+DB2) |
+| 35 | COSGN00C.cbl | 260 | 10 | 3 | 10 | 7.0 | Online (CICS) |
+| 36 | COADM01C.cbl | 288 | 10 | 0 | 8 | 6.5 | Online (CICS) |
+| 37 | CBSTM03B.CBL | 230 | 0 | 17 | 3 | 5.1 | Batch (submodule) |
 | 38 | COBTUPDT.cbl | 237 | 1 | 5 | 5 | 4.0 | Batch (DB2) |
-| 39 | CBSTM03B.CBL | 230 | 0 | 17 | 3 | 5.1 | Batch (submodule) |
-| 40 | CBCUS01C.cbl | 178 | 1 | 4 | 4 | 2.8 | Batch |
-| 41 | CBACT03C.cbl | 178 | 1 | 4 | 12 | 3.6 | Batch |
-| 42 | CBACT02C.cbl | 178 | 1 | 4 | 12 | 3.6 | Batch |
+| 39 | COPAUS2C.cbl | 244 | 1 | 3 | 4 | 3.7 | Online (CICS+DB2) |
+| 40 | CBACT03C.cbl | 178 | 1 | 4 | 12 | 3.6 | Batch |
+| 41 | CBACT02C.cbl | 178 | 1 | 4 | 12 | 3.6 | Batch |
+| 42 | CBCUS01C.cbl | 178 | 1 | 4 | 4 | 2.8 | Batch |
 | 43 | CSUTLDTC.cbl | 157 | 0 | 0 | 4 | 1.4 | Utility |
 | 44 | COBSWAIT.cbl | 41 | 0 | 0 | 0 | 0.0 | Utility |
 
@@ -265,7 +267,7 @@ All scores normalized to the program with the highest value in each dimension = 
 
 ### Phase 1: Pilot — Reporting Service (Weeks 5–9)
 
-**Programs:** CBSTM03A (#8), CBSTM03B, CBTRN03C (#13), CORPT00C (#17)
+**Programs:** CBSTM03A (#4), CBSTM03B, CBTRN03C (#13), CORPT00C (#18)
 
 **Why first:**
 - Self-contained batch — no CICS dependencies, no dual-write risk
@@ -285,7 +287,7 @@ All scores normalized to the program with the highest value in each dimension = 
 
 ### Phase 3: Card Service + User Service (Weeks 17–23)
 
-**Programs:** COCRDLIC (#7), COCRDSLC (#10), COCRDUPC (#6), COUSR00C-03C
+**Programs:** COCRDLIC (#7), COCRDSLC (#12), COCRDUPC (#6), COUSR00C-03C
 
 **Why third:**
 - Card programs share the paginated browse pattern with Phase 1
@@ -294,7 +296,7 @@ All scores normalized to the program with the highest value in each dimension = 
 
 ### Phase 4: Account Service — The Big One (Weeks 24–33)
 
-**Programs:** COACTUPC (#1), COACTVWC (#9), COACCT01 (#20)
+**Programs:** COACTUPC (#1), COACTVWC (#10), COACCT01 (#22)
 
 **Why here (not earlier):**
 - COACTUPC is the riskiest program — 4,236 LOC, 174 branching statements
@@ -305,7 +307,7 @@ All scores normalized to the program with the highest value in each dimension = 
 
 ### Phase 5: Authorization Service — IMS/MQ Integration (Weeks 34–41)
 
-**Programs:** COPAUA0C (#5), COPAUS0C (#8), COPAUS1C (#19), COPAUS2C (#37), CBPAUP0C (#27), PAUDBLOD (#28), PAUDBUNL (#32), DBUNLDGS (#29)
+**Programs:** COPAUA0C (#5), COPAUS0C (#8), COPAUS1C (#20), COPAUS2C (#39), CBPAUP0C (#28), PAUDBLOD (#30), PAUDBUNL (#32), DBUNLDGS (#27)
 
 **Why last:**
 - Most architecturally complex — spans CICS + IMS + MQ
@@ -315,7 +317,7 @@ All scores normalized to the program with the highest value in each dimension = 
 
 ### Phase 6: Batch Pipeline + Decommission (Weeks 42–48)
 
-**Programs:** CBTRN02C (#9), CBACT04C (#11), CBTRN01C (#24), CBEXPORT (#18), CBIMPORT (#23), COBIL00C (#22)
+**Programs:** CBTRN02C (#9), CBACT04C (#11), CBTRN01C (#17), CBEXPORT (#19), CBIMPORT (#23), COBIL00C (#21)
 
 **Why last:**
 - Batch programs can run unchanged alongside modernized online programs
