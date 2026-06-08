@@ -6,9 +6,9 @@
 
 -- Users (from USRSEC VSAM file)
 MERGE INTO users (user_id, first_name, last_name, password, user_type) KEY (user_id) VALUES
-('admin01', 'System', 'Admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'A'),
-('user0001', 'First', 'User', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'U'),
-('user0002', 'Second', 'User', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'U');
+('admin01', 'System', 'Admin', '$2a$10$7w5hoF6MC/4rckCDjb941Ov4XQ.djd7aqqsth.HFDmoeipy.Vt6Ua', 'A'),
+('user0001', 'First', 'User', '$2a$10$7w5hoF6MC/4rckCDjb941Ov4XQ.djd7aqqsth.HFDmoeipy.Vt6Ua', 'U'),
+('user0002', 'Second', 'User', '$2a$10$7w5hoF6MC/4rckCDjb941Ov4XQ.djd7aqqsth.HFDmoeipy.Vt6Ua', 'U');
 
 -- Accounts (from ACCTFILE VSAM — CVACT01Y layout)
 MERGE INTO accounts (acct_id, active_status, curr_bal, credit_limit, cash_credit_limit, open_date, expiration_date, reissue_date, curr_cyc_credit, curr_cyc_debit, addr_zip, group_id) KEY (acct_id) VALUES

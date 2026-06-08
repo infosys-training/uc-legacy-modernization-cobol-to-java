@@ -1,7 +1,9 @@
 package com.carddemo.controller;
 
+import com.carddemo.config.JwtUtils;
 import com.carddemo.model.UserSecurity;
 import com.carddemo.service.UserService;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -29,9 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+    private final JwtUtils jwtUtils;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JwtUtils jwtUtils) {
         this.userService = userService;
+        this.jwtUtils = jwtUtils;
     }
 
     @GetMapping
@@ -55,13 +59,24 @@ public class UserController {
         String userId = credentials.get("userId");
         String password = credentials.get("password");
         boolean authenticated = userService.authenticate(userId, password);
-        Map<String, Object> response = Map.of(
-                "authenticated", authenticated,
-                "userId", userId != null ? userId : ""
-        );
-        return authenticated
-                ? ResponseEntity.ok(response)
-                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+
+        if (authenticated) {
+            UserSecurity user = userService.findByUserId(userId);
+            String token = jwtUtils.generateToken(userId, user.getUserType());
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("authenticated", true);
+            response.put("userId", userId);
+            response.put("userType", user.getUserType());
+            response.put("firstName", user.getFirstName());
+            response.put("lastName", user.getLastName());
+            response.put("token", token);
+            return ResponseEntity.ok(response);
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("authenticated", false);
+        response.put("userId", userId != null ? userId : "");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @PostMapping
