@@ -115,3 +115,29 @@ CREATE TABLE IF NOT EXISTS users (
     password   VARCHAR(72) NOT NULL,
     user_type  VARCHAR(1) NOT NULL
 );
+
+-- DALYTRAN (CVTRA06Y.cpy) — Daily transaction input for batch posting (CBTRN02C)
+CREATE TABLE IF NOT EXISTS daily_transactions (
+    tran_id        VARCHAR(16) PRIMARY KEY,
+    card_num       VARCHAR(16) NOT NULL,
+    type_cd        VARCHAR(2) NOT NULL,
+    cat_cd         INT,
+    source         VARCHAR(10),
+    description    VARCHAR(100),
+    amount         DECIMAL(11,2) NOT NULL,
+    merchant_id    VARCHAR(9),
+    merchant_name  VARCHAR(50),
+    merchant_city  VARCHAR(30),
+    merchant_zip   VARCHAR(10),
+    orig_ts        TIMESTAMP,
+    processed      BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- DALYREJS — Rejected transactions log (CBTRN02C validation failures)
+CREATE TABLE IF NOT EXISTS transaction_rejects (
+    id                BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tran_id           VARCHAR(16) NOT NULL,
+    fail_reason_code  INT,
+    fail_reason_desc  VARCHAR(200),
+    rejected_at       TIMESTAMP NOT NULL
+);

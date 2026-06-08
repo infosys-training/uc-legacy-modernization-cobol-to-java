@@ -97,3 +97,11 @@ MERGE INTO transactions (tran_id, type_cd, cat_cd, source, description, amount, 
 ('0000000000000006', 'RT', 6001, 'POS', 'Return - damaged item', -45.00, 100000002, 'TechStore', 'New York', '10001', '4222222222222222', '2024-01-25 11:15:00', '2024-01-25 11:15:02'),
 ('0000000000000007', 'FE', 9001, 'SYSTEM', 'Annual membership fee', 95.00, NULL, NULL, NULL, NULL, '4555555555555555', '2024-02-01 00:00:00', '2024-02-01 00:00:01'),
 ('0000000000000008', 'SA', 5003, 'ONLINE', 'Monthly subscription - StreamIt', 14.99, 100000005, 'StreamIt Inc', 'Austin', '73301', '4111111111112222', '2024-02-01 06:00:00', '2024-02-01 06:00:01');
+
+-- Daily Transactions (pending batch processing — DALYTRAN-FILE equivalent)
+MERGE INTO daily_transactions (tran_id, card_num, type_cd, cat_cd, source, description, amount, merchant_id, merchant_name, merchant_city, merchant_zip, orig_ts, processed) KEY (tran_id) VALUES
+('DLY0000000000001', '4111111111111111', 'SA', 5001, 'POS', 'Hardware Store Purchase', 89.50, '100000010', 'HardwareHub', 'Chicago', '60601', '2024-03-01 14:30:00', FALSE),
+('DLY0000000000002', '4222222222222222', 'SA', 5002, 'ONLINE', 'Book purchase online', 32.99, '100000011', 'BookWorld', 'New York', '10001', '2024-03-01 16:45:00', FALSE),
+('DLY0000000000003', '4333333333333333', 'CA', 7001, 'ATM', 'ATM Cash Withdrawal', 200.00, '100000012', 'CityBank ATM', 'Los Angeles', '90210', '2024-03-02 09:15:00', FALSE),
+('DLY0000000000004', '9999999999999999', 'SA', 5001, 'POS', 'Invalid card test', 50.00, '100000013', 'TestMerchant', 'Nowhere', '00000', '2024-03-02 10:00:00', FALSE),
+('DLY0000000000005', '4555555555555555', 'SA', 5001, 'POS', 'Coffee shop', 6.50, '100000014', 'JavaBeans', 'San Francisco', '94102', '2024-03-02 07:30:00', FALSE);
