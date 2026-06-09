@@ -91,7 +91,7 @@ public class TransactionService {
                 .orElseThrow(() -> new BusinessValidationException(
                         "Card number not found in cross-reference: " + transaction.getCardNumber()));
 
-        Account account = accountRepository.findById(xref.getAccountId())
+        Account account = accountRepository.findByIdForUpdate(xref.getAccountId())
                 .orElseThrow(() -> new BusinessValidationException(
                         "Account not found for card: " + transaction.getCardNumber()));
 
@@ -135,7 +135,7 @@ public class TransactionService {
 
     private String generateTransactionId() {
         String ts = LocalDateTime.now().format(ID_FORMAT);
-        int seq = SEQ.getAndIncrement() % 10000;
+        int seq = Math.abs(SEQ.getAndIncrement() % 10000);
         return String.format("%s%04d", ts.substring(0, Math.min(ts.length(), 12)), seq);
     }
 }

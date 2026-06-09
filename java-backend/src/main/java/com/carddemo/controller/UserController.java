@@ -54,6 +54,10 @@ public class UserController {
             @RequestBody Map<String, String> credentials) {
         String userId = credentials.get("userId");
         String password = credentials.get("password");
+        if (userId == null || userId.isBlank() || password == null || password.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    Map.of("authenticated", false, "userId", userId != null ? userId : ""));
+        }
         boolean authenticated = userService.authenticate(userId, password);
         Map<String, Object> response = Map.of(
                 "authenticated", authenticated,

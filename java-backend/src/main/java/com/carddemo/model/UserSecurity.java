@@ -33,6 +33,7 @@ public class UserSecurity {
     @Column(name = "last_name", length = 20)
     private String lastName;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password", length = 72, nullable = false)
     private String password;
 
