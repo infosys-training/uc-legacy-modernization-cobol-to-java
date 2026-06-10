@@ -130,10 +130,10 @@
 
 | Category | Count | Percentage |
 |----------|-------|-----------|
-| Online (CICS) | 16 | 36% |
-| Online (CICS + IMS/DB2/MQ) | 9 | 21% |
+| Online (CICS) | 17 | 39% |
+| Online (CICS + IMS/DB2/MQ) | 8 | 18% |
 | Batch (Pure) | 12 | 27% |
-| Batch (IMS) | 5 | 11% |
+| Batch (IMS) | 4 | 9% |
 | Batch (DB2) | 1 | 2% |
-| Utility | 1 | 2% |
+| Utility | 2 | 5% |
 | **Total** | **44** | **100%** |
