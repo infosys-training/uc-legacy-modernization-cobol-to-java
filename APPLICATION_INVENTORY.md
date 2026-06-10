@@ -150,8 +150,8 @@ The CardDemo application is a multi-tier mainframe credit card management system
 | Metric | Count |
 |--------|-------|
 | Total COBOL programs | 44 |
-| Batch programs | 17 |
-| Online (CICS) programs | 16 |
+| Batch programs | 14 |
+| Online (CICS) programs | 19 |
 | Online (CICS + MQ) programs | 3 |
 | Online (CICS + DB2) programs | 3 |
 | Batch (IMS) programs | 4 |
