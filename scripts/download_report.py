@@ -77,6 +77,14 @@ def download_report(customer, output_dir, headless, timeout):
             page.goto(PORTAL_URL, wait_until="networkidle", timeout=timeout)
         except PlaywrightTimeout:
             print("  Warning: Page load timed out, proceeding anyway...")
+        except Exception as e:
+            error_msg = str(e)
+            if "ERR_NAME_NOT_RESOLVED" in error_msg:
+                print(f"  ERROR: Cannot resolve hostname. Ensure you are on the Infosys network.")
+            else:
+                print(f"  ERROR: Failed to navigate to portal: {error_msg}")
+            browser.close()
+            return False
         print("  Page loaded successfully.")
 
         # Step 2: Select customer from dropdown
