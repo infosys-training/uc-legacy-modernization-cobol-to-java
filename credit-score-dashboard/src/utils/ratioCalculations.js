@@ -12,7 +12,7 @@ export function calculateRatios() {
 
   // Leverage Ratios
   const debtToEquity = bs.totalLiabilities / bs.shareholdersEquity.totalEquity;
-  const debtToAssets = bs.totalLiabilities / bs.totalAssets;
+  const debtToAssets = (bs.totalLiabilities / bs.totalAssets) * 100;
 
   // Coverage Ratios
   const interestCoverage = is_.operatingIncome / is_.interestExpense;
