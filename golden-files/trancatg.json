@@ -1,0 +1,134 @@
+{
+  "metadata": {
+    "source_file": "trancatg.txt",
+    "copybook": "CVTRA04Y",
+    "entity": "TransactionCategory",
+    "record_length": 60,
+    "key_field": [
+      "TRAN-TYPE-CD",
+      "TRAN-CAT-CD"
+    ],
+    "record_count": 18
+  },
+  "field_definitions": [
+    {
+      "field_name": "TRAN-TYPE-CD",
+      "pic_clause": "PIC X(02)",
+      "byte_offset": 0,
+      "byte_length": 2,
+      "data_type": "alphanumeric",
+      "decimal_scale": 0,
+      "business_meaning": "Transaction type code (part of composite key)"
+    },
+    {
+      "field_name": "TRAN-CAT-CD",
+      "pic_clause": "PIC 9(04)",
+      "byte_offset": 2,
+      "byte_length": 4,
+      "data_type": "numeric",
+      "decimal_scale": 0,
+      "business_meaning": "Category code (part of composite key)"
+    },
+    {
+      "field_name": "TRAN-CAT-TYPE-DESC",
+      "pic_clause": "PIC X(50)",
+      "byte_offset": 6,
+      "byte_length": 50,
+      "data_type": "alphanumeric",
+      "decimal_scale": 0,
+      "business_meaning": "Category description"
+    }
+  ],
+  "records": [
+    {
+      "TRAN-TYPE-CD": "01",
+      "TRAN-CAT-CD": 1,
+      "TRAN-CAT-TYPE-DESC": "Regular Sales Draft"
+    },
+    {
+      "TRAN-TYPE-CD": "01",
+      "TRAN-CAT-CD": 2,
+      "TRAN-CAT-TYPE-DESC": "Regular Cash Advance"
+    },
+    {
+      "TRAN-TYPE-CD": "01",
+      "TRAN-CAT-CD": 3,
+      "TRAN-CAT-TYPE-DESC": "Convenience Check Debit"
+    },
+    {
+      "TRAN-TYPE-CD": "01",
+      "TRAN-CAT-CD": 4,
+      "TRAN-CAT-TYPE-DESC": "ATM Cash Advance"
+    },
+    {
+      "TRAN-TYPE-CD": "01",
+      "TRAN-CAT-CD": 5,
+      "TRAN-CAT-TYPE-DESC": "Interest Amount"
+    },
+    {
+      "TRAN-TYPE-CD": "02",
+      "TRAN-CAT-CD": 1,
+      "TRAN-CAT-TYPE-DESC": "Cash payment"
+    },
+    {
+      "TRAN-TYPE-CD": "02",
+      "TRAN-CAT-CD": 2,
+      "TRAN-CAT-TYPE-DESC": "Electronic payment"
+    },
+    {
+      "TRAN-TYPE-CD": "02",
+      "TRAN-CAT-CD": 3,
+      "TRAN-CAT-TYPE-DESC": "Check payment"
+    },
+    {
+      "TRAN-TYPE-CD": "03",
+      "TRAN-CAT-CD": 1,
+      "TRAN-CAT-TYPE-DESC": "Credit to Account"
+    },
+    {
+      "TRAN-TYPE-CD": "03",
+      "TRAN-CAT-CD": 2,
+      "TRAN-CAT-TYPE-DESC": "Credit to Purchase balance"
+    },
+    {
+      "TRAN-TYPE-CD": "03",
+      "TRAN-CAT-CD": 3,
+      "TRAN-CAT-TYPE-DESC": "Credit to Cash balance"
+    },
+    {
+      "TRAN-TYPE-CD": "04",
+      "TRAN-CAT-CD": 1,
+      "TRAN-CAT-TYPE-DESC": "Zero dollar authorization"
+    },
+    {
+      "TRAN-TYPE-CD": "04",
+      "TRAN-CAT-CD": 2,
+      "TRAN-CAT-TYPE-DESC": "Online purchase authorization"
+    },
+    {
+      "TRAN-TYPE-CD": "04",
+      "TRAN-CAT-CD": 3,
+      "TRAN-CAT-TYPE-DESC": "Travel booking authorization"
+    },
+    {
+      "TRAN-TYPE-CD": "05",
+      "TRAN-CAT-CD": 1,
+      "TRAN-CAT-TYPE-DESC": "Refund credit"
+    },
+    {
+      "TRAN-TYPE-CD": "06",
+      "TRAN-CAT-CD": 1,
+      "TRAN-CAT-TYPE-DESC": "Fraud reversal"
+    },
+    {
+      "TRAN-TYPE-CD": "06",
+      "TRAN-CAT-CD": 2,
+      "TRAN-CAT-TYPE-DESC": "Non-fraud reversal"
+    },
+    {
+      "TRAN-TYPE-CD": "07",
+      "TRAN-CAT-CD": 1,
+      "TRAN-CAT-TYPE-DESC": "Sales draft credit adjustment"
+    }
+  ]
+}
