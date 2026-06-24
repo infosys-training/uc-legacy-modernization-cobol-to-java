@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "source_file": "trantype.txt",
+    "copybook": "CVTRA03Y",
+    "entity": "TransactionType",
+    "record_length": 60,
+    "key_field": "TRAN-TYPE",
+    "record_count": 7
+  },
+  "field_definitions": [
+    {
+      "field_name": "TRAN-TYPE",
+      "pic_clause": "PIC X(02)",
+      "byte_offset": 0,
+      "byte_length": 2,
+      "data_type": "alphanumeric",
+      "decimal_scale": 0,
+      "business_meaning": "Transaction type code (primary key)"
+    },
+    {
+      "field_name": "TRAN-TYPE-DESC",
+      "pic_clause": "PIC X(50)",
+      "byte_offset": 2,
+      "byte_length": 50,
+      "data_type": "alphanumeric",
+      "decimal_scale": 0,
+      "business_meaning": "Transaction type description"
+    }
+  ],
+  "records": [
+    {
+      "TRAN-TYPE": "01",
+      "TRAN-TYPE-DESC": "Purchase"
+    },
+    {
+      "TRAN-TYPE": "02",
+      "TRAN-TYPE-DESC": "Payment"
+    },
+    {
+      "TRAN-TYPE": "03",
+      "TRAN-TYPE-DESC": "Credit"
+    },
+    {
+      "TRAN-TYPE": "04",
+      "TRAN-TYPE-DESC": "Authorization"
+    },
+    {
+      "TRAN-TYPE": "05",
+      "TRAN-TYPE-DESC": "Refund"
+    },
+    {
+      "TRAN-TYPE": "06",
+      "TRAN-TYPE-DESC": "Reversal"
+    },
+    {
+      "TRAN-TYPE": "07",
+      "TRAN-TYPE-DESC": "Adjustment"
+    }
+  ]
+}
